@@ -12,6 +12,11 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import OurStory from "./pages/OurStory";
 import Freshness from "./pages/Freshness";
+import AdminDashboard from "./pages/admin/Dashboard";
+import AdminProducts from "./pages/admin/Products";
+import AdminOrders from "./pages/admin/Orders";
+import AdminCustomers from "./pages/admin/Customers";
+import AdminAnalytics from "./pages/admin/Analytics";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -32,6 +37,12 @@ const App = () => (
           <Route path="/signup" element={<Signup />} />
           <Route path="/our-story" element={<OurStory />} />
           <Route path="/freshness" element={<Freshness />} />
+          {/* Admin */}
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/products" element={<AdminProducts />} />
+          <Route path="/admin/orders" element={<AdminOrders />} />
+          <Route path="/admin/customers" element={<AdminCustomers />} />
+          <Route path="/admin/analytics" element={<AdminAnalytics />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
