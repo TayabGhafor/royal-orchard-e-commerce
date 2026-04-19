@@ -72,7 +72,7 @@ const Home = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="absolute z-10 bg-surface-container-lowest p-4 rounded-lg shadow-xl card-hover max-w-[200px] -top-20 left-60 lg:left-52 hidden md:block"
+              className="absolute z-20 bg-surface-container-lowest p-4 rounded-lg shadow-xl card-hover max-w-[180px] -top-24 right-4 lg:-right-8 hidden md:block"
             >
               <div className="w-full aspect-square rounded-md overflow-hidden bg-surface-container-low mb-3">
                 <img
