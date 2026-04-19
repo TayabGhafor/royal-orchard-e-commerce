@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { SiteShell } from "@/components/SiteShell";
 import { Icon } from "@/components/Icon";
 import { useCart } from "@/store/cart";
+import { formatPKR } from "@/lib/format";
 
 const checkoutSchema = z.object({
   name: z.string().trim().min(2, "Please enter your name").max(100),
@@ -22,7 +23,7 @@ const Checkout = () => {
   const navigate = useNavigate();
 
   const sub = subtotal();
-  const tax = Math.round(sub * 0.05 * 100) / 100;
+  const tax = Math.round(sub * 0.05);
   const total = sub + tax;
 
   if (items.length === 0 && !submitting) {
@@ -188,7 +189,7 @@ const Checkout = () => {
                     <div className="flex-1">
                       <div className="flex justify-between">
                         <h4 className="font-bold text-lg leading-tight">{item.name}</h4>
-                        <span className="font-bold">${(item.unitPrice * item.quantity).toFixed(2)}</span>
+                        <span className="font-bold">{formatPKR(item.unitPrice * item.quantity)}</span>
                       </div>
                       <p className="text-sm text-on-surface-variant mt-1 italic">{item.weight}</p>
                     </div>
@@ -199,7 +200,7 @@ const Checkout = () => {
               <div className="border-t border-surface-container-highest pt-6 space-y-3">
                 <div className="flex justify-between text-on-surface-variant font-medium">
                   <span>Subtotal</span>
-                  <span>${sub.toFixed(2)}</span>
+                  <span>{formatPKR(sub)}</span>
                 </div>
                 <div className="flex justify-between text-on-surface-variant font-medium">
                   <span>Shipping</span>
@@ -207,11 +208,11 @@ const Checkout = () => {
                 </div>
                 <div className="flex justify-between text-on-surface-variant font-medium">
                   <span>Harvest Tax (5%)</span>
-                  <span>${tax.toFixed(2)}</span>
+                  <span>{formatPKR(tax)}</span>
                 </div>
                 <div className="flex justify-between text-2xl font-black pt-4 text-on-surface">
                   <span>Total</span>
-                  <span className="text-primary">${total.toFixed(2)}</span>
+                  <span className="text-primary">{formatPKR(total)}</span>
                 </div>
               </div>
 

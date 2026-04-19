@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { SiteShell } from "@/components/SiteShell";
 import { Icon } from "@/components/Icon";
 import { useCart } from "@/store/cart";
+import { formatPKR } from "@/lib/format";
 
 const Cart = () => {
   const { items, updateQuantity, removeItem, subtotal } = useCart();
@@ -74,7 +75,7 @@ const Cart = () => {
                         </button>
                       </div>
                       <span className="font-headline text-xl font-extrabold text-primary">
-                        ${(item.unitPrice * item.quantity).toFixed(2)}
+                        {formatPKR(item.unitPrice * item.quantity)}
                       </span>
                     </div>
                   </div>
@@ -88,7 +89,7 @@ const Cart = () => {
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between text-on-surface-variant">
                     <span>Subtotal</span>
-                    <span className="font-bold text-on-surface">${sub.toFixed(2)}</span>
+                    <span className="font-bold text-on-surface">{formatPKR(sub)}</span>
                   </div>
                   <div className="flex justify-between text-on-surface-variant">
                     <span>Shipping</span>
@@ -96,7 +97,7 @@ const Cart = () => {
                   </div>
                   <div className="flex justify-between pt-4 border-t border-outline-variant/20 text-2xl font-extrabold">
                     <span>Total</span>
-                    <span className="text-primary">${sub.toFixed(2)}</span>
+                    <span className="text-primary">{formatPKR(sub)}</span>
                   </div>
                 </div>
                 <Link
