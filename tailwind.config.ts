@@ -95,6 +95,14 @@ export default {
         "on-surface-variant": "#4d4732",
         outline: "#7e775f",
         "outline-variant": "#d0c6ab",
+
+        // Retro editorial palette (OurStory page reference)
+        terracotta: "#C0573E",
+        olive: "#5B6334",
+        ochre: "#C88B2A",
+        "warm-cream": "#F4EBD9",
+        "retro-gold": "#FFD700",
+        "dark-soil": "#3D2B1F",
       },
       borderRadius: {
         DEFAULT: "1rem",
