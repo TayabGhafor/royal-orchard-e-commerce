@@ -79,3 +79,22 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+/* === Retro Editorial helpers (OurStory page reference) === */
+.blob-shape { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }
+.blob-shape-alt { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+.organic-border { border-radius: 53% 47% 34% 66% / 63% 41% 59% 37%; }
+.retro-gradient { background: linear-gradient(135deg, #C0573E 0%, #FFD700 100%); }
+.sepia-effect { filter: sepia(0.3) contrast(1.1) brightness(0.9); }
+.film-grain { position: relative; }
+.film-grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(45deg, rgba(255,215,0,0.2) 0%, transparent 40%, rgba(192,87,62,0.15) 100%);
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+/* === Freshness page (editorial shadow) === */
+.editorial-shadow { box-shadow: 0 32px 64px -12px rgba(144, 77, 0, 0.08); }

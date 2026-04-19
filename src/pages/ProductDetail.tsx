@@ -6,6 +6,7 @@ import { SiteShell } from "@/components/SiteShell";
 import { Icon } from "@/components/Icon";
 import { findProduct } from "@/data/products";
 import { useCart } from "@/store/cart";
+import { formatPKR } from "@/lib/format";
 
 const ProductDetail = () => {
   const { slug } = useParams();
@@ -97,7 +98,7 @@ const ProductDetail = () => {
                   {product.name}
                 </h1>
                 <p className="mt-6 text-xl font-bold text-primary font-headline">
-                  ${product.price.toFixed(2)}
+                  {formatPKR(product.price)}
                   <span className="text-sm font-normal text-outline"> / {selectedWeight}</span>
                 </p>
               </div>

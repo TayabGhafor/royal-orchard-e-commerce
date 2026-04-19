@@ -5,6 +5,7 @@ import { SiteShell } from "@/components/SiteShell";
 import { Icon } from "@/components/Icon";
 import { products } from "@/data/products";
 import { useCart } from "@/store/cart";
+import { formatPKR } from "@/lib/format";
 
 const trending = [
   {
@@ -247,7 +248,7 @@ const Home = () => {
               <p className="text-sm text-outline mb-4">{p.tagline}</p>
               <div className="flex items-center justify-between">
                 <p className="text-primary font-black text-xl">
-                  ${p.price}
+                  {formatPKR(p.price)}
                   <span className="text-xs font-normal"> / {p.weights[0]}</span>
                 </p>
                 <button

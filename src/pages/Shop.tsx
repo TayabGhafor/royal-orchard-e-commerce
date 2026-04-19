@@ -5,6 +5,7 @@ import { SiteShell } from "@/components/SiteShell";
 import { Icon } from "@/components/Icon";
 import { products, type Product, type WeightOption } from "@/data/products";
 import { useCart } from "@/store/cart";
+import { formatPKR } from "@/lib/format";
 
 const varieties = ["All", "Sindhri", "Chaunsa", "Anwar Ratol", "Langra"] as const;
 const weights: (WeightOption | "All")[] = ["All", "3kg", "5kg", "8kg"];
@@ -224,7 +225,7 @@ const FeaturedCard = ({ p, onAdd }: { p: Product; onAdd: () => void }) => (
             <h3 className="text-2xl font-headline font-bold">{p.name}</h3>
             <p className="text-sm text-on-surface-variant mt-1">{p.tagline}</p>
           </div>
-          <span className="text-xl font-bold text-primary">${p.price.toFixed(2)}</span>
+          <span className="text-xl font-bold text-primary">{formatPKR(p.price)}</span>
         </div>
         <div className="flex items-center gap-2 mb-6">
           <span className="text-xs text-outline font-medium">
@@ -264,7 +265,7 @@ const SmallCard = ({ p, onAdd }: { p: Product; onAdd: () => void }) => (
       <p className="text-xs text-on-surface-variant mb-4 line-clamp-2">{p.tagline}</p>
     </Link>
     <div className="flex items-center justify-between">
-      <span className="font-bold text-primary">${p.price.toFixed(2)}</span>
+      <span className="font-bold text-primary">{formatPKR(p.price)}</span>
       <button
         onClick={onAdd}
         className="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-primary hover:bg-primary hover:text-on-primary transition-all"

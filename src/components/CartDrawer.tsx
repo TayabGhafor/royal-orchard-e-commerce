@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "@/store/cart";
 import { Icon } from "./Icon";
+import { formatPKR } from "@/lib/format";
 
 export const CartDrawer = () => {
   const { items, isOpen, setOpen, updateQuantity, removeItem, subtotal } = useCart();
@@ -96,7 +97,7 @@ export const CartDrawer = () => {
                           </button>
                         </div>
                         <span className="font-bold text-primary">
-                          ${(item.unitPrice * item.quantity).toFixed(2)}
+                          {formatPKR(item.unitPrice * item.quantity)}
                         </span>
                       </div>
                     </div>
@@ -109,7 +110,7 @@ export const CartDrawer = () => {
               <div className="border-t border-outline-variant/20 p-6 space-y-4 bg-surface-container-lowest">
                 <div className="flex justify-between text-sm text-outline">
                   <span>Subtotal</span>
-                  <span className="font-bold text-on-surface">${sub.toFixed(2)}</span>
+                  <span className="font-bold text-on-surface">{formatPKR(sub)}</span>
                 </div>
                 <div className="flex justify-between text-sm text-outline">
                   <span>Shipping</span>
@@ -117,7 +118,7 @@ export const CartDrawer = () => {
                 </div>
                 <div className="flex justify-between text-lg font-extrabold pt-2 border-t border-outline-variant/20">
                   <span>Total</span>
-                  <span className="text-primary">${sub.toFixed(2)}</span>
+                  <span className="text-primary">{formatPKR(sub)}</span>
                 </div>
                 <button
                   onClick={() => {
