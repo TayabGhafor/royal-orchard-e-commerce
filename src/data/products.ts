@@ -6,7 +6,7 @@ export interface Product {
   name: string;
   tagline: string;
   description: string;
-  price: number; // in USD for display ($)
+  price: number; // PKR (Rs.) — base price for the smallest weight option
   variety: "Sindhri" | "Chaunsa" | "Anwar Ratol" | "Langra" | "Mixed" | "Other";
   collection: "Premium Reserve" | "Seasonal Specials" | "Bulk Harvest";
   weights: WeightOption[];
@@ -46,7 +46,7 @@ export const products: Product[] = [
     tagline: "The Queen of Mangoes from the Tando Jam orchards.",
     description:
       "Experience the Queen of Mangoes. Our Premium Sindhri variety is hand-selected from the heart of the orchard, known for its extreme sweetness, intoxicating aroma, and signature fiber-less texture.",
-    price: 45,
+    price: 4500,
     variety: "Sindhri",
     collection: "Premium Reserve",
     weights: ["3kg", "5kg", "8kg"],
@@ -62,7 +62,7 @@ export const products: Product[] = [
     tagline: "Intense aroma with a velvety, fiber-less texture.",
     description:
       "An export-grade single-batch harvest. The Anwar Ratol is small in size but massive in flavor — a velvety, fiber-less mango with an unmistakable honeyed perfume.",
-    price: 52,
+    price: 5200,
     variety: "Anwar Ratol",
     collection: "Seasonal Specials",
     weights: ["3kg", "5kg", "8kg"],
@@ -78,7 +78,7 @@ export const products: Product[] = [
     tagline: "Signature sweet aroma and golden yellow skin.",
     description:
       "Known for its signature sweet aroma and golden yellow skin when ripe. A classic premium Pakistani variety, perfect on its own or in desserts.",
-    price: 38,
+    price: 3800,
     variety: "Chaunsa",
     collection: "Premium Reserve",
     weights: ["3kg", "5kg", "8kg"],
@@ -93,7 +93,7 @@ export const products: Product[] = [
     tagline: "Greenish skin even when ripe. Tart-sweet profile.",
     description:
       "Maintains a greenish skin even when fully ripe. The Langra has a distinctive tart-sweet profile loved by connoisseurs across South Asia.",
-    price: 32,
+    price: 3200,
     variety: "Langra",
     collection: "Seasonal Specials",
     weights: ["3kg", "5kg", "8kg"],
@@ -108,7 +108,7 @@ export const products: Product[] = [
     tagline: "Perfectly ripe with minor blemishes — ideal for juices.",
     description:
       "Perfectly ripe fruit with minor skin blemishes, ideal for juices, lassis and desserts. All the flavor at a friendlier price.",
-    price: 28,
+    price: 2800,
     variety: "Mixed",
     collection: "Bulk Harvest",
     weights: ["5kg", "8kg"],
@@ -123,7 +123,7 @@ export const products: Product[] = [
     tagline: "Wooden crate fresh from Tando Jam.",
     description:
       "A full wooden crate of perfectly aligned golden Sindhri mangoes. The choice for families and small businesses.",
-    price: 65,
+    price: 6500,
     variety: "Sindhri",
     collection: "Bulk Harvest",
     weights: ["8kg"],
