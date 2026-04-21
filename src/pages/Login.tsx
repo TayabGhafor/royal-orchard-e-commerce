@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { toast } from "sonner";
 import { Icon } from "@/components/Icon";
@@ -16,6 +16,8 @@ const Login = () => {
   const [showPwd, setShowPwd] = useState(false);
   const signIn = useAuth((s) => s.signIn);
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,12 +27,16 @@ const Login = () => {
       return;
     }
     const result = signIn(email, password);
+    if (!result.ok) {
+      toast.error(result.error || "Unable to sign in");
+      return;
+    }
     if (result.role === "admin") {
       toast.success("Welcome, Admin!");
       navigate("/admin");
     } else {
       toast.success("Welcome back!");
-      navigate("/");
+      navigate(from && !from.startsWith("/login") && !from.startsWith("/signup") ? from : "/");
     }
   };
 
