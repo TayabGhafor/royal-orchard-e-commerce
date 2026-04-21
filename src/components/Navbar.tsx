@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Icon } from "./Icon";
 import { useCart } from "@/store/cart";
 import { useAuth } from "@/store/auth";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const navLinks = [
   { to: "/", label: "Home" },
@@ -18,6 +19,17 @@ export const Navbar = () => {
   const signOut = useAuth((s) => s.signOut);
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [userOpen, setUserOpen] = useState(false);
+
+  const initials = user
+    ? user.name
+        .split(" ")
+        .map((p) => p[0])
+        .filter(Boolean)
+        .slice(0, 2)
+        .join("")
+        .toUpperCase()
+    : "";
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 flex justify-center p-4 pointer-events-none">
@@ -76,15 +88,62 @@ export const Navbar = () => {
             )}
           </button>
           {user ? (
-            <button
-              onClick={() => {
-                signOut();
-                navigate("/");
-              }}
-              className="hidden sm:block px-5 py-2 bg-primary text-on-primary font-bold rounded-full cta-glow transition-all text-sm"
-            >
-              Sign Out
-            </button>
+            <Popover open={userOpen} onOpenChange={setUserOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  className="w-10 h-10 rounded-full bg-primary text-on-primary font-bold text-sm flex items-center justify-center hover:scale-105 transition-transform shadow-md"
+                  aria-label="Account"
+                >
+                  {initials || <Icon name="person" />}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="end" sideOffset={12} className="w-72 p-0 overflow-hidden border-outline-variant/30">
+                <div className="bg-primary/10 p-5 flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-primary text-on-primary font-bold flex items-center justify-center">
+                    {initials || <Icon name="person" />}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-headline font-bold text-on-surface truncate">{user.name}</p>
+                    <p className="text-xs text-on-surface-variant truncate">{user.email}</p>
+                  </div>
+                </div>
+                <div className="p-4 space-y-3 text-sm">
+                  {user.address && (
+                    <div className="flex items-start gap-2 text-on-surface-variant">
+                      <Icon name="location_on" className="text-base text-primary mt-0.5" />
+                      <span className="leading-snug">{user.address}</span>
+                    </div>
+                  )}
+                  {user.phone && (
+                    <div className="flex items-center gap-2 text-on-surface-variant">
+                      <Icon name="call" className="text-base text-primary" />
+                      <span>{user.phone}</span>
+                    </div>
+                  )}
+                  {user.role === "admin" && (
+                    <button
+                      onClick={() => {
+                        setUserOpen(false);
+                        navigate("/admin");
+                      }}
+                      className="w-full text-left flex items-center gap-2 px-3 py-2 rounded-md hover:bg-surface-container text-on-surface font-semibold"
+                    >
+                      <Icon name="dashboard" className="text-base" /> Admin Dashboard
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      signOut();
+                      setUserOpen(false);
+                      navigate("/");
+                    }}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-full bg-primary text-on-primary font-bold text-sm hover:opacity-90"
+                  >
+                    <Icon name="logout" className="text-base" /> Sign Out
+                  </button>
+                </div>
+              </PopoverContent>
+            </Popover>
           ) : (
             <Link
               to="/login"
