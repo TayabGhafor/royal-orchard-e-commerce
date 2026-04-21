@@ -24,9 +24,14 @@ const Login = () => {
       toast.error(parsed.error.issues[0].message);
       return;
     }
-    signIn(email, password);
-    toast.success("Welcome back!");
-    navigate("/");
+    const result = signIn(email, password);
+    if (result.role === "admin") {
+      toast.success("Welcome, Admin!");
+      navigate("/admin");
+    } else {
+      toast.success("Welcome back!");
+      navigate("/");
+    }
   };
 
   return (
