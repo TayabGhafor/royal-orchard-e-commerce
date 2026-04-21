@@ -182,9 +182,9 @@ const Home = () => {
           ].map((s) => (
             <div
               key={s.label}
-              className="bg-surface-container-low backdrop-blur-xl p-8 rounded-lg flex items-center gap-6 border border-white/40 shadow-sm transition-transform hover:scale-105"
+              className="group bg-surface-container-low backdrop-blur-xl p-8 rounded-lg flex items-center gap-6 border border-white/40 shadow-sm lift-on-hover shine-on-hover"
             >
-              <div className={`w-14 h-14 ${s.bg} rounded-full flex items-center justify-center ${s.color}`}>
+              <div className={`w-14 h-14 ${s.bg} rounded-full flex items-center justify-center ${s.color} icon-pop`}>
                 <Icon name={s.icon} className="text-3xl" />
               </div>
               <div>
