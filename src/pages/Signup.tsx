@@ -37,6 +37,14 @@ const Signup = () => {
         <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] bg-primary-fixed opacity-20 rounded-full blur-[120px] pointer-events-none" />
         <div className="absolute bottom-[-10%] left-[-5%] w-[400px] h-[400px] bg-secondary-fixed opacity-15 rounded-full blur-[100px] pointer-events-none" />
 
+        <Link
+          to="/"
+          className="absolute top-6 left-6 z-20 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-surface-container-lowest/80 backdrop-blur-md border border-outline-variant/20 text-on-surface hover:text-primary hover:border-primary/40 transition-all shadow-sm"
+        >
+          <Icon name="arrow_back" className="text-base" />
+          <span className="text-sm font-semibold">Back to store</span>
+        </Link>
+
         <div className="w-full max-w-[1100px] grid md:grid-cols-2 bg-surface-container-lowest rounded-lg shadow-2xl shadow-primary/5 overflow-hidden border border-outline-variant/10">
           <div className="hidden md:block relative overflow-hidden group">
             <img
