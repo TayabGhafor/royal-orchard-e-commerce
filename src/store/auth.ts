@@ -83,6 +83,15 @@ export const useAuth = create<AuthState>()(
       signOut: () => set({ user: null }),
       isAdmin: () => get().user?.role === "admin",
     }),
-    { name: "royalorchard-auth" },
+    {
+      name: "royalorchard-auth",
+      version: 2,
+      migrate: (persisted: unknown) => {
+        const p = (persisted ?? {}) as { user?: MockUser | null; accounts?: StoredAccount[] };
+        // Drop legacy users that have no role so they get re-authenticated cleanly
+        if (p.user && !p.user.role) p.user = null;
+        return { user: p.user ?? null, accounts: p.accounts ?? [] };
+      },
+    },
   ),
 );
