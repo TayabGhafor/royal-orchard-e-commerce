@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { toast } from "sonner";
 import { Icon } from "@/components/Icon";
@@ -9,15 +9,19 @@ const schema = z
   .object({
     name: z.string().trim().min(2, "Enter your name").max(100),
     email: z.string().trim().email("Enter a valid email").max(255),
+    address: z.string().trim().min(10, "Enter a full delivery address").max(500),
     password: z.string().min(6, "Password must be at least 6 characters").max(100),
     confirm: z.string(),
   })
   .refine((d) => d.password === d.confirm, { message: "Passwords don't match", path: ["confirm"] });
 
 const Signup = () => {
-  const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "" });
+  const [form, setForm] = useState({ name: "", email: "", address: "", password: "", confirm: "" });
   const signUp = useAuth((s) => s.signUp);
+  const updateProfile = useAuth((s) => s.updateProfile);
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,9 +30,14 @@ const Signup = () => {
       toast.error(parsed.error.issues[0].message);
       return;
     }
-    signUp(form.name, form.email, form.password);
+    const res = signUp(form.name, form.email, form.password);
+    if (!res.ok) {
+      toast.error(res.error || "Unable to create account");
+      return;
+    }
+    updateProfile({ address: form.address });
     toast.success("Welcome to Royal Orchard!");
-    navigate("/");
+    navigate(from && !from.startsWith("/login") && !from.startsWith("/signup") ? from : "/");
   };
 
   return (
@@ -98,6 +107,16 @@ const Signup = () => {
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   placeholder="hello@royalorchard.com"
                   className="w-full px-5 py-3.5 bg-surface-container-low outline-none focus:ring-2 focus:ring-primary rounded-t-xl"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="block text-sm font-semibold text-on-surface-variant ml-1">Delivery Address</label>
+                <textarea
+                  rows={2}
+                  value={form.address}
+                  onChange={(e) => setForm({ ...form, address: e.target.value })}
+                  placeholder="House, street, area, city"
+                  className="w-full px-5 py-3.5 bg-surface-container-low outline-none focus:ring-2 focus:ring-primary rounded-t-xl resize-none"
                 />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

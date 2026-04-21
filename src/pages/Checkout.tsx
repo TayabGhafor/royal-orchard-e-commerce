@@ -6,6 +6,7 @@ import { SiteShell } from "@/components/SiteShell";
 import { Icon } from "@/components/Icon";
 import { useCart } from "@/store/cart";
 import { useAdmin } from "@/store/admin";
+import { useAuth } from "@/store/auth";
 import { formatPKR } from "@/lib/format";
 
 const checkoutSchema = z.object({
@@ -19,7 +20,14 @@ type Payment = "cod" | "card" | "easypaisa" | "jazzcash";
 const Checkout = () => {
   const { items, subtotal, clear } = useCart();
   const addOrder = useAdmin((s) => s.addOrder);
-  const [form, setForm] = useState({ name: "", phone: "", address: "" });
+  const upsertCustomer = useAdmin((s) => s.upsertCustomer);
+  const user = useAuth((s) => s.user);
+  const updateProfile = useAuth((s) => s.updateProfile);
+  const [form, setForm] = useState({
+    name: user?.name ?? "",
+    phone: user?.phone ?? "",
+    address: user?.address ?? "",
+  });
   const [payment, setPayment] = useState<Payment>("cod");
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
@@ -46,14 +54,17 @@ const Checkout = () => {
           ? `${items[0].name} (${items[0].weight})`
           : `${items[0].name} (${items[0].weight}) +${items.length - 1} more`;
       const totalQty = items.reduce((n, it) => n + it.quantity, 0);
+      const email = user?.email ?? `${form.name.toLowerCase().replace(/\s+/g, ".")}@guest.local`;
       addOrder({
         customer: form.name,
-        email: `${form.name.toLowerCase().replace(/\s+/g, ".")}@guest.local`,
+        email,
         product: productSummary,
         quantity: totalQty,
         total,
         address: form.address,
       });
+      upsertCustomer({ name: form.name, email, spent: total });
+      if (user) updateProfile({ address: form.address, phone: form.phone, name: form.name });
       clear();
       toast.success("Order placed! We'll be in touch shortly.");
       navigate("/");
