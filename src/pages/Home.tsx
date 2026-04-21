@@ -368,7 +368,7 @@ const Home = () => {
             {reviews.map((r) => (
               <div
                 key={r.name}
-                className="bg-white p-8 rounded-lg shadow-sm border border-outline-variant/10 relative"
+              className="bg-white p-8 rounded-lg shadow-sm border border-outline-variant/10 relative lift-on-hover tilt-on-hover"
               >
                 <Icon
                   name="format_quote"
