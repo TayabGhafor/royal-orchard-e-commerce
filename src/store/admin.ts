@@ -40,6 +40,7 @@ interface AdminState {
   deleteProduct: (id: string) => void;
   // Orders
   setOrderStatus: (id: string, status: OrderStatus) => void;
+  addOrder: (o: Omit<AdminOrder, "id" | "createdAt" | "status"> & { status?: OrderStatus }) => AdminOrder;
 }
 
 const slugify = (s: string) =>
@@ -132,6 +133,16 @@ export const useAdmin = create<AdminState>()(
         set((state) => ({
           orders: state.orders.map((o) => (o.id === id ? { ...o, status } : o)),
         })),
+      addOrder: (o) => {
+        const order: AdminOrder = {
+          ...o,
+          id: `RO-${Math.floor(1000 + Math.random() * 9000)}`,
+          status: o.status ?? "Pending",
+          createdAt: new Date().toISOString(),
+        };
+        set((state) => ({ orders: [order, ...state.orders] }));
+        return order;
+      },
     }),
     { name: "royalorchard-admin" },
   ),

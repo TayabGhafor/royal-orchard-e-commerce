@@ -18,6 +18,7 @@ import AdminOrders from "./pages/admin/Orders";
 import AdminCustomers from "./pages/admin/Customers";
 import AdminAnalytics from "./pages/admin/Analytics";
 import NotFound from "./pages/NotFound.tsx";
+import RequireAdmin from "./components/admin/RequireAdmin";
 
 const queryClient = new QueryClient();
 
@@ -37,12 +38,12 @@ const App = () => (
           <Route path="/signup" element={<Signup />} />
           <Route path="/our-story" element={<OurStory />} />
           <Route path="/freshness" element={<Freshness />} />
-          {/* Admin */}
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/products" element={<AdminProducts />} />
-          <Route path="/admin/orders" element={<AdminOrders />} />
-          <Route path="/admin/customers" element={<AdminCustomers />} />
-          <Route path="/admin/analytics" element={<AdminAnalytics />} />
+          {/* Admin (protected) */}
+          <Route path="/admin" element={<RequireAdmin><AdminDashboard /></RequireAdmin>} />
+          <Route path="/admin/products" element={<RequireAdmin><AdminProducts /></RequireAdmin>} />
+          <Route path="/admin/orders" element={<RequireAdmin><AdminOrders /></RequireAdmin>} />
+          <Route path="/admin/customers" element={<RequireAdmin><AdminCustomers /></RequireAdmin>} />
+          <Route path="/admin/analytics" element={<RequireAdmin><AdminAnalytics /></RequireAdmin>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

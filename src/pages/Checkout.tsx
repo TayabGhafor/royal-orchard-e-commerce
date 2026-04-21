@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { SiteShell } from "@/components/SiteShell";
 import { Icon } from "@/components/Icon";
 import { useCart } from "@/store/cart";
+import { useAdmin } from "@/store/admin";
 import { formatPKR } from "@/lib/format";
 
 const checkoutSchema = z.object({
@@ -17,6 +18,7 @@ type Payment = "cod" | "card" | "easypaisa" | "jazzcash";
 
 const Checkout = () => {
   const { items, subtotal, clear } = useCart();
+  const addOrder = useAdmin((s) => s.addOrder);
   const [form, setForm] = useState({ name: "", phone: "", address: "" });
   const [payment, setPayment] = useState<Payment>("cod");
   const [submitting, setSubmitting] = useState(false);
@@ -39,6 +41,19 @@ const Checkout = () => {
     }
     setSubmitting(true);
     setTimeout(() => {
+      const productSummary =
+        items.length === 1
+          ? `${items[0].name} (${items[0].weight})`
+          : `${items[0].name} (${items[0].weight}) +${items.length - 1} more`;
+      const totalQty = items.reduce((n, it) => n + it.quantity, 0);
+      addOrder({
+        customer: form.name,
+        email: `${form.name.toLowerCase().replace(/\s+/g, ".")}@guest.local`,
+        product: productSummary,
+        quantity: totalQty,
+        total,
+        address: form.address,
+      });
       clear();
       toast.success("Order placed! We'll be in touch shortly.");
       navigate("/");
