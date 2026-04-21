@@ -1,6 +1,6 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { Icon } from "./Icon";
+import { Icon } from "@/components/Icon";
 import { useCart } from "@/store/cart";
 import { useAuth } from "@/store/auth";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
