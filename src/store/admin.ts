@@ -41,6 +41,7 @@ interface AdminState {
   // Orders
   setOrderStatus: (id: string, status: OrderStatus) => void;
   addOrder: (o: Omit<AdminOrder, "id" | "createdAt" | "status"> & { status?: OrderStatus }) => AdminOrder;
+  upsertCustomer: (c: { name: string; email: string; spent: number }) => void;
 }
 
 const slugify = (s: string) =>
@@ -143,6 +144,34 @@ export const useAdmin = create<AdminState>()(
         set((state) => ({ orders: [order, ...state.orders] }));
         return order;
       },
+      upsertCustomer: ({ name, email, spent }) =>
+        set((state) => {
+          const idx = state.customers.findIndex(
+            (c) => c.email.toLowerCase() === email.toLowerCase(),
+          );
+          if (idx === -1) {
+            const newC: AdminCustomer = {
+              id: `C-${String(state.customers.length + 1).padStart(3, "0")}`,
+              name,
+              email,
+              status: "Active",
+              orders: 1,
+              spent,
+              joinedAt: new Date().toISOString().slice(0, 10),
+            };
+            return { customers: [newC, ...state.customers] };
+          }
+          const updated = [...state.customers];
+          const existing = updated[idx];
+          updated[idx] = {
+            ...existing,
+            name: name || existing.name,
+            status: "Active",
+            orders: existing.orders + 1,
+            spent: existing.spent + spent,
+          };
+          return { customers: updated };
+        }),
     }),
     { name: "royalorchard-admin" },
   ),

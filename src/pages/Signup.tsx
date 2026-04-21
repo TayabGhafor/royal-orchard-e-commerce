@@ -109,6 +109,16 @@ const Signup = () => {
                   className="w-full px-5 py-3.5 bg-surface-container-low outline-none focus:ring-2 focus:ring-primary rounded-t-xl"
                 />
               </div>
+              <div className="space-y-1.5">
+                <label className="block text-sm font-semibold text-on-surface-variant ml-1">Delivery Address</label>
+                <textarea
+                  rows={2}
+                  value={form.address}
+                  onChange={(e) => setForm({ ...form, address: e.target.value })}
+                  placeholder="House, street, area, city"
+                  className="w-full px-5 py-3.5 bg-surface-container-low outline-none focus:ring-2 focus:ring-primary rounded-t-xl resize-none"
+                />
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="block text-sm font-semibold text-on-surface-variant ml-1">Password</label>
