@@ -225,7 +225,7 @@ const Home = () => {
             <Link
               to={`/product/${p.slug}`}
               key={p.id}
-              className="min-w-[320px] bg-surface-container-low rounded-lg p-6 group transition-all card-hover"
+              className="min-w-[320px] bg-surface-container-low rounded-lg p-6 group transition-all card-hover shine-on-hover"
             >
               <div className="relative w-full aspect-[4/5] rounded-md overflow-hidden mb-6">
                 <img
