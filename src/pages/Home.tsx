@@ -72,7 +72,7 @@ const Home = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="absolute z-20 bg-surface-container-lowest p-4 rounded-lg shadow-xl card-hover max-w-[180px] -top-24 right-4 lg:-right-8 hidden md:block"
+              className="absolute z-20 bg-surface-container-lowest p-4 rounded-lg shadow-xl card-hover max-w-[180px] -top-24 right-4 lg:-right-8 hidden md:block animate-float"
             >
               <div className="w-full aspect-square rounded-md overflow-hidden bg-surface-container-low mb-3">
                 <img
@@ -182,9 +182,9 @@ const Home = () => {
           ].map((s) => (
             <div
               key={s.label}
-              className="bg-surface-container-low backdrop-blur-xl p-8 rounded-lg flex items-center gap-6 border border-white/40 shadow-sm transition-transform hover:scale-105"
+              className="group bg-surface-container-low backdrop-blur-xl p-8 rounded-lg flex items-center gap-6 border border-white/40 shadow-sm lift-on-hover shine-on-hover"
             >
-              <div className={`w-14 h-14 ${s.bg} rounded-full flex items-center justify-center ${s.color}`}>
+              <div className={`w-14 h-14 ${s.bg} rounded-full flex items-center justify-center ${s.color} icon-pop`}>
                 <Icon name={s.icon} className="text-3xl" />
               </div>
               <div>
@@ -225,7 +225,7 @@ const Home = () => {
             <Link
               to={`/product/${p.slug}`}
               key={p.id}
-              className="min-w-[320px] bg-surface-container-low rounded-lg p-6 group transition-all card-hover"
+              className="min-w-[320px] bg-surface-container-low rounded-lg p-6 group transition-all card-hover shine-on-hover"
             >
               <div className="relative w-full aspect-[4/5] rounded-md overflow-hidden mb-6">
                 <img
@@ -368,7 +368,7 @@ const Home = () => {
             {reviews.map((r) => (
               <div
                 key={r.name}
-                className="bg-white p-8 rounded-lg shadow-sm border border-outline-variant/10 relative"
+              className="bg-white p-8 rounded-lg shadow-sm border border-outline-variant/10 relative lift-on-hover tilt-on-hover"
               >
                 <Icon
                   name="format_quote"
