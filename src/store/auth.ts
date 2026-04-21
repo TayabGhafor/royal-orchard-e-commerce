@@ -29,6 +29,8 @@ interface AuthState {
   updateProfile: (patch: Partial<Pick<MockUser, "address" | "phone" | "name">>) => void;
   signOut: () => void;
   isAdmin: () => boolean;
+  requestPasswordReset: (email: string) => { ok: boolean; token?: string; error?: string };
+  resetPassword: (email: string, token: string, newPassword: string) => { ok: boolean; error?: string };
 }
 
 const ADMIN_EMAIL = "royalorchard@admin.com";
@@ -82,6 +84,38 @@ export const useAuth = create<AuthState>()(
         }),
       signOut: () => set({ user: null }),
       isAdmin: () => get().user?.role === "admin",
+      requestPasswordReset: (email) => {
+        const em = email.trim().toLowerCase();
+        const acct = get().accounts.find((a) => a.email.toLowerCase() === em);
+        if (!acct) return { ok: false, error: "No account found with this email." };
+        const token = Math.random().toString(36).slice(2, 10).toUpperCase();
+        try {
+          const raw = localStorage.getItem("royalorchard-reset-tokens");
+          const map = raw ? JSON.parse(raw) : {};
+          map[em] = { token, exp: Date.now() + 1000 * 60 * 30 };
+          localStorage.setItem("royalorchard-reset-tokens", JSON.stringify(map));
+        } catch (_) { /* ignore */ }
+        return { ok: true, token };
+      },
+      resetPassword: (email, token, newPassword) => {
+        const em = email.trim().toLowerCase();
+        if (newPassword.length < 6) return { ok: false, error: "Password must be at least 6 characters." };
+        let map: Record<string, { token: string; exp: number }> = {};
+        try {
+          const raw = localStorage.getItem("royalorchard-reset-tokens");
+          map = raw ? JSON.parse(raw) : {};
+        } catch (_) { /* ignore */ }
+        const entry = map[em];
+        if (!entry || entry.token !== token.trim().toUpperCase()) return { ok: false, error: "Invalid reset code." };
+        if (Date.now() > entry.exp) return { ok: false, error: "Reset code has expired." };
+        const accounts = get().accounts.map((a) =>
+          a.email.toLowerCase() === em ? { ...a, password: newPassword } : a,
+        );
+        set({ accounts });
+        delete map[em];
+        try { localStorage.setItem("royalorchard-reset-tokens", JSON.stringify(map)); } catch (_) { /* ignore */ }
+        return { ok: true };
+      },
     }),
     {
       name: "royalorchard-auth",
