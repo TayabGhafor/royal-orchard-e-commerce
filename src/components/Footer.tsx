@@ -35,17 +35,17 @@ export const Footer = () => (
         <ul className="flex flex-col gap-4 text-sm text-outline">
           <li><a className="hover:text-primary transition-colors" href="/shop">Current Varieties</a></li>
           <li><a className="hover:text-primary transition-colors" href="/our-story">Farm Experience</a></li>
-          <li><a className="hover:text-primary transition-colors" href="#">Corporate Gifting</a></li>
-          <li><a className="hover:text-primary transition-colors" href="#">Wholesale</a></li>
+          <li><a className="hover:text-primary transition-colors" href="/wholesale">Corporate Gifting</a></li>
+          <li><a className="hover:text-primary transition-colors" href="/wholesale">Wholesale</a></li>
         </ul>
       </div>
       <div>
         <h5 className="font-bold mb-6">Support</h5>
         <ul className="flex flex-col gap-4 text-sm text-outline">
-          <li><a className="hover:text-primary transition-colors" href="/freshness">Shipping Policy</a></li>
-          <li><a className="hover:text-primary transition-colors" href="#">Refund Policy</a></li>
-          <li><a className="hover:text-primary transition-colors" href="/freshness">Fruit Care Guide</a></li>
-          <li><a className="hover:text-primary transition-colors" href="#">FAQs</a></li>
+          <li><a className="hover:text-primary transition-colors" href="/shipping-policy">Shipping Policy</a></li>
+          <li><a className="hover:text-primary transition-colors" href="/refund-policy">Refund Policy</a></li>
+          <li><a className="hover:text-primary transition-colors" href="/fruit-care-guide">Fruit Care Guide</a></li>
+          <li><a className="hover:text-primary transition-colors" href="/faq">FAQs</a></li>
         </ul>
       </div>
       <div>
@@ -66,9 +66,9 @@ export const Footer = () => (
     <div className="max-w-7xl mx-auto px-6 pt-10 border-t border-outline-variant/10 flex flex-col md:flex-row justify-between items-center gap-6">
       <p className="text-xs text-outline">© 2024 RoyalOrchard Pvt Ltd. All rights reserved.</p>
       <div className="flex gap-8 text-xs font-bold text-outline">
-        <a href="#">Privacy</a>
-        <a href="#">Terms</a>
-        <a href="#">Security</a>
+        <a className="hover:text-primary transition-colors" href="/privacy">Privacy</a>
+        <a className="hover:text-primary transition-colors" href="/terms">Terms</a>
+        <a className="hover:text-primary transition-colors" href="/security">Security</a>
       </div>
     </div>
   </footer>
