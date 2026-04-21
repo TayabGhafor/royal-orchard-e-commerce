@@ -98,3 +98,33 @@
 
 /* === Freshness page (editorial shadow) === */
 .editorial-shadow { box-shadow: 0 32px 64px -12px rgba(144, 77, 0, 0.08); }
+
+/* === Homepage micro-interactions === */
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.animate-float { animation: float-slow 5s ease-in-out infinite; }
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+.shine-on-hover { position: relative; overflow: hidden; }
+.shine-on-hover::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.45) 50%, transparent 70%);
+  transform: translateX(-100%);
+  transition: transform 0.7s ease;
+  pointer-events: none;
+}
+.shine-on-hover:hover::after { transform: translateX(100%); }
+
+.lift-on-hover { transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s ease; }
+.lift-on-hover:hover { transform: translateY(-6px); box-shadow: 0 24px 48px -16px rgba(144,77,0,0.18); }
+
+.tilt-on-hover { transition: transform .4s cubic-bezier(.2,.8,.2,1); }
+.tilt-on-hover:hover { transform: perspective(800px) rotateX(2deg) rotateY(-2deg) scale(1.02); }
+
+.icon-pop { transition: transform .3s cubic-bezier(.2,.8,.2,1); }
+.group:hover .icon-pop { transform: scale(1.15) rotate(-6deg); }
