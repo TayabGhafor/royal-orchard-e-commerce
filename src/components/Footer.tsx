@@ -51,16 +51,19 @@ export const Footer = () => (
       <div>
         <h5 className="font-bold mb-6">Newsletter</h5>
         <p className="text-sm text-outline mb-4">Get harvest alerts and early-bird discounts.</p>
-        <div className="flex flex-col sm:flex-row gap-3 p-2 bg-surface rounded-xl border border-outline-variant/30 shadow-sm">
+        <form className="flex flex-col gap-2 w-full">
           <input
-            className="bg-transparent border-none focus:ring-0 text-sm flex-1 px-3 py-2.5 outline-none text-foreground placeholder:text-muted-foreground/60"
+            className="w-full bg-surface border border-outline-variant/40 rounded-lg text-sm px-4 py-3 outline-none text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
             placeholder="Enter your email"
             type="email"
           />
-          <button className="bg-primary text-on-primary px-5 py-2.5 text-sm font-semibold rounded-lg hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-md hover:shadow-lg whitespace-nowrap">
-            Join
+          <button
+            type="submit"
+            className="w-full bg-primary text-on-primary px-5 py-3 text-sm font-semibold rounded-lg hover:bg-primary/90 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 shadow-md hover:shadow-lg"
+          >
+            Subscribe
           </button>
-        </div>
+        </form>
       </div>
     </div>
     <div className="max-w-7xl mx-auto px-6 pt-10 border-t border-outline-variant/10 flex flex-col md:flex-row justify-between items-center gap-6">
