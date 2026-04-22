@@ -51,13 +51,13 @@ export const Footer = () => (
       <div>
         <h5 className="font-bold mb-6">Newsletter</h5>
         <p className="text-sm text-outline mb-4">Get harvest alerts and early-bird discounts.</p>
-        <div className="flex gap-2 p-1.5 bg-surface rounded-xl border border-outline-variant/30 shadow-sm">
+        <div className="flex flex-col sm:flex-row gap-3 p-2 bg-surface rounded-xl border border-outline-variant/30 shadow-sm">
           <input
             className="bg-transparent border-none focus:ring-0 text-sm flex-1 px-3 py-2.5 outline-none text-foreground placeholder:text-muted-foreground/60"
             placeholder="Enter your email"
             type="email"
           />
-          <button className="bg-primary text-on-primary px-5 py-2.5 text-sm font-semibold rounded-lg hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-md hover:shadow-lg">
+          <button className="bg-primary text-on-primary px-5 py-2.5 text-sm font-semibold rounded-lg hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-md hover:shadow-lg whitespace-nowrap">
             Join
           </button>
         </div>
