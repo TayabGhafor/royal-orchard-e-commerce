@@ -8,9 +8,12 @@ import { formatPKR } from "@/lib/format";
 const tabs: ("All" | OrderStatus)[] = ["All", "Pending", "Shipped", "Delivered"];
 
 const next: Record<OrderStatus, OrderStatus | null> = {
-  Pending: "Shipped",
+  Pending: "Processing",
+  Processing: "Shipped",
   Shipped: "Delivered",
   Delivered: null,
+  Returned: null,
+  Cancelled: null,
 };
 
 const Orders = () => {

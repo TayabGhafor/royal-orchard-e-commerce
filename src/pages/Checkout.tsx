@@ -62,6 +62,9 @@ const Checkout = () => {
         quantity: totalQty,
         total,
         address: form.address,
+        paid: payment !== "cod",
+        paymentMethod: payment,
+        status: "Processing",
       });
       upsertCustomer({ name: form.name, email, spent: total });
       if (user) updateProfile({ address: form.address, phone: form.phone, name: form.name });

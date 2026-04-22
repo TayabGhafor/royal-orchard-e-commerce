@@ -22,6 +22,8 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Security from "./pages/Security";
 import Wholesale from "./pages/Wholesale";
+import Account from "./pages/Account";
+import Orders from "./pages/Orders";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminProducts from "./pages/admin/Products";
 import AdminOrders from "./pages/admin/Orders";
@@ -58,6 +60,8 @@ const App = () => (
           <Route path="/terms" element={<Terms />} />
           <Route path="/security" element={<Security />} />
           <Route path="/wholesale" element={<Wholesale />} />
+          <Route path="/account" element={<Account />} />
+          <Route path="/orders" element={<Orders />} />
           {/* Admin (protected) */}
           <Route path="/admin" element={<RequireAdmin><AdminDashboard /></RequireAdmin>} />
           <Route path="/admin/products" element={<RequireAdmin><AdminProducts /></RequireAdmin>} />

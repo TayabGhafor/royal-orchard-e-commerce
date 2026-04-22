@@ -2,7 +2,13 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { products as seedProducts, type Product, type WeightOption } from "@/data/products";
 
-export type OrderStatus = "Pending" | "Shipped" | "Delivered";
+export type OrderStatus =
+  | "Pending"
+  | "Processing"
+  | "Shipped"
+  | "Delivered"
+  | "Returned"
+  | "Cancelled";
 
 export interface AdminOrder {
   id: string;
@@ -14,6 +20,9 @@ export interface AdminOrder {
   status: OrderStatus;
   address: string;
   createdAt: string; // ISO
+  paid?: boolean;
+  reviewed?: boolean;
+  paymentMethod?: string;
 }
 
 export interface AdminCustomer {
