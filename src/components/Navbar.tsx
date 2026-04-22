@@ -133,6 +133,24 @@ export const Navbar = () => {
                   )}
                   <button
                     onClick={() => {
+                      setUserOpen(false);
+                      navigate("/account");
+                    }}
+                    className="w-full text-left flex items-center gap-2 px-3 py-2 rounded-md hover:bg-surface-container text-on-surface font-semibold transition-colors"
+                  >
+                    <Icon name="person" className="text-base text-primary" /> My Account
+                  </button>
+                  <button
+                    onClick={() => {
+                      setUserOpen(false);
+                      navigate("/orders");
+                    }}
+                    className="w-full text-left flex items-center gap-2 px-3 py-2 rounded-md hover:bg-surface-container text-on-surface font-semibold transition-colors"
+                  >
+                    <Icon name="receipt_long" className="text-base text-primary" /> My Orders
+                  </button>
+                  <button
+                    onClick={() => {
                       signOut();
                       setUserOpen(false);
                       navigate("/");
