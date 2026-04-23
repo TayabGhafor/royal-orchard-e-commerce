@@ -308,7 +308,32 @@ const Orders = () => {
                         </div>
                       </div>
 
-                      {!isClosed && (
+                      {isClosed ? (
+                        <div className="pt-4">
+                          <div
+                            className={`flex items-center gap-3 px-4 py-3 rounded-xl ${
+                              order.status === "Cancelled"
+                                ? "bg-zinc-100 text-zinc-700"
+                                : "bg-rose-50 text-rose-700"
+                            }`}
+                          >
+                            <Icon
+                              name={order.status === "Cancelled" ? "cancel" : "assignment_return"}
+                              className="text-base"
+                            />
+                            <div className="flex-1">
+                              <p className="text-xs font-bold uppercase tracking-wider">
+                                {order.status === "Cancelled" ? "Order cancelled" : "Return in progress"}
+                              </p>
+                              <p className="text-[11px] opacity-80">
+                                {order.status === "Cancelled"
+                                  ? "This order is closed and will not be shipped."
+                                  : "We'll process your return within 3–5 business days."}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
                         <div className="pt-4">
                           <div className="relative flex items-start justify-between">
                             <div className="absolute top-4 left-0 w-full h-0.5 bg-surface-container-highest" />
