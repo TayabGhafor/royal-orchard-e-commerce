@@ -467,6 +467,48 @@ const SummaryCard = ({
   </div>
 );
 
+const EligibleAction = ({
+  eligible,
+  icon,
+  label,
+  hint,
+  tone,
+  onClick,
+}: {
+  eligible: boolean;
+  icon: string;
+  label: string;
+  hint: string;
+  tone: "danger" | "neutral";
+  onClick: () => void;
+}) => (
+  <div className="flex flex-col gap-1">
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={!eligible}
+      title={hint}
+      className={`px-4 py-2 rounded-full font-bold text-xs inline-flex items-center justify-center gap-1.5 transition-colors ${
+        eligible
+          ? tone === "danger"
+            ? "bg-surface-container-highest text-on-surface hover:bg-rose-100 hover:text-rose-700"
+            : "bg-surface-container-highest text-on-surface hover:bg-primary-container hover:text-on-primary-container"
+          : "bg-surface-container/40 text-on-surface-variant/60 cursor-not-allowed"
+      }`}
+    >
+      <Icon name={icon} className="text-sm" />
+      {label}
+    </button>
+    <p
+      className={`text-[10px] text-center font-medium ${
+        eligible ? "text-on-surface-variant" : "text-on-surface-variant/70"
+      }`}
+    >
+      {hint}
+    </p>
+  </div>
+);
+
 const EmptyState = ({ tab }: { tab: TabKey }) => {
   const messages: Record<TabKey, { icon: string; title: string; sub: string }> = {
     all: { icon: "shopping_basket", title: "No orders yet", sub: "Start your harvest with a sun-ripened crate." },
