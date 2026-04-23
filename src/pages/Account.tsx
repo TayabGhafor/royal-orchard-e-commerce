@@ -201,6 +201,16 @@ const InfoRow = ({ icon, label, value, full }: { icon: string; label: string; va
   </div>
 );
 
+const Field = ({ label, icon, children }: { label: string; icon: string; children: React.ReactNode }) => (
+  <div className="flex flex-col gap-1.5">
+    <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
+      <Icon name={icon} className="text-sm text-primary" />
+      {label}
+    </label>
+    {children}
+  </div>
+);
+
 const Stat = ({ icon, label, value }: { icon: string; label: string; value: string }) => (
   <div className="bg-surface-container-lowest rounded-2xl p-5 shadow-sm border border-outline-variant/20 flex items-center gap-4">
     <div className="w-12 h-12 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center">

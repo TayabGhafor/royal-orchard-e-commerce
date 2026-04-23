@@ -49,6 +49,19 @@ const TIMELINE_INDEX: Record<OrderStatus, number> = {
   Cancelled: -1,
 };
 
+type SortKey = "newest" | "oldest" | "highest" | "lowest";
+
+const SORT_OPTIONS: { key: SortKey; label: string; icon: string }[] = [
+  { key: "newest", label: "Newest first", icon: "schedule" },
+  { key: "oldest", label: "Oldest first", icon: "history" },
+  { key: "highest", label: "Highest total", icon: "trending_up" },
+  { key: "lowest", label: "Lowest total", icon: "trending_down" },
+];
+
+const canCancel = (s: OrderStatus) => s === "Pending" || s === "Processing";
+const canReturn = (s: OrderStatus) => s === "Delivered";
+const canConfirm = (s: OrderStatus) => s === "Shipped";
+
 const filterFor = (orders: AdminOrder[], tab: TabKey) => {
   switch (tab) {
     case "all":
@@ -73,6 +86,8 @@ const Orders = () => {
   const allOrders = useAdmin((s) => s.orders);
   const setOrderStatus = useAdmin((s) => s.setOrderStatus);
   const [tab, setTab] = useState<TabKey>("all");
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<SortKey>("newest");
 
   const myOrders = useMemo(() => {
     if (!user) return [];
@@ -99,6 +114,31 @@ const Orders = () => {
   if (!user) return <Navigate to="/login" replace />;
 
   const visible = filterFor(myOrders, tab);
+
+  const filteredSorted = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const filtered = q
+      ? visible.filter(
+          (o) =>
+            o.id.toLowerCase().includes(q) ||
+            o.product.toLowerCase().includes(q),
+        )
+      : visible;
+    const sorted = [...filtered].sort((a, b) => {
+      switch (sort) {
+        case "oldest":
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        case "highest":
+          return b.total - a.total;
+        case "lowest":
+          return a.total - b.total;
+        case "newest":
+        default:
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+    });
+    return sorted;
+  }, [visible, search, sort]);
 
   const cancelOrder = (id: string) => {
     setOrderStatus(id, "Cancelled");
