@@ -5,7 +5,15 @@ import { Icon } from "@/components/Icon";
 import { useAdmin, type OrderStatus } from "@/store/admin";
 import { formatPKR } from "@/lib/format";
 
-const tabs: ("All" | OrderStatus)[] = ["All", "Pending", "Shipped", "Delivered"];
+const tabs: ("All" | OrderStatus)[] = [
+  "All",
+  "Pending",
+  "Processing",
+  "Shipped",
+  "Delivered",
+  "Returned",
+  "Cancelled",
+];
 
 const next: Record<OrderStatus, OrderStatus | null> = {
   Pending: "Processing",
@@ -29,6 +37,7 @@ const Orders = () => {
   const counts = {
     total: orders.length,
     pending: orders.filter((o) => o.status === "Pending").length,
+    processing: orders.filter((o) => o.status === "Processing").length,
     shipped: orders.filter((o) => o.status === "Shipped").length,
     delivered: orders.filter((o) => o.status === "Delivered").length,
   };
@@ -56,9 +65,10 @@ const Orders = () => {
           </button>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <Stat title="Total Orders" value={counts.total.toString()} />
           <Stat title="Pending" value={counts.pending.toString()} accent="text-amber-600" />
+          <Stat title="Processing" value={counts.processing.toString()} accent="text-violet-600" />
           <Stat title="Shipped" value={counts.shipped.toString()} accent="text-blue-600" />
           <Stat title="Delivered" value={counts.delivered.toString()} accent="text-emerald-600" />
         </div>
@@ -148,11 +158,14 @@ const Stat = ({ title, value, accent = "text-stone-900" }: { title: string; valu
 const StatusPill = ({ status }: { status: string }) => {
   const map: Record<string, string> = {
     Pending: "bg-amber-50 text-amber-700",
+    Processing: "bg-violet-50 text-violet-700",
     Shipped: "bg-blue-50 text-blue-700",
     Delivered: "bg-emerald-50 text-emerald-700",
+    Returned: "bg-rose-50 text-rose-700",
+    Cancelled: "bg-zinc-100 text-zinc-700",
   };
   return (
-    <span className={`px-3 py-1 rounded-full text-xs font-bold ${map[status]}`}>
+    <span className={`px-3 py-1 rounded-full text-xs font-bold ${map[status] ?? "bg-stone-100 text-stone-700"}`}>
       {status}
     </span>
   );
