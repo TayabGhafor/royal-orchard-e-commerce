@@ -204,11 +204,55 @@ const Orders = () => {
         </div>
 
         {/* Orders list */}
-        {visible.length === 0 ? (
+        {/* Search + Sort */}
+        <div className="flex flex-col md:flex-row gap-3 mb-6">
+          <div className="relative flex-1">
+            <Icon
+              name="search"
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-base pointer-events-none"
+            />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value.slice(0, 80))}
+              placeholder="Search by order number or product…"
+              className="w-full bg-surface-container-lowest border border-outline-variant/40 rounded-full pl-11 pr-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-on-surface placeholder:text-on-surface-variant"
+            />
+          </div>
+          <div className="relative md:w-64">
+            <Icon
+              name="sort"
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-base pointer-events-none"
+            />
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortKey)}
+              className="w-full appearance-none bg-surface-container-lowest border border-outline-variant/40 rounded-full pl-11 pr-10 py-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-on-surface cursor-pointer"
+            >
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.key} value={o.key}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+            <Icon
+              name="expand_more"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none"
+            />
+          </div>
+        </div>
+
+        {search && (
+          <p className="text-xs text-on-surface-variant mb-4 -mt-2">
+            Showing {filteredSorted.length} result{filteredSorted.length === 1 ? "" : "s"} for "{search}"
+          </p>
+        )}
+
+        {filteredSorted.length === 0 ? (
           <EmptyState tab={tab} />
         ) : (
           <div className="space-y-5">
-            {visible.map((order) => {
+            {filteredSorted.map((order) => {
               const stepIdx = TIMELINE_INDEX[order.status];
               const isClosed = order.status === "Returned" || order.status === "Cancelled";
               return (
