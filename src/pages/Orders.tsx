@@ -111,11 +111,8 @@ const Orders = () => {
     [myOrders],
   );
 
-  if (!user) return <Navigate to="/login" replace />;
-
-  const visible = filterFor(myOrders, tab);
-
   const filteredSorted = useMemo(() => {
+    const visible = filterFor(myOrders, tab);
     const q = search.trim().toLowerCase();
     const filtered = q
       ? visible.filter(
@@ -124,7 +121,7 @@ const Orders = () => {
             o.product.toLowerCase().includes(q),
         )
       : visible;
-    const sorted = [...filtered].sort((a, b) => {
+    return [...filtered].sort((a, b) => {
       switch (sort) {
         case "oldest":
           return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
@@ -137,8 +134,9 @@ const Orders = () => {
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       }
     });
-    return sorted;
-  }, [visible, search, sort]);
+  }, [myOrders, tab, search, sort]);
+
+  if (!user) return <Navigate to="/login" replace />;
 
   const cancelOrder = (id: string) => {
     setOrderStatus(id, "Cancelled");
