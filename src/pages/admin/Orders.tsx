@@ -158,11 +158,14 @@ const Stat = ({ title, value, accent = "text-stone-900" }: { title: string; valu
 const StatusPill = ({ status }: { status: string }) => {
   const map: Record<string, string> = {
     Pending: "bg-amber-50 text-amber-700",
+    Processing: "bg-violet-50 text-violet-700",
     Shipped: "bg-blue-50 text-blue-700",
     Delivered: "bg-emerald-50 text-emerald-700",
+    Returned: "bg-rose-50 text-rose-700",
+    Cancelled: "bg-zinc-100 text-zinc-700",
   };
   return (
-    <span className={`px-3 py-1 rounded-full text-xs font-bold ${map[status]}`}>
+    <span className={`px-3 py-1 rounded-full text-xs font-bold ${map[status] ?? "bg-stone-100 text-stone-700"}`}>
       {status}
     </span>
   );
