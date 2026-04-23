@@ -30,7 +30,12 @@ const Orders = () => {
   const [tab, setTab] = useState<(typeof tabs)[number]>("All");
 
   const filtered = useMemo(
-    () => (tab === "All" ? orders : orders.filter((o) => o.status === tab)),
+    () => {
+      const list = tab === "All" ? orders : orders.filter((o) => o.status === tab);
+      return [...list].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+    },
     [orders, tab],
   );
 
