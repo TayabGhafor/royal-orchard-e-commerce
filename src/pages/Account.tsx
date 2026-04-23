@@ -4,11 +4,26 @@ import { Icon } from "@/components/Icon";
 import { useAuth } from "@/store/auth";
 import { useAdmin } from "@/store/admin";
 import { formatPKR } from "@/lib/format";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { z } from "zod";
+import { toast } from "sonner";
+
+const profileSchema = z.object({
+  name: z.string().trim().min(2, "Name must be at least 2 characters").max(100),
+  phone: z.string().trim().max(20).optional().or(z.literal("")),
+  address: z.string().trim().max(500).optional().or(z.literal("")),
+});
 
 const Account = () => {
   const user = useAuth((s) => s.user);
+  const updateProfile = useAuth((s) => s.updateProfile);
   const orders = useAdmin((s) => s.orders);
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState({
+    name: user?.name ?? "",
+    phone: user?.phone ?? "",
+    address: user?.address ?? "",
+  });
 
   const myOrders = useMemo(
     () => (user ? orders.filter((o) => o.email.toLowerCase() === user.email.toLowerCase()) : []),
@@ -29,6 +44,27 @@ const Account = () => {
     .join("")
     .toUpperCase();
 
+  const startEdit = () => {
+    setForm({ name: user.name, phone: user.phone ?? "", address: user.address ?? "" });
+    setEditing(true);
+  };
+
+  const saveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    const parsed = profileSchema.safeParse(form);
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0].message);
+      return;
+    }
+    updateProfile({
+      name: form.name.trim(),
+      phone: form.phone?.trim() ?? "",
+      address: form.address?.trim() ?? "",
+    });
+    toast.success("Profile updated. Changes will apply to new checkouts.");
+    setEditing(false);
+  };
+
   return (
     <SiteShell>
       <div className="pt-32 pb-20 px-6 max-w-5xl mx-auto">
@@ -38,17 +74,104 @@ const Account = () => {
           <p className="text-on-surface-variant font-medium">Manage your profile and review your orchard journey.</p>
         </header>
 
-        <section className="bg-surface-container-lowest rounded-2xl shadow-sm border border-outline-variant/20 p-8 flex flex-col md:flex-row items-start gap-6 mb-8">
-          <div className="w-20 h-20 rounded-full bg-primary text-on-primary font-headline font-extrabold text-2xl flex items-center justify-center shadow-md">
-            {initials || <Icon name="person" />}
-          </div>
-          <div className="flex-1 min-w-0">
-            <h2 className="text-2xl font-headline font-bold text-on-surface">{user.name}</h2>
-            <p className="text-on-surface-variant text-sm mb-4">{user.email}</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-              <InfoRow icon="call" label="Phone" value={user.phone || "Not added"} />
-              <InfoRow icon="badge" label="Role" value={user.role === "admin" ? "Administrator" : "Customer"} />
-              <InfoRow icon="location_on" label="Address" value={user.address || "Not added"} full />
+        <section className="bg-surface-container-lowest rounded-2xl shadow-sm border border-outline-variant/20 p-8 mb-8">
+          <div className="flex flex-col md:flex-row items-start gap-6">
+            <div className="w-20 h-20 rounded-full bg-primary text-on-primary font-headline font-extrabold text-2xl flex items-center justify-center shadow-md flex-shrink-0">
+              {initials || <Icon name="person" />}
+            </div>
+            <div className="flex-1 min-w-0 w-full">
+              <div className="flex items-start justify-between gap-3 mb-1">
+                <div>
+                  <h2 className="text-2xl font-headline font-bold text-on-surface">{user.name}</h2>
+                  <p className="text-on-surface-variant text-sm">{user.email}</p>
+                </div>
+                {!editing && (
+                  <button
+                    onClick={startEdit}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-on-primary font-bold text-xs shadow-sm hover:opacity-90 transition-opacity"
+                  >
+                    <Icon name="edit" className="text-sm" /> Edit Profile
+                  </button>
+                )}
+              </div>
+
+              {!editing ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mt-4">
+                  <InfoRow icon="call" label="Phone" value={user.phone || "Not added"} />
+                  <InfoRow icon="badge" label="Role" value={user.role === "admin" ? "Administrator" : "Customer"} />
+                  <InfoRow icon="location_on" label="Address" value={user.address || "Not added"} full />
+                </div>
+              ) : (
+                <form onSubmit={saveProfile} className="mt-5 space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Field label="Full Name" icon="person">
+                      <input
+                        type="text"
+                        value={form.name}
+                        onChange={(e) => setForm({ ...form, name: e.target.value })}
+                        className="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-primary text-on-surface"
+                        placeholder="Your full name"
+                        maxLength={100}
+                      />
+                    </Field>
+                    <Field label="Email (locked)" icon="lock">
+                      <input
+                        type="email"
+                        value={user.email}
+                        readOnly
+                        className="w-full bg-surface-container-highest/50 border-none rounded-lg px-4 py-3 outline-none text-on-surface-variant cursor-not-allowed"
+                      />
+                    </Field>
+                    <Field label="Phone" icon="call">
+                      <input
+                        type="tel"
+                        value={form.phone}
+                        onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                        className="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-primary text-on-surface"
+                        placeholder="+92 300 0000000"
+                        maxLength={20}
+                      />
+                    </Field>
+                    <Field label="Role" icon="badge">
+                      <input
+                        type="text"
+                        value={user.role === "admin" ? "Administrator" : "Customer"}
+                        readOnly
+                        className="w-full bg-surface-container-highest/50 border-none rounded-lg px-4 py-3 outline-none text-on-surface-variant cursor-not-allowed"
+                      />
+                    </Field>
+                  </div>
+                  <Field label="Delivery Address" icon="location_on">
+                    <textarea
+                      rows={3}
+                      value={form.address}
+                      onChange={(e) => setForm({ ...form, address: e.target.value })}
+                      className="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-primary text-on-surface resize-none"
+                      placeholder="Street, city, postal code"
+                      maxLength={500}
+                    />
+                  </Field>
+                  <div className="flex flex-wrap items-center gap-3 pt-2">
+                    <button
+                      type="submit"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-on-primary font-bold text-sm shadow-md hover:opacity-90 transition-opacity"
+                    >
+                      <Icon name="check" className="text-base" /> Save Changes
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditing(false)}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-surface-container-highest text-on-surface font-bold text-sm hover:bg-surface-container transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <p className="text-xs text-on-surface-variant ml-auto">
+                      <Icon name="info" className="text-sm align-text-bottom mr-1" />
+                      Updates apply to your next checkout.
+                    </p>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
         </section>
@@ -75,6 +198,16 @@ const InfoRow = ({ icon, label, value, full }: { icon: string; label: string; va
       <p className="text-xs uppercase tracking-wider text-on-surface-variant font-semibold">{label}</p>
       <p className="text-on-surface">{value}</p>
     </div>
+  </div>
+);
+
+const Field = ({ label, icon, children }: { label: string; icon: string; children: React.ReactNode }) => (
+  <div className="flex flex-col gap-1.5">
+    <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
+      <Icon name={icon} className="text-sm text-primary" />
+      {label}
+    </label>
+    {children}
   </div>
 );
 

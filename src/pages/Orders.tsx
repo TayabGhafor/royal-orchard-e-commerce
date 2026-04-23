@@ -49,6 +49,19 @@ const TIMELINE_INDEX: Record<OrderStatus, number> = {
   Cancelled: -1,
 };
 
+type SortKey = "newest" | "oldest" | "highest" | "lowest";
+
+const SORT_OPTIONS: { key: SortKey; label: string; icon: string }[] = [
+  { key: "newest", label: "Newest first", icon: "schedule" },
+  { key: "oldest", label: "Oldest first", icon: "history" },
+  { key: "highest", label: "Highest total", icon: "trending_up" },
+  { key: "lowest", label: "Lowest total", icon: "trending_down" },
+];
+
+const canCancel = (s: OrderStatus) => s === "Pending" || s === "Processing";
+const canReturn = (s: OrderStatus) => s === "Delivered";
+const canConfirm = (s: OrderStatus) => s === "Shipped";
+
 const filterFor = (orders: AdminOrder[], tab: TabKey) => {
   switch (tab) {
     case "all":
@@ -73,6 +86,8 @@ const Orders = () => {
   const allOrders = useAdmin((s) => s.orders);
   const setOrderStatus = useAdmin((s) => s.setOrderStatus);
   const [tab, setTab] = useState<TabKey>("all");
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<SortKey>("newest");
 
   const myOrders = useMemo(() => {
     if (!user) return [];
@@ -96,9 +111,32 @@ const Orders = () => {
     [myOrders],
   );
 
-  if (!user) return <Navigate to="/login" replace />;
+  const filteredSorted = useMemo(() => {
+    const visible = filterFor(myOrders, tab);
+    const q = search.trim().toLowerCase();
+    const filtered = q
+      ? visible.filter(
+          (o) =>
+            o.id.toLowerCase().includes(q) ||
+            o.product.toLowerCase().includes(q),
+        )
+      : visible;
+    return [...filtered].sort((a, b) => {
+      switch (sort) {
+        case "oldest":
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        case "highest":
+          return b.total - a.total;
+        case "lowest":
+          return a.total - b.total;
+        case "newest":
+        default:
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+    });
+  }, [myOrders, tab, search, sort]);
 
-  const visible = filterFor(myOrders, tab);
+  if (!user) return <Navigate to="/login" replace />;
 
   const cancelOrder = (id: string) => {
     setOrderStatus(id, "Cancelled");
@@ -166,11 +204,55 @@ const Orders = () => {
         </div>
 
         {/* Orders list */}
-        {visible.length === 0 ? (
+        {/* Search + Sort */}
+        <div className="flex flex-col md:flex-row gap-3 mb-6">
+          <div className="relative flex-1">
+            <Icon
+              name="search"
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-base pointer-events-none"
+            />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value.slice(0, 80))}
+              placeholder="Search by order number or product…"
+              className="w-full bg-surface-container-lowest border border-outline-variant/40 rounded-full pl-11 pr-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-on-surface placeholder:text-on-surface-variant"
+            />
+          </div>
+          <div className="relative md:w-64">
+            <Icon
+              name="sort"
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-base pointer-events-none"
+            />
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortKey)}
+              className="w-full appearance-none bg-surface-container-lowest border border-outline-variant/40 rounded-full pl-11 pr-10 py-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-on-surface cursor-pointer"
+            >
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.key} value={o.key}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+            <Icon
+              name="expand_more"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none"
+            />
+          </div>
+        </div>
+
+        {search && (
+          <p className="text-xs text-on-surface-variant mb-4 -mt-2">
+            Showing {filteredSorted.length} result{filteredSorted.length === 1 ? "" : "s"} for "{search}"
+          </p>
+        )}
+
+        {filteredSorted.length === 0 ? (
           <EmptyState tab={tab} />
         ) : (
           <div className="space-y-5">
-            {visible.map((order) => {
+            {filteredSorted.map((order) => {
               const stepIdx = TIMELINE_INDEX[order.status];
               const isClosed = order.status === "Returned" || order.status === "Cancelled";
               return (
@@ -226,7 +308,32 @@ const Orders = () => {
                         </div>
                       </div>
 
-                      {!isClosed && (
+                      {isClosed ? (
+                        <div className="pt-4">
+                          <div
+                            className={`flex items-center gap-3 px-4 py-3 rounded-xl ${
+                              order.status === "Cancelled"
+                                ? "bg-zinc-100 text-zinc-700"
+                                : "bg-rose-50 text-rose-700"
+                            }`}
+                          >
+                            <Icon
+                              name={order.status === "Cancelled" ? "cancel" : "assignment_return"}
+                              className="text-base"
+                            />
+                            <div className="flex-1">
+                              <p className="text-xs font-bold uppercase tracking-wider">
+                                {order.status === "Cancelled" ? "Order cancelled" : "Return in progress"}
+                              </p>
+                              <p className="text-[11px] opacity-80">
+                                {order.status === "Cancelled"
+                                  ? "This order is closed and will not be shipped."
+                                  : "We'll process your return within 3–5 business days."}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
                         <div className="pt-4">
                           <div className="relative flex items-start justify-between">
                             <div className="absolute top-4 left-0 w-full h-0.5 bg-surface-container-highest" />
@@ -275,35 +382,47 @@ const Orders = () => {
                         )}
                       </div>
                       <div className="mt-4 flex flex-col gap-2">
-                        {(order.status === "Pending" || order.status === "Processing") && (
-                          <button
-                            onClick={() => cancelOrder(order.id)}
-                            className="px-4 py-2 rounded-full bg-surface-container-highest text-on-surface font-bold text-xs hover:bg-rose-100 hover:text-rose-700 transition-colors"
-                          >
-                            Cancel Order
-                          </button>
-                        )}
-                        {order.status === "Shipped" && (
+                        {canConfirm(order.status) && (
                           <button
                             onClick={() => confirmReceived(order.id)}
-                            className="px-4 py-2 rounded-full bg-primary text-on-primary font-bold text-xs hover:opacity-90 transition-opacity"
+                            className="px-4 py-2 rounded-full bg-primary text-on-primary font-bold text-xs hover:opacity-90 transition-opacity inline-flex items-center justify-center gap-1.5"
                           >
-                            Confirm Received
+                            <Icon name="check_circle" className="text-sm" /> Confirm Received
                           </button>
                         )}
                         {order.status === "Delivered" && !order.reviewed && (
-                          <button className="px-4 py-2 rounded-full bg-amber-500 text-white font-bold text-xs hover:opacity-90 transition-opacity">
-                            Leave a Review
+                          <button className="px-4 py-2 rounded-full bg-amber-500 text-white font-bold text-xs hover:opacity-90 transition-opacity inline-flex items-center justify-center gap-1.5">
+                            <Icon name="rate_review" className="text-sm" /> Leave a Review
                           </button>
                         )}
-                        {order.status === "Delivered" && (
-                          <button
-                            onClick={() => returnOrder(order.id)}
-                            className="px-4 py-2 rounded-full bg-surface-container-highest text-on-surface font-bold text-xs hover:bg-rose-100 hover:text-rose-700 transition-colors"
-                          >
-                            Request Return
-                          </button>
-                        )}
+                        <EligibleAction
+                          eligible={canCancel(order.status)}
+                          icon="cancel"
+                          label="Cancel Order"
+                          hint={
+                            canCancel(order.status)
+                              ? "Available before shipping"
+                              : isClosed
+                              ? "Order is already closed"
+                              : "Too late — already shipped"
+                          }
+                          tone="danger"
+                          onClick={() => cancelOrder(order.id)}
+                        />
+                        <EligibleAction
+                          eligible={canReturn(order.status)}
+                          icon="assignment_return"
+                          label="Request Return"
+                          hint={
+                            canReturn(order.status)
+                              ? "Available after delivery"
+                              : order.status === "Returned"
+                              ? "Return already requested"
+                              : "Available once delivered"
+                          }
+                          tone="neutral"
+                          onClick={() => returnOrder(order.id)}
+                        />
                       </div>
                     </div>
                   </div>
@@ -345,6 +464,48 @@ const SummaryCard = ({
       <p className="text-xs uppercase tracking-wider text-on-surface-variant font-semibold">{label}</p>
       <p className="text-xl font-headline font-extrabold text-on-surface truncate">{value}</p>
     </div>
+  </div>
+);
+
+const EligibleAction = ({
+  eligible,
+  icon,
+  label,
+  hint,
+  tone,
+  onClick,
+}: {
+  eligible: boolean;
+  icon: string;
+  label: string;
+  hint: string;
+  tone: "danger" | "neutral";
+  onClick: () => void;
+}) => (
+  <div className="flex flex-col gap-1">
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={!eligible}
+      title={hint}
+      className={`px-4 py-2 rounded-full font-bold text-xs inline-flex items-center justify-center gap-1.5 transition-colors ${
+        eligible
+          ? tone === "danger"
+            ? "bg-surface-container-highest text-on-surface hover:bg-rose-100 hover:text-rose-700"
+            : "bg-surface-container-highest text-on-surface hover:bg-primary-container hover:text-on-primary-container"
+          : "bg-surface-container/40 text-on-surface-variant/60 cursor-not-allowed"
+      }`}
+    >
+      <Icon name={icon} className="text-sm" />
+      {label}
+    </button>
+    <p
+      className={`text-[10px] text-center font-medium ${
+        eligible ? "text-on-surface-variant" : "text-on-surface-variant/70"
+      }`}
+    >
+      {hint}
+    </p>
   </div>
 );
 
