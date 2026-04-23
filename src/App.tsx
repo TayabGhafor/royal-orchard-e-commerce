@@ -29,6 +29,7 @@ import AdminProducts from "./pages/admin/Products";
 import AdminOrders from "./pages/admin/Orders";
 import AdminCustomers from "./pages/admin/Customers";
 import AdminAnalytics from "./pages/admin/Analytics";
+import AdminProfile from "./pages/admin/Profile";
 import NotFound from "./pages/NotFound.tsx";
 import RequireAdmin from "./components/admin/RequireAdmin";
 
@@ -68,6 +69,7 @@ const App = () => (
           <Route path="/admin/orders" element={<RequireAdmin><AdminOrders /></RequireAdmin>} />
           <Route path="/admin/customers" element={<RequireAdmin><AdminCustomers /></RequireAdmin>} />
           <Route path="/admin/analytics" element={<RequireAdmin><AdminAnalytics /></RequireAdmin>} />
+          <Route path="/admin/profile" element={<RequireAdmin><AdminProfile /></RequireAdmin>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

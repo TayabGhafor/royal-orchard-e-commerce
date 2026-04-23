@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Icon } from "@/components/Icon";
 import { useAuth } from "@/store/auth";
 import {
@@ -41,13 +41,6 @@ export default function AdminTopbar() {
           <Icon name="notifications" />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-orange-500 ring-2 ring-white" />
         </button>
-        <Link
-          to="/"
-          className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-stone-500 hover:text-orange-600"
-        >
-          <Icon name="storefront" className="text-sm" />
-          View Store
-        </Link>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -89,9 +82,9 @@ export default function AdminTopbar() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate("/account")} className="gap-2 cursor-pointer">
-              <Icon name="person" className="text-base text-stone-500" />
-              <span>My Profile</span>
+            <DropdownMenuItem onClick={() => navigate("/admin/profile")} className="gap-2 cursor-pointer">
+              <Icon name="admin_panel_settings" className="text-base text-stone-500" />
+              <span>Admin Profile</span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/admin")} className="gap-2 cursor-pointer">
               <Icon name="dashboard" className="text-base text-stone-500" />
