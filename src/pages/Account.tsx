@@ -4,11 +4,26 @@ import { Icon } from "@/components/Icon";
 import { useAuth } from "@/store/auth";
 import { useAdmin } from "@/store/admin";
 import { formatPKR } from "@/lib/format";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { z } from "zod";
+import { toast } from "sonner";
+
+const profileSchema = z.object({
+  name: z.string().trim().min(2, "Name must be at least 2 characters").max(100),
+  phone: z.string().trim().max(20).optional().or(z.literal("")),
+  address: z.string().trim().max(500).optional().or(z.literal("")),
+});
 
 const Account = () => {
   const user = useAuth((s) => s.user);
+  const updateProfile = useAuth((s) => s.updateProfile);
   const orders = useAdmin((s) => s.orders);
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState({
+    name: user?.name ?? "",
+    phone: user?.phone ?? "",
+    address: user?.address ?? "",
+  });
 
   const myOrders = useMemo(
     () => (user ? orders.filter((o) => o.email.toLowerCase() === user.email.toLowerCase()) : []),
@@ -28,6 +43,27 @@ const Account = () => {
     .slice(0, 2)
     .join("")
     .toUpperCase();
+
+  const startEdit = () => {
+    setForm({ name: user.name, phone: user.phone ?? "", address: user.address ?? "" });
+    setEditing(true);
+  };
+
+  const saveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    const parsed = profileSchema.safeParse(form);
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0].message);
+      return;
+    }
+    updateProfile({
+      name: form.name.trim(),
+      phone: form.phone?.trim() ?? "",
+      address: form.address?.trim() ?? "",
+    });
+    toast.success("Profile updated. Changes will apply to new checkouts.");
+    setEditing(false);
+  };
 
   return (
     <SiteShell>
