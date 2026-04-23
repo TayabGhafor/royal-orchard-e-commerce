@@ -382,35 +382,47 @@ const Orders = () => {
                         )}
                       </div>
                       <div className="mt-4 flex flex-col gap-2">
-                        {(order.status === "Pending" || order.status === "Processing") && (
-                          <button
-                            onClick={() => cancelOrder(order.id)}
-                            className="px-4 py-2 rounded-full bg-surface-container-highest text-on-surface font-bold text-xs hover:bg-rose-100 hover:text-rose-700 transition-colors"
-                          >
-                            Cancel Order
-                          </button>
-                        )}
-                        {order.status === "Shipped" && (
+                        {canConfirm(order.status) && (
                           <button
                             onClick={() => confirmReceived(order.id)}
-                            className="px-4 py-2 rounded-full bg-primary text-on-primary font-bold text-xs hover:opacity-90 transition-opacity"
+                            className="px-4 py-2 rounded-full bg-primary text-on-primary font-bold text-xs hover:opacity-90 transition-opacity inline-flex items-center justify-center gap-1.5"
                           >
-                            Confirm Received
+                            <Icon name="check_circle" className="text-sm" /> Confirm Received
                           </button>
                         )}
                         {order.status === "Delivered" && !order.reviewed && (
-                          <button className="px-4 py-2 rounded-full bg-amber-500 text-white font-bold text-xs hover:opacity-90 transition-opacity">
-                            Leave a Review
+                          <button className="px-4 py-2 rounded-full bg-amber-500 text-white font-bold text-xs hover:opacity-90 transition-opacity inline-flex items-center justify-center gap-1.5">
+                            <Icon name="rate_review" className="text-sm" /> Leave a Review
                           </button>
                         )}
-                        {order.status === "Delivered" && (
-                          <button
-                            onClick={() => returnOrder(order.id)}
-                            className="px-4 py-2 rounded-full bg-surface-container-highest text-on-surface font-bold text-xs hover:bg-rose-100 hover:text-rose-700 transition-colors"
-                          >
-                            Request Return
-                          </button>
-                        )}
+                        <EligibleAction
+                          eligible={canCancel(order.status)}
+                          icon="cancel"
+                          label="Cancel Order"
+                          hint={
+                            canCancel(order.status)
+                              ? "Available before shipping"
+                              : isClosed
+                              ? "Order is already closed"
+                              : "Too late — already shipped"
+                          }
+                          tone="danger"
+                          onClick={() => cancelOrder(order.id)}
+                        />
+                        <EligibleAction
+                          eligible={canReturn(order.status)}
+                          icon="assignment_return"
+                          label="Request Return"
+                          hint={
+                            canReturn(order.status)
+                              ? "Available after delivery"
+                              : order.status === "Returned"
+                              ? "Return already requested"
+                              : "Available once delivered"
+                          }
+                          tone="neutral"
+                          onClick={() => returnOrder(order.id)}
+                        />
                       </div>
                     </div>
                   </div>
