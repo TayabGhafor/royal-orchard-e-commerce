@@ -201,6 +201,7 @@ const ProductDetail = () => {
             </div>
           </section>
         </div>
+        )}
 
         {/* Reviews */}
         <section className="mt-32 space-y-12">

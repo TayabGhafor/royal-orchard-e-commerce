@@ -8,6 +8,8 @@ import { useCart } from "@/store/cart";
 import { useAdmin } from "@/store/admin";
 import { useAuth } from "@/store/auth";
 import { formatPKR } from "@/lib/format";
+import { usePageLoading } from "@/hooks/use-page-loading";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const checkoutSchema = z.object({
   name: z.string().trim().min(2, "Please enter your name").max(100),
@@ -35,6 +37,7 @@ const Checkout = () => {
   const sub = subtotal();
   const tax = Math.round(sub * 0.05);
   const total = sub + tax;
+  const { loading, error, retry } = usePageLoading({ delay: 600 });
 
   if (items.length === 0 && !submitting) {
     return <Navigate to="/shop" replace />;
@@ -93,6 +96,39 @@ const Checkout = () => {
           </p>
         </header>
 
+        {error && (
+          <div className="flex items-center justify-between gap-4 px-5 py-3 mb-6 rounded-xl bg-rose-50 border border-rose-200 text-rose-700">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Icon name="error" /> {error}
+            </div>
+            <button
+              onClick={retry}
+              className="text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full bg-white border border-rose-200 hover:bg-rose-100"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {loading ? (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+            <div className="lg:col-span-7 space-y-8">
+              <Skeleton className="h-8 w-48" />
+              <div className="grid grid-cols-2 gap-6">
+                <Skeleton className="h-14 rounded-lg" />
+                <Skeleton className="h-14 rounded-lg" />
+              </div>
+              <Skeleton className="h-28 rounded-lg" />
+              <Skeleton className="h-8 w-48" />
+              <div className="grid grid-cols-2 gap-4">
+                {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-lg" />)}
+              </div>
+            </div>
+            <div className="lg:col-span-5">
+              <Skeleton className="h-96 rounded-lg" />
+            </div>
+          </div>
+        ) : (
         <form onSubmit={onSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
           <div className="lg:col-span-7 space-y-12">
             <section>
