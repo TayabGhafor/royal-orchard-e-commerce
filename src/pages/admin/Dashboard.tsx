@@ -4,10 +4,25 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import { Icon } from "@/components/Icon";
 import { useAdmin } from "@/store/admin";
 import { formatPKR } from "@/lib/format";
+import { usePageLoading } from "@/hooks/use-page-loading";
+import { useRealtimeTick, formatRelative } from "@/hooks/use-realtime-tick";
+import {
+  StatCardSkeleton,
+  ChartSkeleton,
+  TableSkeleton,
+} from "@/components/admin/AdminSkeletons";
+import { useState, useEffect } from "react";
 
 const Dashboard = () => {
   const orders = useAdmin((s) => s.orders);
   const customers = useAdmin((s) => s.customers);
+  const { loading, error, retry } = usePageLoading({ delay: 700 });
+  const { lastUpdated } = useRealtimeTick(30000);
+  const [, setNow] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
 
   const revenue = orders.reduce((s, o) => s + o.total, 0);
   const activeUsers = customers.filter((c) => c.status === "Active").length;
@@ -72,6 +87,10 @@ const Dashboard = () => {
             <p className="text-stone-500">Welcome back, Supervisor. Here's what's happening today.</p>
           </div>
           <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 text-xs text-stone-500 bg-emerald-50 text-emerald-700 px-3 py-2 rounded-full font-semibold">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              Live · updated {formatRelative(lastUpdated)}
+            </div>
             <div className="bg-stone-50 px-4 py-2 rounded-full flex items-center gap-2 border border-stone-100">
               <Icon name="calendar_today" className="text-stone-400 text-base" />
               <span className="text-sm font-medium text-stone-700">{dateRange}</span>
@@ -79,9 +98,25 @@ const Dashboard = () => {
           </div>
         </header>
 
+        {error && (
+          <div className="flex items-center justify-between gap-4 px-5 py-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Icon name="error" /> {error}
+            </div>
+            <button
+              onClick={retry}
+              className="text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full bg-white border border-rose-200 hover:bg-rose-100"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
         {/* Stats Grid */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {stats.map((item, i) => (
+          {loading
+            ? Array.from({ length: 3 }).map((_, i) => <StatCardSkeleton key={i} />)
+            : stats.map((item, i) => (
             <motion.div
               key={item.title}
               initial={{ opacity: 0, y: 20 }}
@@ -115,6 +150,13 @@ const Dashboard = () => {
 
         {/* Charts Bento */}
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {loading ? (
+            <>
+              <ChartSkeleton className="lg:col-span-8" />
+              <ChartSkeleton className="lg:col-span-4" />
+            </>
+          ) : (
+            <>
           {/* Revenue Trends */}
           <div className="lg:col-span-8 bg-white p-8 rounded-2xl shadow-sm border border-stone-100 relative overflow-hidden">
             <div className="flex justify-between items-center mb-8">
