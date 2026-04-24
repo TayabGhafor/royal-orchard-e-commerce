@@ -217,6 +217,8 @@ const Account = () => {
           <ActionCard to="/orders" icon="local_shipping" title="My Orders" subtitle="Track & manage your deliveries" />
           <ActionCard to="/shop" icon="storefront" title="Continue Shopping" subtitle="Discover more orchard treasures" />
         </div>
+        </>
+        )}
       </div>
     </SiteShell>
   );
