@@ -6,6 +6,8 @@ import { Icon } from "@/components/Icon";
 import { useAdmin, type AdminProduct } from "@/store/admin";
 import { formatPKR } from "@/lib/format";
 import type { WeightOption } from "@/data/products";
+import { usePageLoading } from "@/hooks/use-page-loading";
+import { TableSkeleton } from "@/components/admin/AdminSkeletons";
 
 type FormState = {
   id?: string;
@@ -37,6 +39,7 @@ const Products = () => {
   const addProduct = useAdmin((s) => s.addProduct);
   const updateProduct = useAdmin((s) => s.updateProduct);
   const deleteProduct = useAdmin((s) => s.deleteProduct);
+  const { loading, error, retry } = usePageLoading({ delay: 600 });
 
   const [search, setSearch] = useState("");
   const [collectionFilter, setCollectionFilter] = useState<string>("All");
@@ -173,6 +176,22 @@ const Products = () => {
         </div>
 
         {/* Table */}
+        {error && (
+          <div className="flex items-center justify-between gap-4 px-5 py-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Icon name="error" /> {error}
+            </div>
+            <button
+              onClick={retry}
+              className="text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full bg-white border border-rose-200 hover:bg-rose-100"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+        {loading ? (
+          <TableSkeleton rows={6} cols={6} />
+        ) : (
         <div className="bg-white rounded-xl shadow-sm border border-stone-100 overflow-hidden">
           <table className="w-full">
             <thead>
