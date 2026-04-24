@@ -468,6 +468,8 @@ const Orders = () => {
             <Icon name="storefront" /> Continue Shopping
           </Link>
         </div>
+        </>
+        )}
       </div>
     </SiteShell>
   );

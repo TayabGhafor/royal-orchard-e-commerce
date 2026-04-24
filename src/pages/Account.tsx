@@ -77,6 +77,34 @@ const Account = () => {
           <p className="text-on-surface-variant font-medium">Manage your profile and review your orchard journey.</p>
         </header>
 
+        {error && (
+          <div className="flex items-center justify-between gap-4 px-5 py-3 mb-6 rounded-xl bg-rose-50 border border-rose-200 text-rose-700">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Icon name="error" /> {error}
+            </div>
+            <button
+              onClick={retry}
+              className="text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full bg-white border border-rose-200 hover:bg-rose-100"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+        {loading ? (
+          <div className="space-y-6">
+            <Skeleton className="h-48 w-full rounded-2xl" />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Skeleton className="h-20 rounded-2xl" />
+              <Skeleton className="h-20 rounded-2xl" />
+              <Skeleton className="h-20 rounded-2xl" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Skeleton className="h-20 rounded-2xl" />
+              <Skeleton className="h-20 rounded-2xl" />
+            </div>
+          </div>
+        ) : (
+        <>
         <section className="bg-surface-container-lowest rounded-2xl shadow-sm border border-outline-variant/20 p-8 mb-8">
           <div className="flex flex-col md:flex-row items-start gap-6">
             <div className="w-20 h-20 rounded-full bg-primary text-on-primary font-headline font-extrabold text-2xl flex items-center justify-center shadow-md flex-shrink-0">
