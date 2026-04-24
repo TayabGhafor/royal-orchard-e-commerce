@@ -6,6 +6,8 @@ import { Icon } from "@/components/Icon";
 import { products, type Product, type WeightOption } from "@/data/products";
 import { useCart } from "@/store/cart";
 import { formatPKR } from "@/lib/format";
+import { usePageLoading } from "@/hooks/use-page-loading";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const varieties = ["All", "Sindhri", "Chaunsa", "Anwar Ratol", "Langra"] as const;
 const weights: (WeightOption | "All")[] = ["All", "3kg", "5kg", "8kg"];
@@ -16,6 +18,7 @@ const Shop = () => {
   const [search, setSearch] = useState("");
   const addItem = useCart((s) => s.addItem);
   const setOpen = useCart((s) => s.setOpen);
+  const { loading, error, retry } = usePageLoading({ delay: 700 });
 
   const filtered = useMemo(
     () => {
@@ -169,6 +172,49 @@ const Shop = () => {
 
           {/* PRODUCT GRID */}
           <div className="flex-1 space-y-20">
+            {error && (
+              <div className="flex items-center justify-between gap-4 px-5 py-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Icon name="error" /> {error}
+                </div>
+                <button
+                  onClick={retry}
+                  className="text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full bg-white border border-rose-200 hover:bg-rose-100"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+
+            {loading ? (
+              <section>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-20">
+                  {Array.from({ length: 2 }).map((_, i) => (
+                    <div key={i} className="bg-surface-container-lowest rounded-lg overflow-hidden p-4">
+                      <Skeleton className="aspect-[4/3] w-full rounded-md mb-4" />
+                      <Skeleton className="h-6 w-3/4 mb-2" />
+                      <Skeleton className="h-4 w-1/2 mb-6" />
+                      <Skeleton className="h-12 w-full rounded-full" />
+                    </div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="bg-surface-container-lowest p-4 rounded-lg">
+                      <Skeleton className="aspect-square w-full rounded-md mb-4" />
+                      <Skeleton className="h-5 w-3/4 mb-2" />
+                      <Skeleton className="h-3 w-full mb-1" />
+                      <Skeleton className="h-3 w-2/3 mb-4" />
+                      <div className="flex justify-between items-center">
+                        <Skeleton className="h-5 w-16" />
+                        <Skeleton className="h-10 w-10 rounded-full" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ) : (
+              <>
             {featured.length > 0 && (
               <section>
                 <div className="flex items-end justify-between mb-8">
@@ -218,6 +264,8 @@ const Shop = () => {
                 </div>
               )}
             </section>
+              </>
+            )}
           </div>
         </div>
       </div>

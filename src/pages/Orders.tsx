@@ -6,6 +6,8 @@ import { useAuth } from "@/store/auth";
 import { useAdmin, type AdminOrder, type OrderStatus } from "@/store/admin";
 import { formatPKR } from "@/lib/format";
 import { toast } from "sonner";
+import { usePageLoading } from "@/hooks/use-page-loading";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type TabKey =
   | "all"
@@ -88,6 +90,7 @@ const Orders = () => {
   const [tab, setTab] = useState<TabKey>("all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortKey>("newest");
+  const { loading, error, retry } = usePageLoading({ delay: 700 });
 
   const myOrders = useMemo(() => {
     if (!user) return [];
@@ -165,6 +168,31 @@ const Orders = () => {
         </header>
 
         {/* Summary cards */}
+        {error && (
+          <div className="flex items-center justify-between gap-4 px-5 py-3 mb-6 rounded-xl bg-rose-50 border border-rose-200 text-rose-700">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Icon name="error" /> {error}
+            </div>
+            <button
+              onClick={retry}
+              className="text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full bg-white border border-rose-200 hover:bg-rose-100"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+        {loading ? (
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-2xl" />)}
+            </div>
+            <Skeleton className="h-12 w-full rounded-full" />
+            <div className="space-y-5">
+              {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-48 w-full rounded-2xl" />)}
+            </div>
+          </div>
+        ) : (
+        <>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
           <SummaryCard icon="receipt_long" label="Total Orders" value={String(counts.all)} accent="bg-primary-container text-on-primary-container" />
           <SummaryCard icon="local_shipping" label="In Transit" value={String(counts["to-receive"])} accent="bg-secondary-container text-on-secondary-container" />
@@ -440,6 +468,8 @@ const Orders = () => {
             <Icon name="storefront" /> Continue Shopping
           </Link>
         </div>
+        </>
+        )}
       </div>
     </SiteShell>
   );

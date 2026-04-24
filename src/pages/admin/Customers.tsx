@@ -2,12 +2,19 @@ import { motion } from "framer-motion";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { useAdmin } from "@/store/admin";
 import { formatPKR } from "@/lib/format";
+import { usePageLoading } from "@/hooks/use-page-loading";
+import { Icon } from "@/components/Icon";
+import {
+  StatCardSkeleton,
+  TableSkeleton,
+} from "@/components/admin/AdminSkeletons";
 
 const Customers = () => {
   const customers = useAdmin((s) => s.customers);
   const active = customers.filter((c) => c.status === "Active").length;
   // Mock "new today"
   const newToday = 156;
+  const { loading, error, retry } = usePageLoading({ delay: 700 });
 
   return (
     <AdminLayout>
@@ -20,7 +27,9 @@ const Customers = () => {
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
-          {[
+          {loading
+            ? Array.from({ length: 3 }).map((_, i) => <StatCardSkeleton key={i} />)
+            : [
             { title: "Total Customers", value: customers.length.toLocaleString() },
             { title: "Active Today", value: active.toLocaleString() },
             { title: "New Signups", value: newToday.toLocaleString() },
@@ -38,6 +47,23 @@ const Customers = () => {
           ))}
         </div>
 
+        {error && (
+          <div className="flex items-center justify-between gap-4 px-5 py-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Icon name="error" /> {error}
+            </div>
+            <button
+              onClick={retry}
+              className="text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full bg-white border border-rose-200 hover:bg-rose-100"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {loading ? (
+          <TableSkeleton rows={5} cols={5} />
+        ) : (
         <div className="bg-white rounded-xl shadow-sm border border-stone-100 overflow-hidden">
           <div className="p-6 flex justify-between items-center">
             <button className="bg-stone-100 px-4 py-2 rounded-full text-sm font-semibold hover:bg-stone-200">
@@ -84,6 +110,7 @@ const Customers = () => {
             </tbody>
           </table>
         </div>
+        )}
       </div>
     </AdminLayout>
   );

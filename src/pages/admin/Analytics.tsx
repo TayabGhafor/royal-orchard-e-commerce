@@ -3,11 +3,27 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import { useAdmin } from "@/store/admin";
 import { formatPKR } from "@/lib/format";
 import { Icon } from "@/components/Icon";
+import { usePageLoading } from "@/hooks/use-page-loading";
+import { useRealtimeTick, formatRelative } from "@/hooks/use-realtime-tick";
+import {
+  StatCardSkeleton,
+  ChartSkeleton,
+} from "@/components/admin/AdminSkeletons";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useEffect, useState } from "react";
 
 const Analytics = () => {
   const orders = useAdmin((s) => s.orders);
   const products = useAdmin((s) => s.products);
   const customers = useAdmin((s) => s.customers);
+  const { loading, error, retry } = usePageLoading({ delay: 800 });
+  const { lastUpdated } = useRealtimeTick(30000);
+  // Tick a 1s render so "Xs ago" stays fresh.
+  const [, setNow] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
 
   const { revenue, avg, profit } = useMemo(() => {
     const revenue = orders.reduce((s, o) => s + o.total, 0);
@@ -91,7 +107,12 @@ const Analytics = () => {
               Detailed performance insights for your premium harvest
             </p>
           </div>
-          <div className="flex items-center gap-2 bg-white p-1 rounded-full shadow-sm border border-stone-100">
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-1.5 text-xs bg-emerald-50 text-emerald-700 px-3 py-2 rounded-full font-semibold">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              Live · updated {formatRelative(lastUpdated)}
+            </div>
+            <div className="flex items-center gap-2 bg-white p-1 rounded-full shadow-sm border border-stone-100">
             <button className="px-4 py-2 text-sm font-bold text-stone-700 hover:bg-stone-50 rounded-full transition-all">
               7 Days
             </button>
@@ -101,10 +122,30 @@ const Analytics = () => {
             <button className="p-2 text-stone-400 hover:text-orange-600 transition-colors">
               <Icon name="calendar_today" />
             </button>
+            </div>
           </div>
         </div>
 
+        {error && (
+          <div className="flex items-center justify-between gap-4 px-5 py-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Icon name="error" /> {error}
+            </div>
+            <button
+              onClick={retry}
+              className="text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full bg-white border border-rose-200 hover:bg-rose-100"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
         {/* KPI Bento */}
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)}
+          </div>
+        ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {kpis.map((k) => (
             <div
@@ -133,8 +174,10 @@ const Analytics = () => {
             </div>
           ))}
         </div>
+        )}
 
         {/* Revenue Trends */}
+        {loading ? <ChartSkeleton /> : (
         <section className="bg-white rounded-2xl p-8 shadow-sm border border-stone-100">
           <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
             <div>
@@ -179,8 +222,30 @@ const Analytics = () => {
             ))}
           </div>
         </section>
+        )}
 
         {/* Bottom Two Columns */}
+        {loading ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white rounded-2xl p-8 shadow-sm border border-stone-100 space-y-4">
+              <Skeleton className="h-6 w-40" />
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4">
+                  <Skeleton className="h-12 w-12 rounded-lg" />
+                  <Skeleton className="h-3 flex-1 rounded-full" />
+                </div>
+              ))}
+            </div>
+            <div className="bg-white rounded-2xl p-8 shadow-sm border border-stone-100 space-y-4">
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-24 w-full rounded-xl" />
+              <div className="grid grid-cols-2 gap-4">
+                <Skeleton className="h-20 rounded-xl" />
+                <Skeleton className="h-20 rounded-xl" />
+              </div>
+            </div>
+          </div>
+        ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Top Selling Varieties */}
           <div className="bg-white rounded-2xl p-8 shadow-sm border border-stone-100">
@@ -264,6 +329,7 @@ const Analytics = () => {
             </div>
           </div>
         </div>
+        )}
       </div>
     </AdminLayout>
   );

@@ -4,6 +4,8 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import { Icon } from "@/components/Icon";
 import { useAdmin, type OrderStatus } from "@/store/admin";
 import { formatPKR } from "@/lib/format";
+import { usePageLoading } from "@/hooks/use-page-loading";
+import { TableSkeleton, StatCardSkeleton } from "@/components/admin/AdminSkeletons";
 
 const tabs: ("All" | OrderStatus)[] = [
   "All",
@@ -29,6 +31,7 @@ const Orders = () => {
   const setOrderStatus = useAdmin((s) => s.setOrderStatus);
   const [tab, setTab] = useState<(typeof tabs)[number]>("All");
   const [search, setSearch] = useState("");
+  const { loading, error, retry } = usePageLoading({ delay: 600 });
 
   const filtered = useMemo(
     () => {
@@ -83,12 +86,32 @@ const Orders = () => {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <Stat title="Total Orders" value={counts.total.toString()} />
-          <Stat title="Pending" value={counts.pending.toString()} accent="text-amber-600" />
-          <Stat title="Processing" value={counts.processing.toString()} accent="text-violet-600" />
-          <Stat title="Shipped" value={counts.shipped.toString()} accent="text-blue-600" />
-          <Stat title="Delivered" value={counts.delivered.toString()} accent="text-emerald-600" />
+          {loading
+            ? Array.from({ length: 5 }).map((_, i) => <StatCardSkeleton key={i} />)
+            : (
+              <>
+                <Stat title="Total Orders" value={counts.total.toString()} />
+                <Stat title="Pending" value={counts.pending.toString()} accent="text-amber-600" />
+                <Stat title="Processing" value={counts.processing.toString()} accent="text-violet-600" />
+                <Stat title="Shipped" value={counts.shipped.toString()} accent="text-blue-600" />
+                <Stat title="Delivered" value={counts.delivered.toString()} accent="text-emerald-600" />
+              </>
+            )}
         </div>
+
+        {error && (
+          <div className="flex items-center justify-between gap-4 px-5 py-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Icon name="error" /> {error}
+            </div>
+            <button
+              onClick={retry}
+              className="text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full bg-white border border-rose-200 hover:bg-rose-100"
+            >
+              Retry
+            </button>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="flex gap-2 flex-wrap">
@@ -128,6 +151,9 @@ const Orders = () => {
         </div>
 
         {/* Table */}
+        {loading ? (
+          <TableSkeleton rows={6} cols={6} />
+        ) : (
         <div className="bg-white rounded-xl shadow-sm border border-stone-100 overflow-hidden">
           <table className="w-full">
             <thead>
@@ -180,6 +206,7 @@ const Orders = () => {
             </tbody>
           </table>
         </div>
+        )}
       </div>
     </AdminLayout>
   );

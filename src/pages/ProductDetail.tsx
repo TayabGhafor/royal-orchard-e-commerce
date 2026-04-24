@@ -7,6 +7,8 @@ import { Icon } from "@/components/Icon";
 import { findProduct } from "@/data/products";
 import { useCart } from "@/store/cart";
 import { formatPKR } from "@/lib/format";
+import { usePageLoading } from "@/hooks/use-page-loading";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const ProductDetail = () => {
   const { slug } = useParams();
@@ -16,6 +18,7 @@ const ProductDetail = () => {
   const addItem = useCart((s) => s.addItem);
   const setOpen = useCart((s) => s.setOpen);
   const navigate = useNavigate();
+  const { loading, error, retry } = usePageLoading({ delay: 600 });
 
   if (!product) return <Navigate to="/shop" replace />;
 
@@ -35,6 +38,40 @@ const ProductDetail = () => {
           <Icon name="arrow_back" className="text-base" /> Back to Shop
         </Link>
 
+        {error && (
+          <div className="flex items-center justify-between gap-4 px-5 py-3 mb-6 rounded-xl bg-rose-50 border border-rose-200 text-rose-700">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Icon name="error" /> {error}
+            </div>
+            <button
+              onClick={retry}
+              className="text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full bg-white border border-rose-200 hover:bg-rose-100"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {loading ? (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
+            <div className="lg:col-span-7">
+              <Skeleton className="w-full aspect-square rounded-lg" />
+              <div className="grid grid-cols-3 gap-4 mt-6">
+                <Skeleton className="aspect-square rounded-md" />
+                <Skeleton className="aspect-square rounded-md" />
+                <Skeleton className="aspect-square rounded-md" />
+              </div>
+            </div>
+            <div className="lg:col-span-5 space-y-6">
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-12 w-3/4" />
+              <Skeleton className="h-6 w-24" />
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-14 w-full rounded-full" />
+              <Skeleton className="h-14 w-full rounded-full" />
+            </div>
+          </div>
+        ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
           <section className="lg:col-span-7">
             <motion.div
@@ -164,6 +201,7 @@ const ProductDetail = () => {
             </div>
           </section>
         </div>
+        )}
 
         {/* Reviews */}
         <section className="mt-32 space-y-12">

@@ -3,10 +3,13 @@ import { SiteShell } from "@/components/SiteShell";
 import { Icon } from "@/components/Icon";
 import { useCart } from "@/store/cart";
 import { formatPKR } from "@/lib/format";
+import { usePageLoading } from "@/hooks/use-page-loading";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Cart = () => {
   const { items, updateQuantity, removeItem, subtotal } = useCart();
   const sub = subtotal();
+  const { loading, error, retry } = usePageLoading({ delay: 500 });
 
   return (
     <SiteShell>
@@ -18,7 +21,44 @@ const Cart = () => {
           </p>
         </header>
 
-        {items.length === 0 ? (
+        {error && (
+          <div className="flex items-center justify-between gap-4 px-5 py-3 mb-6 rounded-xl bg-rose-50 border border-rose-200 text-rose-700">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Icon name="error" /> {error}
+            </div>
+            <button
+              onClick={retry}
+              className="text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full bg-white border border-rose-200 hover:bg-rose-100"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {loading ? (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+            <div className="lg:col-span-8 space-y-4">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} className="flex gap-6 p-6 bg-surface-container-lowest rounded-lg shadow-sm">
+                  <Skeleton className="w-28 h-28 rounded-md" />
+                  <div className="flex-1 space-y-3">
+                    <Skeleton className="h-6 w-2/3" />
+                    <Skeleton className="h-4 w-1/3" />
+                    <Skeleton className="h-10 w-32 mt-6 rounded-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="lg:col-span-4">
+              <div className="bg-surface-container-lowest rounded-lg p-8 shadow-sm space-y-4">
+                <Skeleton className="h-7 w-40" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-12 w-full rounded-full" />
+              </div>
+            </div>
+          </div>
+        ) : items.length === 0 ? (
           <div className="py-20 flex flex-col items-center gap-6 text-center">
             <Icon name="shopping_basket" className="text-7xl text-primary-fixed-dim" />
             <p className="text-outline">Your basket is empty.</p>
