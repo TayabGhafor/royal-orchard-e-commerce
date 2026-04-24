@@ -6,125 +6,262 @@ import { Icon } from "@/components/Icon";
 
 const Analytics = () => {
   const orders = useAdmin((s) => s.orders);
+  const products = useAdmin((s) => s.products);
+  const customers = useAdmin((s) => s.customers);
 
-  const { revenue, avg, delivered, pending, profit } = useMemo(() => {
+  const { revenue, avg, profit } = useMemo(() => {
     const revenue = orders.reduce((s, o) => s + o.total, 0);
-    const delivered = orders.filter((o) => o.status === "Delivered").length;
-    const pending = orders.filter((o) => o.status === "Pending").length;
     const avg = orders.length ? Math.round(revenue / orders.length) : 0;
     const profit = Math.round(revenue * 0.32);
-    return { revenue, avg, delivered, pending, profit };
+    return { revenue, avg, profit };
   }, [orders]);
 
   const kpis = [
-    { label: "Revenue", value: formatPKR(revenue), tone: "text-emerald-600", icon: "payments" },
-    { label: "Avg Order", value: formatPKR(avg), tone: "text-stone-900", icon: "shopping_cart" },
-    { label: "Conversion", value: "3.4%", tone: "text-blue-600", icon: "trending_up" },
-    { label: "Profit (est.)", value: formatPKR(profit), tone: "text-orange-600", icon: "savings" },
+    {
+      label: "Total Revenue",
+      value: formatPKR(revenue),
+      change: "+12%",
+      trend: "up",
+      icon: "payments",
+      iconBg: "bg-amber-50",
+      iconColor: "text-amber-700",
+      accent: "border-amber-500",
+    },
+    {
+      label: "Average Order Value",
+      value: formatPKR(avg),
+      icon: "shopping_basket",
+      iconBg: "bg-emerald-50",
+      iconColor: "text-emerald-700",
+      accent: "",
+    },
+    {
+      label: "Conversion Rate",
+      value: "3.4%",
+      icon: "ads_click",
+      iconBg: "bg-blue-50",
+      iconColor: "text-blue-700",
+      accent: "",
+    },
+    {
+      label: "Net Profit",
+      value: formatPKR(profit),
+      icon: "account_balance_wallet",
+      iconBg: "bg-orange-100",
+      iconColor: "text-orange-700",
+      accent: "",
+    },
   ];
 
-  // Mock daily/weekly/monthly trend
-  const monthly = [120, 180, 220, 260, 240, 320, 300, 360, 410, 380, 450, 480];
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const max = Math.max(...monthly);
+  // Weekly revenue trend (mock heights)
+  const trend = [40, 65, 45, 85, 60, 95, 50];
+  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const peakIdx = trend.indexOf(Math.max(...trend));
+
+  // Top selling varieties — derive from product list
+  const topVarieties = useMemo(() => {
+    const palette = ["bg-orange-500", "bg-amber-500", "bg-emerald-500"];
+    const shares = [42, 28, 15];
+    return products.slice(0, 3).map((p, i) => ({
+      name: p.name,
+      share: shares[i],
+      color: palette[i],
+    }));
+  }, [products]);
+
+  const newCustomers = customers.filter((c) => c.status === "Active").length;
+  const dateRange = (() => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(end.getDate() - 7);
+    const fmt = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    return `${fmt(start)} - ${fmt(end)}, ${end.getFullYear()}`;
+  })();
 
   return (
     <AdminLayout>
-      <div className="p-8 space-y-8">
-        <div className="flex justify-between items-end flex-wrap gap-3">
+      <div className="p-8 max-w-7xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-bold tracking-tight">Orchard Analytics</h1>
-            <p className="text-stone-500 mt-1">Live performance metrics from your storefront.</p>
+            <h1 className="text-4xl font-extrabold tracking-tight text-stone-900 mb-2 font-headline">
+              Orchard Analytics
+            </h1>
+            <p className="text-stone-500 font-medium">
+              Detailed performance insights for your premium harvest
+            </p>
           </div>
-          <button className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-full text-sm font-semibold">
-            Export
-          </button>
+          <div className="flex items-center gap-2 bg-white p-1 rounded-full shadow-sm border border-stone-100">
+            <button className="px-4 py-2 text-sm font-bold text-stone-700 hover:bg-stone-50 rounded-full transition-all">
+              7 Days
+            </button>
+            <button className="px-6 py-2 text-sm font-bold bg-orange-500 text-white rounded-full shadow-md shadow-orange-500/20">
+              {dateRange}
+            </button>
+            <button className="p-2 text-stone-400 hover:text-orange-600 transition-colors">
+              <Icon name="calendar_today" />
+            </button>
+          </div>
         </div>
 
-        {/* KPI */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        {/* KPI Bento */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {kpis.map((k) => (
             <div
               key={k.label}
-              className="bg-white p-6 rounded-xl shadow-sm border border-stone-100 flex items-start justify-between"
+              className={`bg-white p-6 rounded-2xl shadow-sm border border-stone-100 flex flex-col justify-between ${
+                k.accent ? `border-b-4 ${k.accent}` : ""
+              }`}
             >
-              <div>
-                <p className="text-xs text-stone-500 uppercase tracking-widest font-semibold">{k.label}</p>
-                <h3 className={`text-2xl font-bold mt-2 ${k.tone}`}>{k.value}</h3>
+              <div className="flex justify-between items-start mb-4">
+                <div className={`p-2 rounded-lg ${k.iconBg} ${k.iconColor}`}>
+                  <Icon name={k.icon} />
+                </div>
+                {k.change && (
+                  <span className="flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+                    {k.change}
+                    <Icon name="trending_up" className="text-[14px]" />
+                  </span>
+                )}
               </div>
-              <div className="w-10 h-10 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center">
-                <Icon name={k.icon} className="text-lg" />
+              <div>
+                <p className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-1">
+                  {k.label}
+                </p>
+                <h3 className="text-3xl font-extrabold text-stone-900 font-headline">{k.value}</h3>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Chart */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-stone-100">
-          <div className="flex items-end justify-between mb-6">
-            <h4 className="font-bold text-lg">Monthly Revenue</h4>
-            <span className="text-xs text-stone-500">2024 (mock)</span>
-          </div>
-          <div className="h-64 flex items-end gap-2">
-            {monthly.map((v, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                <div
-                  style={{ height: `${(v / max) * 100}%` }}
-                  className="w-full bg-gradient-to-t from-orange-500 to-orange-300 rounded-t-lg hover:opacity-80 transition-opacity"
-                  title={formatPKR(v * 1000)}
-                />
-                <span className="text-[10px] text-stone-500 font-medium">{months[i]}</span>
+        {/* Revenue Trends */}
+        <section className="bg-white rounded-2xl p-8 shadow-sm border border-stone-100">
+          <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
+            <div>
+              <h2 className="text-xl font-bold text-stone-900 font-headline">Revenue Trends</h2>
+              <p className="text-sm text-stone-500">
+                Comparing performance across orchard sectors
+              </p>
+            </div>
+            <div className="flex gap-4">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-orange-500" />
+                <span className="text-xs font-bold text-stone-600">Export</span>
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Status breakdown */}
-        <div className="grid md:grid-cols-2 gap-6">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-stone-100">
-            <h4 className="font-bold text-lg mb-4">Delivered vs Pending</h4>
-            <div className="flex items-center gap-6">
-              <div className="flex-1">
-                <div className="flex items-center justify-between mb-2 text-sm">
-                  <span className="font-semibold text-emerald-600">Delivered</span>
-                  <span>{delivered}</span>
-                </div>
-                <div className="h-3 rounded-full bg-stone-100 overflow-hidden">
-                  <div
-                    className="h-full bg-emerald-500"
-                    style={{ width: `${orders.length ? (delivered / orders.length) * 100 : 0}%` }}
-                  />
-                </div>
-                <div className="flex items-center justify-between mt-4 mb-2 text-sm">
-                  <span className="font-semibold text-amber-600">Pending</span>
-                  <span>{pending}</span>
-                </div>
-                <div className="h-3 rounded-full bg-stone-100 overflow-hidden">
-                  <div
-                    className="h-full bg-amber-400"
-                    style={{ width: `${orders.length ? (pending / orders.length) * 100 : 0}%` }}
-                  />
-                </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-amber-400" />
+                <span className="text-xs font-bold text-stone-600">Local Market</span>
               </div>
             </div>
           </div>
+          <div className="h-64 flex items-end gap-3 w-full border-b border-stone-100">
+            {trend.map((h, i) => (
+              <div
+                key={i}
+                style={{ height: `${h}%` }}
+                className={`flex-1 rounded-t-lg relative group transition-all ${
+                  i === peakIdx
+                    ? "bg-orange-500"
+                    : "bg-orange-200/60 hover:bg-orange-400/70"
+                }`}
+              >
+                {i === peakIdx && (
+                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 text-[10px] font-bold bg-orange-500 text-white shadow p-1 rounded">
+                    Peak
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-between mt-4 text-[10px] font-bold text-stone-400 uppercase tracking-tighter">
+            {days.map((d) => (
+              <span key={d}>{d}</span>
+            ))}
+          </div>
+        </section>
 
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-stone-100">
-            <h4 className="font-bold text-lg mb-4">Quick Insights</h4>
-            <ul className="space-y-3 text-sm">
-              <li className="flex items-center justify-between">
-                <span className="text-stone-500">Orders today</span>
-                <span className="font-bold">{orders.filter((o) => Date.now() - new Date(o.createdAt).getTime() < 86400000).length}</span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span className="text-stone-500">Orders this week</span>
-                <span className="font-bold">{orders.filter((o) => Date.now() - new Date(o.createdAt).getTime() < 86400000 * 7).length}</span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span className="text-stone-500">Total revenue</span>
-                <span className="font-bold text-orange-600">{formatPKR(revenue)}</span>
-              </li>
-            </ul>
+        {/* Bottom Two Columns */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Top Selling Varieties */}
+          <div className="bg-white rounded-2xl p-8 shadow-sm border border-stone-100">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-stone-900 font-headline">
+                Top Selling Varieties
+              </h2>
+              <button className="text-orange-600 text-sm font-bold hover:underline">
+                View All
+              </button>
+            </div>
+            <div className="space-y-6">
+              {topVarieties.map((v) => (
+                <div key={v.name} className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-lg bg-orange-100 text-orange-700 flex-shrink-0 flex items-center justify-center">
+                    <Icon name="nutrition" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="font-bold text-stone-900">{v.name}</span>
+                      <span className="text-xs font-bold text-stone-500">{v.share}% Share</span>
+                    </div>
+                    <div className="w-full bg-stone-100 h-2 rounded-full overflow-hidden">
+                      <div
+                        className={`${v.color} h-full`}
+                        style={{ width: `${v.share}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {topVarieties.length === 0 && (
+                <p className="text-sm text-stone-400 text-center py-6">No products yet.</p>
+              )}
+            </div>
+          </div>
+
+          {/* Customer Acquisition */}
+          <div className="bg-white rounded-2xl p-8 shadow-sm border border-stone-100">
+            <h2 className="text-xl font-bold text-stone-900 mb-6 font-headline">
+              Customer Acquisition
+            </h2>
+            <div className="bg-stone-50 rounded-xl p-6 mb-6 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-1">
+                  Weekly Signups
+                </p>
+                <h4 className="text-2xl font-extrabold text-stone-900 font-headline">
+                  {customers.length.toLocaleString()}
+                </h4>
+              </div>
+              <div className="w-16 h-16 rounded-full border-4 border-orange-500 border-t-stone-200 flex items-center justify-center">
+                <span className="text-xs font-black text-orange-600">+8%</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 border border-stone-100 rounded-xl">
+                <Icon name="person_add" className="text-emerald-600 mb-2" />
+                <p className="text-xs font-bold text-stone-400">New Customers</p>
+                <p className="text-lg font-extrabold">{newCustomers}</p>
+              </div>
+              <div className="p-4 border border-stone-100 rounded-xl">
+                <Icon name="replay" className="text-amber-600 mb-2" />
+                <p className="text-xs font-bold text-stone-400">Repeat Rate</p>
+                <p className="text-lg font-extrabold">64%</p>
+              </div>
+            </div>
+            <div className="mt-8 space-y-4">
+              <h4 className="text-sm font-bold text-stone-900">Acquisition Channels</h4>
+              {[
+                { label: "Organic Search", pct: 45, dot: "bg-emerald-500" },
+                { label: "Social Referrals", pct: 30, dot: "bg-amber-500" },
+                { label: "Direct", pct: 25, dot: "bg-stone-300" },
+              ].map((c) => (
+                <div key={c.label} className="flex items-center gap-3">
+                  <div className={`w-2 h-2 rounded-full ${c.dot}`} />
+                  <span className="text-sm text-stone-600 flex-1">{c.label}</span>
+                  <span className="text-sm font-bold">{c.pct}%</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
