@@ -218,9 +218,14 @@ const Dashboard = () => {
               <Icon name="eco" className="text-[150px]" />
             </div>
           </div>
+            </>
+          )}
         </section>
 
         {/* Recent Orders */}
+        {loading ? (
+          <TableSkeleton rows={5} cols={6} />
+        ) : (
         <section className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
           <div className="px-8 py-6 border-b border-stone-100 flex justify-between items-center">
             <h4 className="text-xl font-bold font-headline">Recent Orders</h4>
@@ -288,6 +293,7 @@ const Dashboard = () => {
             </Link>
           </div>
         </section>
+        )}
       </div>
     </AdminLayout>
   );
