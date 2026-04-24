@@ -47,16 +47,9 @@ export default function AdminSidebar() {
         ))}
       </nav>
 
-      <div className="mt-auto p-4 rounded-xl bg-orange-50 border border-orange-100">
-        <p className="text-xs font-bold text-orange-900">Mock Data</p>
-        <p className="text-[11px] text-orange-700/70 mt-1 leading-snug">
-          All admin changes persist in your browser via localStorage.
-        </p>
-      </div>
-
       <button
         onClick={handleLogout}
-        className="mt-3 group flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-semibold text-stone-600 hover:bg-rose-50 hover:text-rose-700 transition-colors border border-transparent hover:border-rose-100"
+        className="mt-auto group flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-semibold text-stone-600 hover:bg-rose-50 hover:text-rose-700 transition-colors border border-transparent hover:border-rose-100"
       >
         <span className="w-9 h-9 rounded-full bg-stone-100 group-hover:bg-rose-100 flex items-center justify-center">
           <Icon name="logout" className="text-base text-stone-500 group-hover:text-rose-600" />
