@@ -263,6 +263,7 @@ const Products = () => {
             </tbody>
           </table>
         </div>
+        )}
       </div>
 
       {/* Modal */}

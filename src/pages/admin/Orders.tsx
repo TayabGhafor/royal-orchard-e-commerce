@@ -206,6 +206,7 @@ const Orders = () => {
             </tbody>
           </table>
         </div>
+        )}
       </div>
     </AdminLayout>
   );

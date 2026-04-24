@@ -110,6 +110,7 @@ const Customers = () => {
             </tbody>
           </table>
         </div>
+        )}
       </div>
     </AdminLayout>
   );
