@@ -13,17 +13,25 @@ const weights: (WeightOption | "All")[] = ["All", "3kg", "5kg", "8kg"];
 const Shop = () => {
   const [variety, setVariety] = useState<(typeof varieties)[number]>("All");
   const [weight, setWeight] = useState<(typeof weights)[number]>("All");
+  const [search, setSearch] = useState("");
   const addItem = useCart((s) => s.addItem);
   const setOpen = useCart((s) => s.setOpen);
 
   const filtered = useMemo(
-    () =>
-      products.filter(
+    () => {
+      const q = search.trim().toLowerCase();
+      return products.filter(
         (p) =>
           (variety === "All" || p.variety === variety) &&
-          (weight === "All" || p.weights.includes(weight as WeightOption)),
-      ),
-    [variety, weight],
+          (weight === "All" || p.weights.includes(weight as WeightOption)) &&
+          (!q ||
+            p.name.toLowerCase().includes(q) ||
+            p.variety.toLowerCase().includes(q) ||
+            p.tagline.toLowerCase().includes(q) ||
+            p.collection.toLowerCase().includes(q)),
+      );
+    },
+    [variety, weight, search],
   );
 
   const featured = filtered.slice(0, 2);
@@ -79,6 +87,34 @@ const Shop = () => {
             <div className="lg:sticky lg:top-32">
               <h3 className="font-headline font-bold text-xl mb-6">Refine Selection</h3>
               <div className="space-y-8">
+                <section>
+                  <label className="block text-xs font-bold text-outline-variant tracking-widest uppercase mb-4">
+                    Search
+                  </label>
+                  <div className="relative">
+                    <Icon
+                      name="search"
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-base pointer-events-none"
+                    />
+                    <input
+                      type="search"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Find a mango…"
+                      className="w-full bg-surface-container-low rounded-full pl-10 pr-9 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary text-on-surface placeholder:text-on-surface-variant"
+                    />
+                    {search && (
+                      <button
+                        onClick={() => setSearch("")}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface"
+                        aria-label="Clear search"
+                      >
+                        <Icon name="close" className="text-base" />
+                      </button>
+                    )}
+                  </div>
+                </section>
+
                 <section>
                   <label className="block text-xs font-bold text-outline-variant tracking-widest uppercase mb-4">
                     Variety
