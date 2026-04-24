@@ -299,6 +299,7 @@ const Checkout = () => {
             </div>
           </aside>
         </form>
+        )}
       </div>
     </SiteShell>
   );

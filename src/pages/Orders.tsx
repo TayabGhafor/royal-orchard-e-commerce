@@ -6,6 +6,8 @@ import { useAuth } from "@/store/auth";
 import { useAdmin, type AdminOrder, type OrderStatus } from "@/store/admin";
 import { formatPKR } from "@/lib/format";
 import { toast } from "sonner";
+import { usePageLoading } from "@/hooks/use-page-loading";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type TabKey =
   | "all"
@@ -88,6 +90,7 @@ const Orders = () => {
   const [tab, setTab] = useState<TabKey>("all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortKey>("newest");
+  const { loading, error, retry } = usePageLoading({ delay: 700 });
 
   const myOrders = useMemo(() => {
     if (!user) return [];

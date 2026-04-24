@@ -7,6 +7,8 @@ import { formatPKR } from "@/lib/format";
 import { useMemo, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
+import { usePageLoading } from "@/hooks/use-page-loading";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const profileSchema = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters").max(100),
@@ -24,6 +26,7 @@ const Account = () => {
     phone: user?.phone ?? "",
     address: user?.address ?? "",
   });
+  const { loading, error, retry } = usePageLoading({ delay: 600 });
 
   const myOrders = useMemo(
     () => (user ? orders.filter((o) => o.email.toLowerCase() === user.email.toLowerCase()) : []),
