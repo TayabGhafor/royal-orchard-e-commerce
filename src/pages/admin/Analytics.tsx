@@ -3,11 +3,27 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import { useAdmin } from "@/store/admin";
 import { formatPKR } from "@/lib/format";
 import { Icon } from "@/components/Icon";
+import { usePageLoading } from "@/hooks/use-page-loading";
+import { useRealtimeTick, formatRelative } from "@/hooks/use-realtime-tick";
+import {
+  StatCardSkeleton,
+  ChartSkeleton,
+} from "@/components/admin/AdminSkeletons";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useEffect, useState } from "react";
 
 const Analytics = () => {
   const orders = useAdmin((s) => s.orders);
   const products = useAdmin((s) => s.products);
   const customers = useAdmin((s) => s.customers);
+  const { loading, error, retry } = usePageLoading({ delay: 800 });
+  const { lastUpdated } = useRealtimeTick(30000);
+  // Tick a 1s render so "Xs ago" stays fresh.
+  const [, setNow] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
 
   const { revenue, avg, profit } = useMemo(() => {
     const revenue = orders.reduce((s, o) => s + o.total, 0);
