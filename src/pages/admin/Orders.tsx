@@ -28,15 +28,27 @@ const Orders = () => {
   const orders = useAdmin((s) => s.orders);
   const setOrderStatus = useAdmin((s) => s.setOrderStatus);
   const [tab, setTab] = useState<(typeof tabs)[number]>("All");
+  const [search, setSearch] = useState("");
 
   const filtered = useMemo(
     () => {
       const list = tab === "All" ? orders : orders.filter((o) => o.status === tab);
-      return [...list].sort(
+      const q = search.trim().toLowerCase();
+      const searched = q
+        ? list.filter(
+            (o) =>
+              o.id.toLowerCase().includes(q) ||
+              o.customer.toLowerCase().includes(q) ||
+              o.email.toLowerCase().includes(q) ||
+              o.product.toLowerCase().includes(q) ||
+              o.status.toLowerCase().includes(q),
+          )
+        : list;
+      return [...searched].sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       );
     },
-    [orders, tab],
+    [orders, tab, search],
   );
 
   const counts = {
@@ -93,6 +105,26 @@ const Orders = () => {
               {t}
             </button>
           ))}
+        </div>
+
+        {/* Search */}
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-white border border-stone-200 rounded-full max-w-md">
+          <Icon name="search" className="text-stone-400 text-base" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search orders by ID, customer, email, product…"
+            className="outline-none bg-transparent text-sm flex-1"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="text-stone-400 hover:text-stone-600"
+              aria-label="Clear search"
+            >
+              <Icon name="close" className="text-base" />
+            </button>
+          )}
         </div>
 
         {/* Table */}

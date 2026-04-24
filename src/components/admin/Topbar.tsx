@@ -1,6 +1,9 @@
 import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { useAuth } from "@/store/auth";
+import { useAdmin } from "@/store/admin";
+import { formatPKR } from "@/lib/format";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +17,60 @@ export default function AdminTopbar() {
   const user = useAuth((s) => s.user);
   const signOut = useAuth((s) => s.signOut);
   const navigate = useNavigate();
+  const orders = useAdmin((s) => s.orders);
+  const products = useAdmin((s) => s.products);
+  const customers = useAdmin((s) => s.customers);
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (!wrapperRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, []);
+
+  const results = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return { orders: [], products: [], customers: [] };
+    return {
+      orders: orders
+        .filter(
+          (o) =>
+            o.id.toLowerCase().includes(q) ||
+            o.customer.toLowerCase().includes(q) ||
+            o.email.toLowerCase().includes(q) ||
+            o.product.toLowerCase().includes(q),
+        )
+        .slice(0, 5),
+      products: products
+        .filter(
+          (p) =>
+            p.name.toLowerCase().includes(q) ||
+            p.variety.toLowerCase().includes(q) ||
+            p.collection.toLowerCase().includes(q),
+        )
+        .slice(0, 5),
+      customers: customers
+        .filter(
+          (c) =>
+            c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q),
+        )
+        .slice(0, 5),
+    };
+  }, [query, orders, products, customers]);
+
+  const totalResults =
+    results.orders.length + results.products.length + results.customers.length;
+
+  const go = (path: string) => {
+    setOpen(false);
+    setQuery("");
+    navigate(path);
+  };
+
   const initials = (user?.name || "AD")
     .split(" ")
     .map((p) => p[0])
@@ -29,12 +86,120 @@ export default function AdminTopbar() {
 
   return (
     <header className="h-16 bg-white border-b border-stone-200 flex items-center justify-between px-8 sticky top-0 z-30">
-      <div className="flex items-center gap-3 max-w-md flex-1">
-        <Icon name="search" className="text-stone-400" />
-        <input
-          placeholder="Search orders, products, customers…"
-          className="bg-transparent outline-none flex-1 text-sm placeholder:text-stone-400"
-        />
+      <div ref={wrapperRef} className="relative max-w-md flex-1">
+        <div className="flex items-center gap-3">
+          <Icon name="search" className="text-stone-400" />
+          <input
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setOpen(true);
+            }}
+            onFocus={() => setOpen(true)}
+            placeholder="Search orders, products, customers…"
+            className="bg-transparent outline-none flex-1 text-sm placeholder:text-stone-400"
+          />
+          {query && (
+            <button
+              onClick={() => {
+                setQuery("");
+                setOpen(false);
+              }}
+              className="text-stone-400 hover:text-stone-600"
+              aria-label="Clear"
+            >
+              <Icon name="close" className="text-base" />
+            </button>
+          )}
+        </div>
+        {open && query.trim() && (
+          <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl border border-stone-200 shadow-xl overflow-hidden max-h-[70vh] overflow-y-auto">
+            {totalResults === 0 ? (
+              <div className="p-6 text-center text-sm text-stone-400">
+                No matches for "{query}"
+              </div>
+            ) : (
+              <div className="py-2">
+                {results.orders.length > 0 && (
+                  <div>
+                    <p className="px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-stone-400">
+                      Orders
+                    </p>
+                    {results.orders.map((o) => (
+                      <button
+                        key={o.id}
+                        onClick={() => go("/admin/orders")}
+                        className="w-full text-left px-4 py-2 hover:bg-stone-50 flex items-center gap-3"
+                      >
+                        <Icon name="receipt_long" className="text-stone-400 text-base" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold truncate">
+                            #{o.id} · {o.customer}
+                          </p>
+                          <p className="text-xs text-stone-500 truncate">
+                            {o.product} · {o.status}
+                          </p>
+                        </div>
+                        <span className="text-xs font-semibold text-stone-600">
+                          {formatPKR(o.total)}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {results.products.length > 0 && (
+                  <div>
+                    <p className="px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-stone-400">
+                      Products
+                    </p>
+                    {results.products.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => go("/admin/products")}
+                        className="w-full text-left px-4 py-2 hover:bg-stone-50 flex items-center gap-3"
+                      >
+                        <img
+                          src={p.images[0]}
+                          alt={p.name}
+                          className="w-8 h-8 rounded object-cover"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold truncate">{p.name}</p>
+                          <p className="text-xs text-stone-500 truncate">
+                            {p.variety} · {p.collection}
+                          </p>
+                        </div>
+                        <span className="text-xs font-semibold text-stone-600">
+                          {formatPKR(p.price)}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {results.customers.length > 0 && (
+                  <div>
+                    <p className="px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-stone-400">
+                      Customers
+                    </p>
+                    {results.customers.map((c) => (
+                      <button
+                        key={c.id}
+                        onClick={() => go("/admin/customers")}
+                        className="w-full text-left px-4 py-2 hover:bg-stone-50 flex items-center gap-3"
+                      >
+                        <Icon name="person" className="text-stone-400 text-base" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold truncate">{c.name}</p>
+                          <p className="text-xs text-stone-500 truncate">{c.email}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
       <div className="flex items-center gap-4">
         <button className="relative w-9 h-9 flex items-center justify-center rounded-full hover:bg-stone-100 text-stone-600">
