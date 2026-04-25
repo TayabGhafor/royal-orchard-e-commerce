@@ -1,44 +1,27 @@
-import { PageLayout, Section } from "@/components/PageLayout";
+import { Icon } from "@/components/Icon";
+import { SiteShell } from "@/components/SiteShell";
 
 const FruitCareGuide = () => (
-  <PageLayout
-    eyebrow="Connoisseur's Manual"
-    icon="spa"
-    title="Fruit Care Guide"
-    subtitle="Unlock the fullest expression of every mango. A few small rituals make a world of difference."
-  >
-    <Section title="When Your Box Arrives">
-      <p>Open the box immediately and inspect each fruit. Mangoes shipped at peak harvest are typically <strong>firm but yielding</strong>. Set them in a single layer in a cool, ventilated area — never refrigerate unripe mangoes.</p>
-    </Section>
-    <Section title="Ripening at Home">
-      <ul className="list-disc pl-6 space-y-2">
-        <li>Room temperature (22–28°C) for 2–4 days.</li>
-        <li>To accelerate: place in a paper bag with a banana or apple.</li>
-        <li>Ripe when fragrant near the stem and the flesh yields gently to a light squeeze.</li>
-      </ul>
-    </Section>
-    <Section title="Storing Ripe Mangoes">
-      <p>Once fully ripe, mangoes can be refrigerated for up to <strong>5 days</strong>. Store them whole — cut fruit oxidizes quickly. For longer storage, peel, slice, and freeze in airtight containers for up to 6 months.</p>
-    </Section>
-    <Section title="Serving Suggestions">
-      <ul className="list-disc pl-6 space-y-2">
-        <li><strong>Chilled, sliced</strong>: serve directly with a squeeze of lime.</li>
-        <li><strong>Mango lassi</strong>: blend with yogurt, milk, and a touch of cardamom.</li>
-        <li><strong>Salsa</strong>: dice with red onion, cilantro, jalapeño, and lime juice.</li>
-        <li><strong>Dessert pairing</strong>: complements vanilla bean ice cream or sticky rice beautifully.</li>
-      </ul>
-    </Section>
-    <Section title="Cutting Technique">
-      <p>Stand the mango stem-up. Slice down on either side of the flat pit to create two "cheeks". Score the flesh in a grid without piercing the skin, then invert and slice cubes off cleanly.</p>
-    </Section>
-    <Section title="Variety-Specific Notes">
-      <ul className="list-disc pl-6 space-y-2">
-        <li><strong>Chaunsa</strong>: ideal at 4–5 days post-harvest. Honey notes intensify.</li>
-        <li><strong>Sindhri</strong>: ripens fast — eat within 3 days for floral aroma.</li>
-        <li><strong>Anwar Ratol</strong>: smaller, fiberless, perfect for direct slurping.</li>
-      </ul>
-    </Section>
-  </PageLayout>
+  <SiteShell>
+    <main className="bg-surface text-on-surface">
+      <header className="overflow-hidden px-8 py-12 lg:py-24">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 lg:grid-cols-2">
+          <div className="z-10"><span className="mb-6 inline-block rounded-full bg-secondary-fixed px-4 py-1 text-sm font-bold uppercase tracking-widest text-on-secondary-fixed-variant">Editorial Guide</span><h1 className="mb-8 font-headline text-5xl font-black leading-[0.95] tracking-tight text-on-surface lg:text-7xl">The <span className="italic text-primary">Connoisseur's</span> Guide to Mango Perfection</h1><p className="mb-10 max-w-md text-lg leading-relaxed text-on-surface-variant">Master the sensory art of selecting, ripening, and serving the world's most exquisite stone fruits.</p><button className="group flex items-center gap-3 rounded-full bg-primary px-8 py-4 font-bold text-on-primary transition-all hover:shadow-lg">Shop the Harvest <Icon name="arrow_forward" className="transition-transform group-hover:translate-x-1" /></button></div>
+          <div className="relative"><div className="absolute -right-10 -top-10 h-64 w-64 rounded-full bg-tertiary-container opacity-30 blur-3xl" /><div className="relative aspect-square overflow-hidden rounded-xl shadow-2xl"><img alt="Perfectly sliced mango" className="h-full w-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCpix0C1qR7Cx7t1uAeqkROFsv8YoosV7z6BV0li1NBXLoXZPusyj-JftF9d27NKr6RmpXBZGHIKT6T8IoK-tEWY-FkuWal7wD0qwrResF6ChuKF_MkciWWzLvEGtm0EU63Y_-WG5M2KcmhIMXNdh85H607OPTVENA5MhLr4NbNyLdd86XY2B5MYOYxJjGOQGITjBbBPb8SNn4xWdN5HpInt1S6RjswaPaCpucRIUQNc3zfAXn62qFonjEdtgcu5BuVz9B1bX9HuczK" /></div></div>
+        </div>
+      </header>
+
+      <section className="bg-surface-container-low px-8 py-20"><div className="mx-auto max-w-6xl"><div className="mb-16"><h2 className="mb-4 font-headline text-3xl font-extrabold">The Ripening Journey</h2><div className="h-1 w-24 rounded-full bg-primary" /></div><div className="grid grid-cols-1 gap-8 md:grid-cols-3">{[["palette", "Color", "Don't rely solely on color. While some turn vibrant orange, many varieties like Sindhri remain pale yellow even when peak ripe.", "Visual Cue"], ["touch_app", "Feel", "Gently squeeze. A ripe mango will yield slightly, similar to a ripe peach or avocado. Firmness indicates it needs more time.", "Tactile Cue"], ["air", "Aroma", "The most reliable sign. Smell near the stem. A ripe mango emits a potent, floral, and intensely sweet perfume.", "Olfactory Cue"]].map(([icon, title, body, cue]) => <div key={title} className="group rounded-lg border border-outline-variant/10 bg-surface-container-lowest p-8 shadow-sm transition-transform hover:-translate-y-2"><div className="mb-6 flex h-12 w-12 items-center justify-center rounded-full bg-surface-container text-primary"><Icon name={icon} /></div><h3 className="mb-3 text-xl font-bold">{title}</h3><p className="mb-4 text-sm leading-relaxed text-on-surface-variant">{body}</p><span className="text-xs font-bold uppercase tracking-widest text-primary">{cue}</span></div>)}</div></div></section>
+
+      <section className="bg-surface px-8 py-20"><div className="mx-auto flex max-w-6xl flex-col items-center gap-16 md:flex-row"><div className="md:w-1/2"><div className="h-[500px] overflow-hidden rounded-lg"><img alt="Mangoes in a basket" className="h-full w-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCq_5ZRpUVSxYcEUqkK9-0jety8_fZlIsw92uU8Tjm1_rJH2yO4COEocUvZPi9MsKDvxcQ9Zl89-ijjJxI2cmgD5Jv1MxA5yeToAqWg5rggMtfBZ-F1VdChLsM5nQjxOdh3ocvDA4NU-889YZIOE0YPYnArmrECytuMZF2VEnDZlFWN0B1aO865RtZ2jxAO26U-_omuqf6w65iZ79V3sIae5t2JEL2j-R9NGg8DXcBg38YkAwd9yEjzxboJAWoYOfMhPzzv5sGxO232" /></div></div><div className="space-y-12 md:w-1/2"><div><h2 className="mb-6 font-headline text-4xl font-extrabold">Optimal Storage</h2><p className="leading-relaxed text-on-surface-variant">Preserving the delicate cellular structure of a royal mango requires attention to temperature and airflow.</p></div><div className="space-y-8">{[["1", "Countertop Ripening", "Keep unripe mangoes at room temperature. For faster ripening, place in a brown paper bag to trap natural ethylene gases."], ["2", "Refrigeration Rules", "Once ripe, move to the fridge to slow ripening. They will stay fresh for up to 5 days. Never refrigerate before they are fully ripe."]].map(([n, title, body]) => <div key={title} className="flex gap-6"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-container font-bold text-on-primary-container">{n}</div><div><h4 className="mb-2 text-lg font-bold">{title}</h4><p className="text-sm text-on-surface-variant">{body}</p></div></div>)}</div></div></div></section>
+
+      <section className="bg-surface-container px-8 py-20"><div className="mx-auto max-w-6xl"><div className="mb-16 text-center"><h2 className="mb-4 font-headline text-4xl font-black">The Art of the Cut</h2><p className="mx-auto max-w-xl italic text-on-surface-variant">Precision meets presentation in these traditional preparation methods.</p></div><div className="grid grid-cols-1 gap-4 lg:grid-cols-2">{[["The Hedgehog", "The classic editorial look. Slice along the pit, score a grid without piercing the skin, and invert.", "https://lh3.googleusercontent.com/aida-public/AB6AXuDYKxGkw25VVs2V2Bt1xhqcm-17iCig6g0IfcIzFjW3g_AjtNtVfJptxwyPef1wwQfTkeqFwXvEmZl4DSe1-XLZf089R5TpnMRrZ5GEIZuHoKfgsUv3wgkMKAPbBpOoi655XqL11hHVt1mSMqLIB3jXqAjIVntNw_olHMDYxnbOu93FmPtKBOaJS5fqDFmt7XqJdDnK_cJpIIjB-69Sr2Uxqa1F1sZge7YVf_MF0EaJIcw8q6Jo4u_1sPXADEIv-Qz7MmP9RoH7RpZl"], ["The Rose Petal", "For Sindhri or Chaunsa. Peel fully and slice into translucent ribbons. Arrange in a tight radial spiral.", "https://lh3.googleusercontent.com/aida-public/AB6AXuAOuRJxAitWI-X2SpTxdt3B23HMabn8FpqdAwpfOhhZytBqOujq6XPiZgeEPiHtn4cn-p7LzCXDbPId9L1bAZ3QMjiPuA1MrSbQC3_uOHgH3Ci0WwlOrQYemzmoarvZS9HNmOEpqf24QVe0StcAts9Rs86n-BY9xicYFetbrvCPKOIkV2mglxP6SIWmEPQoKKb942wawYOVWF5QxVNMQJEdBTSIoemP5YrUuNIiWMzc4CrjrVy26CJMQkbSvT0uFGm93HXxsrONuSFp"]].map(([title, body, src]) => <div key={title} className="group relative flex aspect-video flex-col justify-end overflow-hidden rounded-lg bg-surface-container-lowest p-8 shadow-sm"><img alt={title} className="absolute inset-0 h-full w-full object-cover opacity-20 transition-transform duration-700 group-hover:scale-105" src={src} /><div className="relative z-10"><h3 className="mb-2 text-2xl font-black uppercase tracking-tight">{title}</h3><p className="mb-6 max-w-xs text-sm text-on-surface-variant">{body}</p><span className="flex items-center gap-2 text-xs font-bold text-primary">EXPLORE TECHNIQUE <Icon name="north_east" className="text-sm" /></span></div></div>)}</div></div></section>
+
+      <section className="px-8 py-20"><div className="mx-auto max-w-6xl rounded-lg border border-primary/5 bg-surface-container-lowest p-12 shadow-2xl shadow-primary/10"><h3 className="mb-10 border-l-4 border-primary pl-6 font-headline text-2xl font-bold">Variety-Specific Nuances</h3><div className="grid grid-cols-1 gap-12 md:grid-cols-3">{[["SINDHRI", "Needs zero pressure. When it smells like honey, it's ready. The skin stays a pale, elegant gold."], ["CHAUNSA", "The King of Mangoes. It softens rapidly. Once the aroma fills the room, consume within 24 hours."], ["LANGRA", "Stays green! Do not wait for it to turn yellow. Rely entirely on the soft-squeeze test and its distinctive pine-like scent."]].map(([name, body]) => <div key={name}><h4 className="mb-2 font-black tracking-tight text-primary">{name}</h4><p className="text-sm leading-relaxed text-on-surface-variant">{body}</p></div>)}</div></div></section>
+
+      <section className="px-8 py-24 text-center"><div className="mx-auto max-w-3xl space-y-8"><h2 className="font-headline text-5xl font-black tracking-tight">Ready for the real thing?</h2><p className="text-xl text-on-surface-variant">Our seasonal harvest is now open for connoisseurs worldwide.</p><div className="flex flex-col justify-center gap-4 pt-8 sm:flex-row"><button className="rounded-full bg-primary px-10 py-5 text-lg font-bold text-on-primary transition-transform hover:scale-105">Browse the Orchard</button><button className="rounded-full border-2 border-primary px-10 py-5 text-lg font-bold text-primary transition-colors hover:bg-primary-container">Join the Membership</button></div></div></section>
+    </main>
+  </SiteShell>
 );
 
 export default FruitCareGuide;
