@@ -50,9 +50,36 @@ interface AdminState {
   updateProduct: (id: string, patch: Partial<AdminProduct>) => Promise<AdminProduct>;
   deleteProduct: (id: string) => Promise<void>;
   // Orders
-  setOrderStatus: (id: string, status: OrderStatus) => void;
-  addOrder: (o: Omit<AdminOrder, "id" | "createdAt" | "status"> & { status?: OrderStatus }) => AdminOrder;
+  loadOrders: () => Promise<void>;
+  setOrderStatus: (id: string, status: OrderStatus) => Promise<void>;
   upsertCustomer: (c: { name: string; email: string; spent: number }) => void;
+}
+
+type BackendOrderStatus = "Placed" | "Processing" | "Shipped" | "Delivered" | "Cancelled" | "Returned";
+
+function mapBackendStatus(s: BackendOrderStatus | string): OrderStatus {
+  if (s === "Placed") return "Pending";
+  if (s === "Processing") return "Processing";
+  if (s === "Shipped") return "Shipped";
+  if (s === "Delivered") return "Delivered";
+  if (s === "Cancelled") return "Cancelled";
+  if (s === "Returned") return "Returned";
+  return "Pending";
+}
+
+function mapUiStatusToBackend(s: OrderStatus): BackendOrderStatus {
+  if (s === "Pending") return "Placed";
+  if (s === "Processing") return "Processing";
+  if (s === "Shipped") return "Shipped";
+  if (s === "Delivered") return "Delivered";
+  if (s === "Cancelled") return "Cancelled";
+  if (s === "Returned") return "Returned";
+  return "Placed";
+}
+
+function shortId(id: string) {
+  const s = String(id || "");
+  return s.length > 8 ? s.slice(-8) : s;
 }
 
 const seedOrders: AdminOrder[] = [
@@ -155,19 +182,41 @@ export const useAdmin = create<AdminState>()(
         await api<{ ok: true }>(`/api/products/${id}`, { method: "DELETE", admin: true });
         set((state) => ({ products: state.products.filter((p) => p.id !== id) }));
       },
-      setOrderStatus: (id, status) =>
+      loadOrders: async () => {
+        const res = await api<{ items: any[] }>("/api/orders?limit=50", { admin: true });
+        const mapped: AdminOrder[] = res.items.map((o) => {
+          const total = Number(o?.pricing?.total || 0);
+          const qty = Array.isArray(o?.items) ? o.items.reduce((n: number, it: any) => n + Number(it.quantity || 0), 0) : 0;
+          const first = Array.isArray(o?.items) && o.items[0] ? o.items[0] : null;
+          const productSummary = first ? `${first.title || "Order"} (${first.weight || ""}kg)` : "Order";
+          const customer = o?.deliveryDetails?.name || o?.guest?.name || "Customer";
+          const email = o?.guest?.email || "—";
+          return {
+            id: String(o._id || o.id || ""),
+            customer,
+            email,
+            product: productSummary,
+            quantity: qty,
+            total,
+            status: mapBackendStatus(o.orderStatus),
+            address: o?.deliveryDetails?.address || "",
+            createdAt: o?.createdAt || new Date().toISOString(),
+            paid: o?.paymentStatus === "Paid",
+            paymentMethod: o?.paymentMethod,
+          };
+        });
+        set({ orders: mapped });
+      },
+      setOrderStatus: async (id, status) => {
+        const backendStatus = mapUiStatusToBackend(status);
+        await api<{ order: any }>(`/api/orders/${id}/status`, {
+          method: "PUT",
+          admin: true,
+          body: JSON.stringify({ status: backendStatus }),
+        });
         set((state) => ({
           orders: state.orders.map((o) => (o.id === id ? { ...o, status } : o)),
-        })),
-      addOrder: (o) => {
-        const order: AdminOrder = {
-          ...o,
-          id: `RO-${Math.floor(1000 + Math.random() * 9000)}`,
-          status: o.status ?? "Pending",
-          createdAt: new Date().toISOString(),
-        };
-        set((state) => ({ orders: [order, ...state.orders] }));
-        return order;
+        }));
       },
       upsertCustomer: ({ name, email, spent }) =>
         set((state) => {

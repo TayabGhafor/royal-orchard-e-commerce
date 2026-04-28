@@ -1,6 +1,6 @@
 const express = require("express");
 const { authMiddleware } = require("../../middleware/auth.middleware");
-const { requireAdmin } = require("../../middleware/role.middleware");
+const { requireAdminKey } = require("../../middleware/admin-key.middleware");
 
 const {
   createOrder,
@@ -25,8 +25,8 @@ module.exports = (env) => {
   router.post("/:id/return", authMiddleware(env), requestReturn());
 
   // Admin
-  router.get("/", authMiddleware(env), requireAdmin, adminListOrders());
-  router.put("/:id/status", authMiddleware(env), requireAdmin, adminUpdateStatus());
+  router.get("/", requireAdminKey(env), adminListOrders());
+  router.put("/:id/status", requireAdminKey(env), adminUpdateStatus());
 
   return router;
 };

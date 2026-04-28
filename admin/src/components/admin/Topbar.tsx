@@ -12,18 +12,49 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export default function AdminTopbar() {
   const user = useAuth((s) => s.user);
   const signOut = useAuth((s) => s.signOut);
   const navigate = useNavigate();
   const orders = useAdmin((s) => s.orders);
+  const loadOrders = useAdmin((s) => s.loadOrders);
   const products = useAdmin((s) => s.products);
   const customers = useAdmin((s) => s.customers);
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [newCount, setNewCount] = useState(0);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const storeUrl = (import.meta.env.VITE_STORE_URL as string | undefined) || "/";
+
+  const newest = useMemo(() => {
+    return [...orders]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 8);
+  }, [orders]);
+
+  const computeNewCount = useMemo(() => {
+    return () => {
+      try {
+        const lastSeen = localStorage.getItem("royalorchard-admin:lastSeenOrderAt") || "";
+        const lastSeenMs = lastSeen ? new Date(lastSeen).getTime() : 0;
+        const count = newest.filter((o) => new Date(o.createdAt).getTime() > lastSeenMs).length;
+        setNewCount(count);
+      } catch {
+        setNewCount(0);
+      }
+    };
+  }, [newest]);
+
+  useEffect(() => {
+    loadOrders().finally(() => computeNewCount());
+    const id = window.setInterval(() => {
+      loadOrders().finally(() => computeNewCount());
+    }, 30_000);
+    return () => window.clearInterval(id);
+  }, [loadOrders, computeNewCount]);
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -218,10 +249,84 @@ export default function AdminTopbar() {
         )}
       </div>
       <div className="flex items-center gap-4">
-        <button className="relative w-9 h-9 flex items-center justify-center rounded-full hover:bg-stone-100 text-stone-600">
-          <Icon name="notifications" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-orange-500 ring-2 ring-white" />
-        </button>
+        <Popover
+          open={notifOpen}
+          onOpenChange={(v) => {
+            setNotifOpen(v);
+            if (v) {
+              loadOrders().finally(() => computeNewCount());
+            } else {
+              try {
+                const newestAt = newest[0]?.createdAt;
+                if (newestAt) localStorage.setItem("royalorchard-admin:lastSeenOrderAt", newestAt);
+              } catch {
+                // ignore
+              }
+              setNewCount(0);
+            }
+          }}
+        >
+          <PopoverTrigger asChild>
+            <button className="relative w-9 h-9 flex items-center justify-center rounded-full hover:bg-stone-100 text-stone-600">
+              <Icon name="notifications" />
+              {newCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-5 h-5 px-1 bg-orange-500 text-white text-[10px] font-black rounded-full flex items-center justify-center ring-2 ring-white">
+                  {newCount > 9 ? "9+" : newCount}
+                </span>
+              )}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="end" sideOffset={10} className="w-80 p-0 overflow-hidden">
+            <div className="px-4 py-3 border-b border-stone-100 flex items-center justify-between">
+              <div>
+                <div className="text-sm font-extrabold text-stone-900">Notifications</div>
+                <div className="text-xs text-stone-500 font-semibold">New orders and updates</div>
+              </div>
+              <button
+                type="button"
+                className="text-xs font-bold text-orange-600 hover:underline"
+                onClick={() => {
+                  setNotifOpen(false);
+                  navigate("/orders");
+                }}
+              >
+                View all
+              </button>
+            </div>
+
+            <div className="max-h-[360px] overflow-y-auto">
+              {newest.length === 0 ? (
+                <div className="p-6 text-center text-sm text-stone-500">
+                  No notifications yet.
+                </div>
+              ) : (
+                newest.map((o) => (
+                  <button
+                    key={o.id}
+                    onClick={() => {
+                      setNotifOpen(false);
+                      navigate("/orders", { state: { highlight: o.id } });
+                    }}
+                    className="w-full text-left px-4 py-3 hover:bg-stone-50 transition flex items-center gap-3 border-b border-stone-50 last:border-0"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-orange-50 text-orange-700 flex items-center justify-center flex-shrink-0">
+                      <Icon name="receipt_long" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-bold text-stone-900 truncate">
+                        New order · {o.customer}
+                      </div>
+                      <div className="text-xs text-stone-500 font-semibold truncate">
+                        #{o.id.slice(-8)} · {formatPKR(o.total)}
+                      </div>
+                    </div>
+                    <Icon name="arrow_forward" className="text-stone-400" />
+                  </button>
+                ))
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Icon } from "@/components/Icon";
@@ -6,6 +6,7 @@ import { useAdmin, type OrderStatus } from "@/store/admin";
 import { formatPKR } from "@/lib/format";
 import { usePageLoading } from "@/hooks/use-page-loading";
 import { TableSkeleton, StatCardSkeleton } from "@/components/admin/AdminSkeletons";
+import { useLocation } from "react-router-dom";
 
 const tabs: ("All" | OrderStatus)[] = [
   "All",
@@ -29,9 +30,16 @@ const next: Record<OrderStatus, OrderStatus | null> = {
 const Orders = () => {
   const orders = useAdmin((s) => s.orders);
   const setOrderStatus = useAdmin((s) => s.setOrderStatus);
+  const loadOrders = useAdmin((s) => s.loadOrders);
   const [tab, setTab] = useState<(typeof tabs)[number]>("All");
   const [search, setSearch] = useState("");
   const { loading, error, retry } = usePageLoading({ delay: 600 });
+  const location = useLocation();
+  const highlight = (location.state as any)?.highlight as string | undefined;
+
+  useEffect(() => {
+    loadOrders().catch(() => {});
+  }, [loadOrders]);
 
   const filtered = useMemo(
     () => {
@@ -68,8 +76,9 @@ const Orders = () => {
       toast("Already delivered");
       return;
     }
-    setOrderStatus(id, n);
-    toast.success(`Order #${id} → ${n}`);
+    setOrderStatus(id, n)
+      .then(() => toast.success(`Order #${id} → ${n}`))
+      .catch((e: any) => toast.error(e?.message || "Failed to update order"));
   };
 
   return (
@@ -168,7 +177,12 @@ const Orders = () => {
             </thead>
             <tbody>
               {filtered.map((o) => (
-                <tr key={o.id} className="border-b border-stone-50 last:border-0 hover:bg-stone-50/50">
+                <tr
+                  key={o.id}
+                  className={`border-b border-stone-50 last:border-0 hover:bg-stone-50/50 ${
+                    highlight === o.id ? "bg-orange-50/60" : ""
+                  }`}
+                >
                   <td className="px-6 py-3.5 font-mono text-sm">#{o.id}</td>
                   <td className="text-sm">
                     <div className="font-semibold">{o.customer}</div>
