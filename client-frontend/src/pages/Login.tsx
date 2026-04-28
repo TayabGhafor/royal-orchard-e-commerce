@@ -27,22 +27,24 @@ const Login = () => {
       toast.error(parsed.error.issues[0].message);
       return;
     }
-    const result = signIn(email, password);
-    if (!result.ok) {
-      toast.error(result.error || "Unable to sign in");
-      return;
-    }
-    if (result.role === "admin") {
-      toast.success("Welcome, Admin!");
-      if (adminUrl) {
-        window.location.assign(adminUrl);
+    (async () => {
+      const result = await signIn(email, password);
+      if (!result.ok) {
+        toast.error(result.error || "Unable to sign in");
         return;
       }
-      navigate("/");
-    } else {
-      toast.success("Welcome back!");
-      navigate(from && !from.startsWith("/login") && !from.startsWith("/signup") ? from : "/");
-    }
+      if (result.role === "admin") {
+        toast.success("Welcome, Admin!");
+        if (adminUrl) {
+          window.location.assign(adminUrl);
+          return;
+        }
+        navigate("/");
+      } else {
+        toast.success("Welcome back!");
+        navigate(from && !from.startsWith("/login") && !from.startsWith("/signup") ? from : "/");
+      }
+    })();
   };
 
   return (

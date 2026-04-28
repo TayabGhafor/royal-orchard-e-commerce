@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import AdminLayout from "@/components/admin/AdminLayout";
@@ -8,6 +8,7 @@ import { formatPKR } from "@/lib/format";
 import type { WeightOption } from "@/data/products";
 import { usePageLoading } from "@/hooks/use-page-loading";
 import { TableSkeleton } from "@/components/admin/AdminSkeletons";
+import { uploadImages } from "@/lib/api";
 
 type FormState = {
   id?: string;
@@ -36,6 +37,7 @@ const empty: FormState = {
 
 const Products = () => {
   const products = useAdmin((s) => s.products);
+  const loadProducts = useAdmin((s) => s.loadProducts);
   const addProduct = useAdmin((s) => s.addProduct);
   const updateProduct = useAdmin((s) => s.updateProduct);
   const deleteProduct = useAdmin((s) => s.deleteProduct);
@@ -46,6 +48,13 @@ const Products = () => {
   const [stockFilter, setStockFilter] = useState<"All" | "In Stock" | "Low" | "Out">("All");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(empty);
+  const [imageMode, setImageMode] = useState<"urls" | "upload">("urls");
+  const [uploading, setUploading] = useState(false);
+  const [uploadFiles, setUploadFiles] = useState<File[]>([]);
+
+  useEffect(() => {
+    loadProducts().catch((e) => toast.error(e?.message || "Failed to load products"));
+  }, [loadProducts]);
 
   const filtered = useMemo(() => {
     return products.filter((p) => {
@@ -82,17 +91,40 @@ const Products = () => {
     setOpen(true);
   };
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const images = form.imagesText
-      .split("\n")
-      .map((s) => s.trim())
-      .filter(Boolean);
+    const urlImages =
+      imageMode === "urls"
+        ? form.imagesText
+            .split("\n")
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : [];
+
     if (!form.name.trim()) return toast.error("Name is required");
-    if (images.length < 1) return toast.error("Add at least 1 image URL");
-    if (images.length > 5) return toast.error("Maximum 5 images allowed");
     if (form.weights.length === 0) return toast.error("Select at least one weight option");
     if (form.price <= 0) return toast.error("Enter a valid price");
+
+    let images: string[] = [];
+    try {
+      if (imageMode === "urls") {
+        images = urlImages;
+        if (images.length < 1) return toast.error("Add at least 1 image URL");
+        if (images.length > 5) return toast.error("Maximum 5 images allowed");
+      } else {
+        if (uploadFiles.length < 1) return toast.error("Upload at least 1 image");
+        if (uploadFiles.length > 5) return toast.error("Maximum 5 images allowed");
+        setUploading(true);
+        const res = await uploadImages(uploadFiles);
+        images = res.urls;
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Unable to process images");
+      setUploading(false);
+      return;
+    } finally {
+      setUploading(false);
+    }
 
     const payload = {
       name: form.name,
@@ -107,14 +139,19 @@ const Products = () => {
       rating: 4.5,
       reviews: 0,
     };
-    if (form.id) {
-      updateProduct(form.id, payload);
-      toast.success("Product updated");
-    } else {
-      addProduct(payload);
-      toast.success("Product added");
+    try {
+      if (form.id) {
+        await updateProduct(form.id, payload);
+        toast.success("Product updated");
+      } else {
+        await addProduct(payload);
+        toast.success("Product added");
+      }
+      setOpen(false);
+      setUploadFiles([]);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to save product");
     }
-    setOpen(false);
   };
 
   const toggleWeight = (w: WeightOption) => {
@@ -374,15 +411,113 @@ const Products = () => {
               />
             </Field>
 
-            <Field label="Image URLs (1–5, one per line)" className="mt-4">
-              <textarea
-                rows={4}
-                placeholder="https://…"
-                value={form.imagesText}
-                onChange={(e) => setForm({ ...form, imagesText: e.target.value })}
-                className={`${inputCls} font-mono text-xs`}
-              />
-            </Field>
+            <div className="mt-4">
+              <div className="flex items-center justify-between gap-3">
+                <label className="text-xs uppercase tracking-widest text-stone-500 font-bold">Product Images</label>
+                <div className="flex bg-stone-100 rounded-full p-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setImageMode("urls");
+                      setUploadFiles([]);
+                    }}
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition ${
+                      imageMode === "urls" ? "bg-white shadow-sm text-stone-900" : "text-stone-500 hover:text-stone-800"
+                    }`}
+                  >
+                    URLs
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setImageMode("upload");
+                      setForm((f) => ({ ...f, imagesText: "" }));
+                    }}
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition ${
+                      imageMode === "upload" ? "bg-white shadow-sm text-stone-900" : "text-stone-500 hover:text-stone-800"
+                    }`}
+                  >
+                    Upload
+                  </button>
+                </div>
+              </div>
+
+              {imageMode === "urls" ? (
+                <div className="mt-2">
+                  <textarea
+                    rows={4}
+                    placeholder={"https://…\nhttps://…"}
+                    value={form.imagesText}
+                    onChange={(e) => setForm({ ...form, imagesText: e.target.value })}
+                    className={`${inputCls} font-mono text-xs`}
+                  />
+                  <div className="mt-3 grid grid-cols-5 gap-2">
+                    {form.imagesText
+                      .split("\n")
+                      .map((s) => s.trim())
+                      .filter(Boolean)
+                      .slice(0, 5)
+                      .map((src, idx) => (
+                        <div
+                          key={`${src}-${idx}`}
+                          className="aspect-square rounded-lg overflow-hidden bg-stone-50 border border-stone-200"
+                          title={src}
+                        >
+                          <img
+                            src={src}
+                            alt=""
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const el = e.currentTarget;
+                              el.style.display = "none";
+                              const parent = el.parentElement;
+                              if (parent && !parent.querySelector("[data-fallback]")) {
+                                const d = document.createElement("div");
+                                d.dataset.fallback = "1";
+                                d.className =
+                                  "w-full h-full flex items-center justify-center text-stone-400 text-xs font-semibold";
+                                d.textContent = "Invalid";
+                                parent.appendChild(d);
+                              }
+                            }}
+                          />
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files || []).slice(0, 5);
+                        setUploadFiles(files);
+                      }}
+                      className="text-sm"
+                    />
+                    <span className="text-xs text-stone-500 font-semibold">
+                      {uploadFiles.length}/5 selected
+                    </span>
+                  </div>
+                  {uploadFiles.length > 0 && (
+                    <div className="mt-3 grid grid-cols-5 gap-2">
+                      {uploadFiles.map((f) => (
+                        <div
+                          key={f.name}
+                          className="aspect-square rounded-lg overflow-hidden bg-stone-50 border border-stone-200"
+                          title={f.name}
+                        >
+                          <img src={URL.createObjectURL(f)} alt="" className="w-full h-full object-cover" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             <div className="flex justify-end gap-3 mt-6">
               <button
@@ -394,9 +529,10 @@ const Products = () => {
               </button>
               <button
                 type="submit"
+                disabled={uploading}
                 className="px-6 py-2.5 rounded-full bg-orange-500 hover:bg-orange-600 text-white font-semibold"
               >
-                {form.id ? "Save changes" : "Create Product"}
+                {uploading ? "Uploading..." : form.id ? "Save changes" : "Create Product"}
               </button>
             </div>
           </motion.form>

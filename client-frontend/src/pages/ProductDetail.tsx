@@ -1,18 +1,25 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { SiteShell } from "@/components/SiteShell";
 import { Icon } from "@/components/Icon";
-import { findProduct } from "@/data/products";
 import { useCart } from "@/store/cart";
 import { formatPKR } from "@/lib/format";
 import { usePageLoading } from "@/hooks/use-page-loading";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useProducts } from "@/store/products";
 
 const ProductDetail = () => {
   const { slug } = useParams();
-  const product = slug ? findProduct(slug) : undefined;
+  const load = useProducts((s) => s.load);
+  const findBySlug = useProducts((s) => s.findBySlug);
+  const items = useProducts((s) => s.items);
+  useEffect(() => {
+    if (items.length === 0) load();
+  }, [items.length, load]);
+
+  const product = slug ? findBySlug(slug) : undefined;
   const [activeImage, setActiveImage] = useState(0);
   const [selectedWeight, setSelectedWeight] = useState(product?.weights[0] || "5kg");
   const addItem = useCart((s) => s.addItem);
@@ -20,7 +27,7 @@ const ProductDetail = () => {
   const navigate = useNavigate();
   const { loading, error, retry } = usePageLoading({ delay: 600 });
 
-  if (!product) return <Navigate to="/shop" replace />;
+  if (!product && items.length > 0) return <Navigate to="/shop" replace />;
 
   const handleAdd = (openCart = true) => {
     addItem(product, selectedWeight as never);

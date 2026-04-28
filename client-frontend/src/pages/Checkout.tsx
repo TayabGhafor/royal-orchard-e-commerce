@@ -10,6 +10,7 @@ import { useAuth } from "@/store/auth";
 import { formatPKR } from "@/lib/format";
 import { usePageLoading } from "@/hooks/use-page-loading";
 import { Skeleton } from "@/components/ui/skeleton";
+import { api } from "@/lib/api";
 
 const checkoutSchema = z.object({
   name: z.string().trim().min(2, "Please enter your name").max(100),
@@ -51,30 +52,59 @@ const Checkout = () => {
       return;
     }
     setSubmitting(true);
-    setTimeout(() => {
+    (async () => {
       const productSummary =
         items.length === 1
           ? `${items[0].name} (${items[0].weight})`
           : `${items[0].name} (${items[0].weight}) +${items.length - 1} more`;
       const totalQty = items.reduce((n, it) => n + it.quantity, 0);
       const email = user?.email ?? `${form.name.toLowerCase().replace(/\s+/g, ".")}@guest.local`;
-      addOrder({
-        customer: form.name,
-        email,
-        product: productSummary,
-        quantity: totalQty,
-        total,
-        address: form.address,
-        paid: payment !== "cod",
-        paymentMethod: payment,
-        status: "Processing",
-      });
-      upsertCustomer({ name: form.name, email, spent: total });
-      if (user) updateProfile({ address: form.address, phone: form.phone, name: form.name });
-      clear();
-      toast.success("Order placed! We'll be in touch shortly.");
-      navigate("/");
-    }, 700);
+      try {
+        await api<{ order: unknown }>("/api/orders/guest", {
+          method: "POST",
+          body: JSON.stringify({
+            guest: { email },
+            deliveryDetails: { name: form.name, phone: form.phone, address: form.address },
+            paymentMethod:
+              payment === "cod"
+                ? "COD"
+                : payment === "easypaisa"
+                ? "Easypaisa"
+                : payment === "jazzcash"
+                ? "JazzCash"
+                : "Card",
+            pricing: { shipping: 0, tax, total },
+            items: items.map((it) => ({
+              product: it.productId,
+              weight: it.weight,
+              quantity: it.quantity,
+            })),
+          }),
+        });
+
+        // Keep local order store in sync for UI sections that still read it.
+        addOrder({
+          customer: form.name,
+          email,
+          product: productSummary,
+          quantity: totalQty,
+          total,
+          address: form.address,
+          paid: payment !== "cod",
+          paymentMethod: payment,
+          status: "Processing",
+        });
+        upsertCustomer({ name: form.name, email, spent: total });
+        if (user) updateProfile({ address: form.address, phone: form.phone, name: form.name });
+        clear();
+        toast.success("Order placed! We'll be in touch shortly.");
+        navigate("/");
+      } catch (err: any) {
+        toast.error(err?.message || "Unable to place order right now");
+      } finally {
+        setSubmitting(false);
+      }
+    })();
   };
 
   const paymentOptions: { id: Payment; label: string; sub: string; icon: string }[] = [

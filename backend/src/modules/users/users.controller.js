@@ -7,11 +7,21 @@ function sanitizeText(s) {
   return sanitizeHtml(trimmed, { allowedTags: [], allowedAttributes: {} });
 }
 
+function redactUser(user) {
+  if (!user) return user;
+  const { password, ...safe } = user;
+  return safe;
+}
+
 function getProfile() {
   return async (req, res, next) => {
     try {
       const user = await User.findById(req.user.userId).select("-password").lean();
       if (!user) throw Object.assign(new Error("User not found"), { statusCode: 404, code: "user_not_found" });
+      if (req.app?.get?.("envConfig")?.LOG_USER_PAYLOADS) {
+        // eslint-disable-next-line no-console
+        console.log("[users] getProfile fetched", { userId: req.user.userId, user: redactUser(user) });
+      }
       res.json({ user });
     } catch (err) {
       next(err);
@@ -35,10 +45,20 @@ function updateProfile() {
         };
       }
 
-      const user = await User.findByIdAndUpdate(req.user.userId, { $set: patch }, { new: true })
+      if (req.app?.get?.("envConfig")?.LOG_USER_PAYLOADS) {
+        // eslint-disable-next-line no-console
+        console.log("[users] updateProfile payload", { userId: req.user.userId, patch });
+      }
+
+      const user = await User.findByIdAndUpdate(req.user.userId, { $set: patch }, { returnDocument: "after" })
         .select("-password")
         .lean();
       if (!user) throw Object.assign(new Error("User not found"), { statusCode: 404, code: "user_not_found" });
+
+      if (req.app?.get?.("envConfig")?.LOG_USER_PAYLOADS) {
+        // eslint-disable-next-line no-console
+        console.log("[users] updateProfile stored", { userId: req.user.userId, user: redactUser(user) });
+      }
       res.json({ user });
     } catch (err) {
       next(err);

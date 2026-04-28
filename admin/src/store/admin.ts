@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { products as seedProducts, type Product, type WeightOption } from "@/data/products";
+import { type Product, type WeightOption } from "@/data/products";
+import { api } from "@/lib/api";
 
 export type OrderStatus =
   | "Pending"
@@ -44,17 +45,15 @@ interface AdminState {
   orders: AdminOrder[];
   customers: AdminCustomer[];
   // Products
-  addProduct: (p: Omit<AdminProduct, "id" | "slug">) => void;
-  updateProduct: (id: string, patch: Partial<AdminProduct>) => void;
-  deleteProduct: (id: string) => void;
+  loadProducts: () => Promise<void>;
+  addProduct: (p: Omit<AdminProduct, "id" | "slug">) => Promise<AdminProduct>;
+  updateProduct: (id: string, patch: Partial<AdminProduct>) => Promise<AdminProduct>;
+  deleteProduct: (id: string) => Promise<void>;
   // Orders
   setOrderStatus: (id: string, status: OrderStatus) => void;
   addOrder: (o: Omit<AdminOrder, "id" | "createdAt" | "status"> & { status?: OrderStatus }) => AdminOrder;
   upsertCustomer: (c: { name: string; email: string; spent: number }) => void;
 }
-
-const slugify = (s: string) =>
-  s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || `prod-${Date.now()}`;
 
 const seedOrders: AdminOrder[] = [
   {
@@ -125,20 +124,37 @@ const seedCustomers: AdminCustomer[] = [
 export const useAdmin = create<AdminState>()(
   persist(
     (set) => ({
-      products: seedProducts.map((p) => ({ ...p, stock: 50 })),
+      products: [],
       orders: seedOrders,
       customers: seedCustomers,
-      addProduct: (p) =>
-        set((state) => {
-          const id = `prod-${Date.now()}`;
-          return { products: [{ ...p, id, slug: slugify(p.name) }, ...state.products] };
-        }),
-      updateProduct: (id, patch) =>
+      loadProducts: async () => {
+        const res = await api<{ items: AdminProduct[] }>("/api/products?limit=50");
+        set({ products: res.items });
+      },
+      addProduct: async (p) => {
+        const res = await api<{ product: AdminProduct }>("/api/products", {
+          method: "POST",
+          admin: true,
+          body: JSON.stringify(p),
+        });
+        set((state) => ({ products: [res.product, ...state.products] }));
+        return res.product;
+      },
+      updateProduct: async (id, patch) => {
+        const res = await api<{ product: AdminProduct }>(`/api/products/${id}`, {
+          method: "PUT",
+          admin: true,
+          body: JSON.stringify(patch),
+        });
         set((state) => ({
-          products: state.products.map((p) => (p.id === id ? { ...p, ...patch } : p)),
-        })),
-      deleteProduct: (id) =>
-        set((state) => ({ products: state.products.filter((p) => p.id !== id) })),
+          products: state.products.map((p) => (p.id === id ? res.product : p)),
+        }));
+        return res.product;
+      },
+      deleteProduct: async (id) => {
+        await api<{ ok: true }>(`/api/products/${id}`, { method: "DELETE", admin: true });
+        set((state) => ({ products: state.products.filter((p) => p.id !== id) }));
+      },
       setOrderStatus: (id, status) =>
         set((state) => ({
           orders: state.orders.map((o) => (o.id === id ? { ...o, status } : o)),

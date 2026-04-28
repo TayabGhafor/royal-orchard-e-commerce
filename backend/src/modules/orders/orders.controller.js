@@ -10,6 +10,14 @@ function sanitizeText(s) {
   return sanitizeHtml(trimmed, { allowedTags: [], allowedAttributes: {} });
 }
 
+function weightToKg(weight) {
+  const w = String(weight || "").trim().toLowerCase();
+  if (w === "3kg" || w === "3") return 3;
+  if (w === "5kg" || w === "5") return 5;
+  if (w === "8kg" || w === "8") return 8;
+  return null;
+}
+
 function parsePagination(req) {
   const page = Math.max(1, Number(req.query.page || 1));
   const limit = Math.min(50, Math.max(1, Number(req.query.limit || 20)));
@@ -80,12 +88,12 @@ function createOrder() {
 
           applied.push({ productId, quantity });
 
-          const price = product.pricePerKg * weight;
+          const price = product.price * (weight / 1);
           subtotal += price * quantity;
 
           builtItems.push({
             product: product._id,
-            title: product.title,
+            title: product.name,
             image: product.images?.[0] || "",
             weight,
             quantity,
@@ -103,6 +111,105 @@ function createOrder() {
           deliveryDetails,
           paymentMethod,
           paymentStatus: "Pending",
+          orderStatus: "Placed",
+          pricing: { subtotal, shipping, tax, total },
+          timeline: [{ status: "Placed", date: new Date() }],
+          returnRequest: { status: "None" },
+        });
+
+        res.status(201).json({ order });
+      } catch (err) {
+        // Rollback applied decrements best-effort
+        // eslint-disable-next-line no-restricted-syntax
+        for (const a of applied) {
+          // eslint-disable-next-line no-await-in-loop
+          await Product.findByIdAndUpdate(a.productId, { $inc: { stock: a.quantity, totalSold: -a.quantity } });
+        }
+        throw err;
+      }
+    } catch (err) {
+      next(err);
+    }
+  };
+}
+
+function createGuestOrder() {
+  return async (req, res, next) => {
+    try {
+      const body = req.body || {};
+      const items = Array.isArray(body.items) ? body.items : [];
+
+      if (items.length === 0) throw Object.assign(new Error("Order items required"), { statusCode: 400, code: "invalid_items" });
+
+      const deliveryDetails = {
+        name: sanitizeText(body.deliveryDetails?.name),
+        phone: sanitizeText(body.deliveryDetails?.phone),
+        address: sanitizeText(body.deliveryDetails?.address),
+      };
+      if (!deliveryDetails.name || !deliveryDetails.phone || !deliveryDetails.address) {
+        throw Object.assign(new Error("Delivery details required"), { statusCode: 400, code: "invalid_delivery_details" });
+      }
+
+      const paymentMethod = sanitizeText(body.paymentMethod);
+      if (!["COD", "Easypaisa", "JazzCash", "Card"].includes(paymentMethod)) {
+        throw Object.assign(new Error("Invalid payment method"), { statusCode: 400, code: "invalid_payment_method" });
+      }
+
+      const guestEmail = sanitizeText(body.guest?.email || body.email);
+      const applied = [];
+      const builtItems = [];
+      let subtotal = 0;
+
+      try {
+        for (const raw of items) {
+          const productId = String(raw.product || "");
+          const weightKg = weightToKg(raw.weight);
+          const quantity = Number(raw.quantity);
+
+          if (!mongoose.isValidObjectId(productId)) {
+            throw Object.assign(new Error("Invalid product"), { statusCode: 400, code: "invalid_product" });
+          }
+          if (!weightKg || ![3, 5, 8].includes(weightKg)) {
+            throw Object.assign(new Error("Invalid weight"), { statusCode: 400, code: "invalid_weight" });
+          }
+          if (!Number.isInteger(quantity) || quantity < 1) {
+            throw Object.assign(new Error("Invalid quantity"), { statusCode: 400, code: "invalid_quantity" });
+          }
+
+          const product = await Product.findOneAndUpdate(
+            { _id: productId, isActive: true, stock: { $gte: quantity } },
+            { $inc: { stock: -quantity, totalSold: quantity } },
+            { returnDocument: "after" },
+          ).lean();
+
+          if (!product) {
+            throw Object.assign(new Error("Insufficient stock"), { statusCode: 409, code: "out_of_stock" });
+          }
+
+          applied.push({ productId, quantity });
+          const price = product.price * weightKg;
+          subtotal += price * quantity;
+
+          builtItems.push({
+            product: product._id,
+            title: product.name,
+            image: product.images?.[0] || "",
+            weight: weightKg,
+            quantity,
+            price,
+          });
+        }
+
+        const shipping = Number.isFinite(Number(body.pricing?.shipping)) ? Math.max(0, Number(body.pricing.shipping)) : 0;
+        const tax = Number.isFinite(Number(body.pricing?.tax)) ? Math.max(0, Number(body.pricing.tax)) : 0;
+        const total = subtotal + shipping + tax;
+
+        const order = await Order.create({
+          guest: { name: deliveryDetails.name, email: guestEmail || undefined },
+          items: builtItems,
+          deliveryDetails,
+          paymentMethod,
+          paymentStatus: paymentMethod === "COD" ? "Unpaid" : "Pending",
           orderStatus: "Placed",
           pricing: { subtotal, shipping, tax, total },
           timeline: [{ status: "Placed", date: new Date() }],
@@ -274,6 +381,7 @@ function adminUpdateStatus() {
 
 module.exports = {
   createOrder,
+  createGuestOrder,
   myOrders,
   getOrder,
   cancelOrder,

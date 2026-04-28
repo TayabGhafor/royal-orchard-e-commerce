@@ -30,14 +30,16 @@ const Signup = () => {
       toast.error(parsed.error.issues[0].message);
       return;
     }
-    const res = signUp(form.name, form.email, form.password);
-    if (!res.ok) {
-      toast.error(res.error || "Unable to create account");
-      return;
-    }
-    updateProfile({ address: form.address });
-    toast.success("Welcome to Royal Orchard!");
-    navigate(from && !from.startsWith("/login") && !from.startsWith("/signup") ? from : "/");
+    (async () => {
+      const res = await signUp(form.name, form.email, form.password);
+      if (!res.ok) {
+        toast.error(res.error || "Unable to create account");
+        return;
+      }
+      await updateProfile({ address: form.address });
+      toast.success("Welcome to Royal Orchard!");
+      navigate(from && !from.startsWith("/login") && !from.startsWith("/signup") ? from : "/");
+    })();
   };
 
   return (

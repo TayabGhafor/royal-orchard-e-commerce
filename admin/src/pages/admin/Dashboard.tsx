@@ -11,7 +11,7 @@ import {
   ChartSkeleton,
   TableSkeleton,
 } from "@/components/admin/AdminSkeletons";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 const Dashboard = () => {
   const orders = useAdmin((s) => s.orders);
@@ -19,6 +19,8 @@ const Dashboard = () => {
   const { loading, error, retry } = usePageLoading({ delay: 700 });
   const { lastUpdated } = useRealtimeTick(30000);
   const [, setNow] = useState(Date.now());
+  const [rangeDays, setRangeDays] = useState<7 | 30>(7);
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
@@ -57,9 +59,33 @@ const Dashboard = () => {
     },
   ];
 
-  const trend = [40, 65, 50, 85, 70, 95, 80];
-  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  const peakIdx = trend.indexOf(Math.max(...trend));
+  const revenueTrend = useMemo(() => {
+    // UI-only trend data (until real analytics data is wired in)
+    // Generates stable(ish) values per day so switching 7/30 feels consistent.
+    const end = new Date();
+    const base = Math.max(orders.reduce((s, o) => s + o.total, 0) / 20, 1500);
+    const points = Array.from({ length: rangeDays }, (_, i) => {
+      const d = new Date(end);
+      d.setDate(end.getDate() - (rangeDays - 1 - i));
+      const t = i / Math.max(rangeDays - 1, 1);
+      const wave = 0.55 + 0.25 * Math.sin(t * Math.PI * 2);
+      const noise = 0.9 + ((i * 17) % 9) / 50;
+      const value = Math.round(base * wave * noise);
+      const label =
+        rangeDays === 7
+          ? d.toLocaleDateString("en-US", { weekday: "short" })
+          : d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      return { date: d, label, value };
+    });
+
+    const max = Math.max(...points.map((p) => p.value), 1);
+    const bars = points.map((p) => ({
+      ...p,
+      heightPct: Math.max(8, Math.round((p.value / max) * 100)),
+    }));
+
+    return { bars, peakIdx: bars.findIndex((b) => b.value === Math.max(...bars.map((x) => x.value))) };
+  }, [orders, rangeDays]);
 
   const dailyVolume = [
     { label: "Fresh Picked", value: 420, pct: 85 },
@@ -161,27 +187,65 @@ const Dashboard = () => {
           <div className="lg:col-span-8 bg-white p-8 rounded-2xl shadow-sm border border-stone-100 relative overflow-hidden">
             <div className="flex justify-between items-center mb-8">
               <h4 className="text-xl font-bold font-headline">Revenue Trends</h4>
-              <select className="bg-stone-50 border-none rounded-full text-xs px-4 py-2 font-medium focus:ring-2 focus:ring-orange-300 focus:outline-none">
-                <option>Last 7 Days</option>
-                <option>Last 30 Days</option>
-              </select>
+              <div className="relative">
+                <select
+                  value={rangeDays}
+                  onChange={(e) => setRangeDays((Number(e.target.value) === 30 ? 30 : 7) as 7 | 30)}
+                  className="appearance-none bg-white border border-stone-200 rounded-full text-xs pl-4 pr-9 py-2 font-semibold text-stone-700 hover:border-stone-300 hover:bg-stone-50 transition focus:ring-4 focus:ring-orange-100/70 focus:border-orange-300 focus:outline-none"
+                >
+                  <option value={7}>Last 7 Days</option>
+                  <option value={30}>Last 30 Days</option>
+                </select>
+                <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-stone-400">
+                  <Icon name="expand_more" className="text-base" />
+                </span>
+              </div>
             </div>
-            <div className="h-64 flex items-end gap-2">
-              {trend.map((h, i) => (
-                <div
-                  key={i}
-                  style={{ height: `${h}%` }}
-                  className={`flex-1 rounded-t-lg transition-all ${
-                    i === peakIdx
-                      ? "bg-orange-500"
-                      : "bg-orange-200/50 hover:bg-orange-400"
-                  }`}
-                />
-              ))}
+            <div
+              key={rangeDays}
+              className="relative h-64 flex items-end gap-2"
+              onMouseLeave={() => setHoverIdx(null)}
+            >
+              {revenueTrend.bars.map((b, i) => {
+                const isPeak = i === revenueTrend.peakIdx;
+                const isActive = hoverIdx === i;
+                return (
+                  <motion.div
+                    key={`${b.date.toISOString()}-${i}`}
+                    initial={{ height: 0, opacity: 0.6 }}
+                    animate={{ height: `${b.heightPct}%`, opacity: 1 }}
+                    transition={{ duration: 0.55, delay: i * 0.02, ease: [0.22, 1, 0.36, 1] }}
+                    className={[
+                      "flex-1 rounded-t-lg relative cursor-pointer",
+                      "transition-[filter,transform,background-color] duration-200",
+                      isPeak ? "bg-orange-500" : "bg-orange-200/60 hover:bg-orange-400",
+                      isActive ? "brightness-105 -translate-y-0.5 shadow-sm" : "",
+                    ].join(" ")}
+                    onMouseEnter={() => setHoverIdx(i)}
+                    onFocus={() => setHoverIdx(i)}
+                    tabIndex={0}
+                    aria-label={`${b.label}: ${formatPKR(b.value)}`}
+                  >
+                    {/* subtle highlight */}
+                    <span className="absolute inset-x-0 top-0 h-6 rounded-t-lg bg-white/15 opacity-0 hover:opacity-100 transition-opacity" />
+                  </motion.div>
+                );
+              })}
+
+              {hoverIdx !== null && revenueTrend.bars[hoverIdx] && (
+                <div className="pointer-events-none absolute -top-2 left-0 right-0 flex justify-center">
+                  <div className="bg-white border border-stone-200 shadow-lg rounded-xl px-3 py-2 text-xs">
+                    <div className="font-bold text-stone-900">{revenueTrend.bars[hoverIdx].label}</div>
+                    <div className="text-stone-600 font-semibold">{formatPKR(revenueTrend.bars[hoverIdx].value)}</div>
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="flex justify-between mt-4 text-xs text-stone-500 font-medium px-1">
-              {days.map((d) => (
-                <span key={d}>{d}</span>
+            <div className="flex justify-between mt-4 text-[11px] text-stone-500 font-semibold px-1">
+              {revenueTrend.bars.map((b, i) => (
+                <span key={`${b.label}-${i}`} className={rangeDays === 30 ? "w-6 text-center" : ""}>
+                  {rangeDays === 30 ? (i % 5 === 0 ? b.label.split(" ")[1] : "•") : b.label}
+                </span>
               ))}
             </div>
           </div>

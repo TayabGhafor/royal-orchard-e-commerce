@@ -4,6 +4,7 @@ const { requireAdmin } = require("../../middleware/role.middleware");
 
 const {
   createOrder,
+  createGuestOrder,
   myOrders,
   getOrder,
   cancelOrder,
@@ -16,6 +17,7 @@ module.exports = (env) => {
   const router = express.Router();
 
   // Customer
+  router.post("/guest", createGuestOrder());
   router.post("/", authMiddleware(env), createOrder());
   router.get("/my-orders", authMiddleware(env), myOrders());
   router.get("/:id", authMiddleware(env), getOrder());

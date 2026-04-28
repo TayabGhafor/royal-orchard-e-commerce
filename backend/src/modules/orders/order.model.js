@@ -22,7 +22,11 @@ const TimelineSchema = new mongoose.Schema(
 
 const OrderSchema = new mongoose.Schema(
   {
-    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: false, index: true },
+    guest: {
+      name: { type: String, trim: true },
+      email: { type: String, trim: true, lowercase: true },
+    },
     items: { type: [OrderItemSchema], default: [] },
     deliveryDetails: {
       name: { type: String, required: true, trim: true },

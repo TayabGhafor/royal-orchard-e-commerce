@@ -6,7 +6,7 @@ const { createApp } = require("./app");
 
 async function main() {
   const env = loadEnv(process.env);
-  await connectDB(env.MONGODB_URI);
+  await connectDB(env.MONGODB_URI, env);
 
   const app = createApp(env);
   app.listen(env.PORT, "0.0.0.0", () => {

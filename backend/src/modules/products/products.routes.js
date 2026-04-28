@@ -1,6 +1,5 @@
 const express = require("express");
-const { authMiddleware } = require("../../middleware/auth.middleware");
-const { requireAdmin } = require("../../middleware/role.middleware");
+const { requireAdminKey } = require("../../middleware/admin-key.middleware");
 const {
   listProducts,
   getProduct,
@@ -15,9 +14,9 @@ module.exports = (env) => {
   router.get("/", listProducts());
   router.get("/:id", getProduct());
 
-  router.post("/", authMiddleware(env), requireAdmin, createProduct());
-  router.put("/:id", authMiddleware(env), requireAdmin, updateProduct());
-  router.delete("/:id", authMiddleware(env), requireAdmin, deleteProduct());
+  router.post("/", requireAdminKey(env), createProduct());
+  router.put("/:id", requireAdminKey(env), updateProduct());
+  router.delete("/:id", requireAdminKey(env), deleteProduct());
 
   return router;
 };

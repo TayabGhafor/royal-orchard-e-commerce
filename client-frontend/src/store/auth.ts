@@ -1,131 +1,95 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { api, setAuthToken } from "@/lib/api";
 
-export interface MockUser {
+export interface User {
+  id: string;
   name: string;
   email: string;
-  role?: "admin" | "customer";
-  address?: string;
-  phone?: string;
-}
-
-interface StoredAccount {
-  name: string;
-  email: string;
-  password: string;
+  role: "admin" | "customer";
   address?: string;
   phone?: string;
 }
 
 interface AuthState {
-  user: MockUser | null;
-  accounts: StoredAccount[];
-  signIn: (email: string, password: string) => { ok: boolean; role: "admin" | "customer"; error?: string };
-  signUp: (
-    name: string,
-    email: string,
-    password: string,
-  ) => { ok: boolean; error?: string };
-  updateProfile: (patch: Partial<Pick<MockUser, "address" | "phone" | "name">>) => void;
+  user: User | null;
+  signIn: (email: string, password: string) => Promise<{ ok: boolean; role: "admin" | "customer"; error?: string }>;
+  signUp: (name: string, email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
+  loadMe: () => Promise<void>;
+  updateProfile: (patch: Partial<Pick<User, "address" | "phone" | "name">>) => Promise<void>;
   signOut: () => void;
   isAdmin: () => boolean;
-  requestPasswordReset: (email: string) => { ok: boolean; token?: string; error?: string };
-  resetPassword: (email: string, token: string, newPassword: string) => { ok: boolean; error?: string };
 }
 
-const ADMIN_EMAIL = "royalorchard@admin.com";
-const ADMIN_PASSWORD = "Royalorchard@admin";
-
-export const useAuth = create<AuthState>()(
-  persist(
-    (set, get) => ({
-      user: null,
-      accounts: [],
-      signIn: (email, password) => {
-        const em = email.trim().toLowerCase();
-        if (em === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-          set({ user: { name: "Admin", email: ADMIN_EMAIL, role: "admin" } });
-          return { ok: true, role: "admin" };
-        }
-        const acct = get().accounts.find((a) => a.email.toLowerCase() === em);
-        if (!acct) return { ok: false, role: "customer", error: "No account found. Please sign up first." };
-        if (acct.password !== password) return { ok: false, role: "customer", error: "Incorrect password." };
-        set({
-          user: {
-            name: acct.name,
-            email: acct.email,
-            role: "customer",
-            address: acct.address,
-            phone: acct.phone,
-          },
-        });
-        return { ok: true, role: "customer" };
+export const useAuth = create<AuthState>((set, get) => ({
+  user: null,
+  signIn: async (email, password) => {
+    try {
+      const res = await api<{ token: string; user: { id: string; name: string; email: string; role: "admin" | "customer" } }>(
+        "/api/auth/login",
+        { method: "POST", body: JSON.stringify({ email, password }) },
+      );
+      setAuthToken(res.token);
+      set({ user: { ...res.user } });
+      return { ok: true, role: res.user.role };
+    } catch (e: any) {
+      return { ok: false, role: "customer", error: e?.message || "Unable to sign in" };
+    }
+  },
+  signUp: async (name, email, password) => {
+    try {
+      const res = await api<{ token: string; user: { id: string; name: string; email: string; role: "admin" | "customer" } }>(
+        "/api/auth/register",
+        { method: "POST", body: JSON.stringify({ name, email, password }) },
+      );
+      setAuthToken(res.token);
+      set({ user: { ...res.user } });
+      return { ok: true };
+    } catch (e: any) {
+      return { ok: false, error: e?.message || "Unable to create account" };
+    }
+  },
+  loadMe: async () => {
+    try {
+      const res = await api<{ user: any }>("/api/auth/me", { auth: true });
+      const u = res.user;
+      set({
+        user: {
+          id: String(u._id || u.id),
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          phone: u.phone,
+          address: u.address?.fullAddress || u.address,
+        },
+      });
+    } catch {
+      // token likely invalid/expired
+      setAuthToken("");
+      set({ user: null });
+    }
+  },
+  updateProfile: async (patch) => {
+    if (!get().user) return;
+    const body: any = {};
+    if (patch.name !== undefined) body.name = patch.name;
+    if (patch.phone !== undefined) body.phone = patch.phone;
+    if (patch.address !== undefined) body.address = { fullAddress: patch.address };
+    const res = await api<{ user: any }>("/api/users/update", { method: "PUT", auth: true, body: JSON.stringify(body) });
+    const u = res.user;
+    set({
+      user: {
+        id: String(u._id || u.id),
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        phone: u.phone,
+        address: u.address?.fullAddress || u.address,
       },
-      signUp: (name, email, password) => {
-        const em = email.trim().toLowerCase();
-        if (em === ADMIN_EMAIL) return { ok: false, error: "This email is reserved." };
-        const exists = get().accounts.some((a) => a.email.toLowerCase() === em);
-        if (exists) return { ok: false, error: "An account with this email already exists." };
-        const account: StoredAccount = { name: name || em.split("@")[0], email: em, password };
-        set((state) => ({
-          accounts: [...state.accounts, account],
-          user: { name: account.name, email: account.email, role: "customer" },
-        }));
-        return { ok: true };
-      },
-      updateProfile: (patch) =>
-        set((state) => {
-          if (!state.user) return state;
-          const user = { ...state.user, ...patch };
-          const accounts = state.accounts.map((a) =>
-            a.email.toLowerCase() === state.user!.email.toLowerCase() ? { ...a, ...patch } : a,
-          );
-          return { user, accounts };
-        }),
-      signOut: () => set({ user: null }),
-      isAdmin: () => get().user?.role === "admin",
-      requestPasswordReset: (email) => {
-        const em = email.trim().toLowerCase();
-        const acct = get().accounts.find((a) => a.email.toLowerCase() === em);
-        if (!acct) return { ok: false, error: "No account found with this email." };
-        const token = Math.random().toString(36).slice(2, 10).toUpperCase();
-        try {
-          const raw = localStorage.getItem("royalorchard-reset-tokens");
-          const map = raw ? JSON.parse(raw) : {};
-          map[em] = { token, exp: Date.now() + 1000 * 60 * 30 };
-          localStorage.setItem("royalorchard-reset-tokens", JSON.stringify(map));
-        } catch (_) { /* ignore */ }
-        return { ok: true, token };
-      },
-      resetPassword: (email, token, newPassword) => {
-        const em = email.trim().toLowerCase();
-        if (newPassword.length < 6) return { ok: false, error: "Password must be at least 6 characters." };
-        let map: Record<string, { token: string; exp: number }> = {};
-        try {
-          const raw = localStorage.getItem("royalorchard-reset-tokens");
-          map = raw ? JSON.parse(raw) : {};
-        } catch (_) { /* ignore */ }
-        const entry = map[em];
-        if (!entry || entry.token !== token.trim().toUpperCase()) return { ok: false, error: "Invalid reset code." };
-        if (Date.now() > entry.exp) return { ok: false, error: "Reset code has expired." };
-        const accounts = get().accounts.map((a) =>
-          a.email.toLowerCase() === em ? { ...a, password: newPassword } : a,
-        );
-        set({ accounts });
-        delete map[em];
-        try { localStorage.setItem("royalorchard-reset-tokens", JSON.stringify(map)); } catch (_) { /* ignore */ }
-        return { ok: true };
-      },
-    }),
-    {
-      name: "royalorchard-auth",
-      version: 2,
-      migrate: (persisted: unknown) => {
-        const p = (persisted ?? {}) as { user?: MockUser | null; accounts?: StoredAccount[] };
-        // Drop legacy users that have no role so they get re-authenticated cleanly
-        if (p.user && !p.user.role) p.user = null;
-        return { user: p.user ?? null, accounts: p.accounts ?? [] };
-      },
-    },
-  ),
-);
+    });
+  },
+  signOut: () => {
+    setAuthToken("");
+    set({ user: null });
+  },
+  isAdmin: () => get().user?.role === "admin",
+}));

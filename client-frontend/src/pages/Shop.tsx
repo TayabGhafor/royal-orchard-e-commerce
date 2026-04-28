@@ -1,13 +1,14 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { SiteShell } from "@/components/SiteShell";
 import { Icon } from "@/components/Icon";
-import { products, type Product, type WeightOption } from "@/data/products";
+import { type Product, type WeightOption } from "@/data/products";
 import { useCart } from "@/store/cart";
 import { formatPKR } from "@/lib/format";
 import { usePageLoading } from "@/hooks/use-page-loading";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useProducts } from "@/store/products";
 
 const varieties = ["All", "Sindhri", "Chaunsa", "Anwar Ratol", "Langra"] as const;
 const weights: (WeightOption | "All")[] = ["All", "3kg", "5kg", "8kg"];
@@ -19,11 +20,19 @@ const Shop = () => {
   const addItem = useCart((s) => s.addItem);
   const setOpen = useCart((s) => s.setOpen);
   const { loading, error, retry } = usePageLoading({ delay: 700 });
+  const items = useProducts((s) => s.items);
+  const load = useProducts((s) => s.load);
+  const apiLoading = useProducts((s) => s.loading);
+  const apiError = useProducts((s) => s.error);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const filtered = useMemo(
     () => {
       const q = search.trim().toLowerCase();
-      return products.filter(
+      return items.filter(
         (p) =>
           (variety === "All" || p.variety === variety) &&
           (weight === "All" || p.weights.includes(weight as WeightOption)) &&
@@ -186,7 +195,7 @@ const Shop = () => {
               </div>
             )}
 
-            {loading ? (
+            {(loading || apiLoading) ? (
               <section>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-20">
                   {Array.from({ length: 2 }).map((_, i) => (
@@ -213,6 +222,18 @@ const Shop = () => {
                   ))}
                 </div>
               </section>
+            ) : apiError ? (
+              <div className="flex items-center justify-between gap-4 px-5 py-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Icon name="error" /> {apiError}
+                </div>
+                <button
+                  onClick={() => load()}
+                  className="text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full bg-white border border-rose-200 hover:bg-rose-100"
+                >
+                  Retry
+                </button>
+              </div>
             ) : (
               <>
             {featured.length > 0 && (

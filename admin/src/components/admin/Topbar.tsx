@@ -88,8 +88,19 @@ export default function AdminTopbar() {
   return (
     <header className="h-16 bg-white border-b border-stone-200 flex items-center justify-between px-8 sticky top-0 z-30">
       <div ref={wrapperRef} className="relative max-w-md flex-1">
-        <div className="flex items-center gap-3">
-          <Icon name="search" className="text-stone-400" />
+        <div
+          className={[
+            "group flex items-center gap-3 rounded-full border bg-white px-4 py-2.5",
+            "transition-all duration-200",
+            "border-stone-200 hover:border-stone-300 hover:shadow-sm",
+            "focus-within:border-orange-300 focus-within:ring-4 focus-within:ring-orange-100/70 focus-within:shadow-md",
+            "focus-within:scale-[1.01]",
+          ].join(" ")}
+        >
+          <Icon
+            name="search"
+            className="text-stone-400 transition-colors group-focus-within:text-orange-600"
+          />
           <input
             value={query}
             onChange={(e) => {
@@ -98,7 +109,11 @@ export default function AdminTopbar() {
             }}
             onFocus={() => setOpen(true)}
             placeholder="Search orders, products, customers…"
-            className="bg-transparent outline-none flex-1 text-sm placeholder:text-stone-400"
+            className={[
+              "bg-transparent outline-none flex-1 text-sm placeholder:text-stone-400",
+              "transition-[width] duration-200",
+              "w-full focus:w-[28rem]",
+            ].join(" ")}
           />
           {query && (
             <button
@@ -106,7 +121,7 @@ export default function AdminTopbar() {
                 setQuery("");
                 setOpen(false);
               }}
-              className="text-stone-400 hover:text-stone-600"
+              className="w-8 h-8 rounded-full flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition"
               aria-label="Clear"
             >
               <Icon name="close" className="text-base" />
