@@ -11,6 +11,9 @@ import {
 } from "@/components/admin/AdminSkeletons";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useState } from "react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import type { DateRange } from "react-day-picker";
 
 const Analytics = () => {
   const orders = useAdmin((s) => s.orders);
@@ -18,6 +21,18 @@ const Analytics = () => {
   const customers = useAdmin((s) => s.customers);
   const { loading, error, retry } = usePageLoading({ delay: 800 });
   const { lastUpdated } = useRealtimeTick(30000);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+
+  const today = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
+
+  const [range, setRange] = useState<DateRange>(() => ({
+    from: today,
+    to: today,
+  }));
   // Tick a 1s render so "Xs ago" stays fresh.
   const [, setNow] = useState(Date.now());
   useEffect(() => {
@@ -25,12 +40,27 @@ const Analytics = () => {
     return () => clearInterval(id);
   }, []);
 
+  const filteredOrders = useMemo(() => {
+    const from = range.from ? new Date(range.from) : null;
+    const to = range.to ? new Date(range.to) : null;
+    if (from) from.setHours(0, 0, 0, 0);
+    if (to) to.setHours(23, 59, 59, 999);
+
+    return orders.filter((o) => {
+      const dt = new Date(o.createdAt);
+      if (Number.isNaN(dt.getTime())) return false;
+      if (from && dt < from) return false;
+      if (to && dt > to) return false;
+      return true;
+    });
+  }, [orders, range.from, range.to]);
+
   const { revenue, avg, profit } = useMemo(() => {
-    const revenue = orders.reduce((s, o) => s + o.total, 0);
-    const avg = orders.length ? Math.round(revenue / orders.length) : 0;
+    const revenue = filteredOrders.reduce((s, o) => s + o.total, 0);
+    const avg = filteredOrders.length ? Math.round(revenue / filteredOrders.length) : 0;
     const profit = Math.round(revenue * 0.32);
     return { revenue, avg, profit };
-  }, [orders]);
+  }, [filteredOrders]);
 
   const kpis = [
     {
@@ -86,13 +116,16 @@ const Analytics = () => {
   }, [products]);
 
   const newCustomers = customers.filter((c) => c.status === "Active").length;
-  const dateRange = (() => {
-    const end = new Date();
-    const start = new Date();
-    start.setDate(end.getDate() - 7);
+  const dateRangeLabel = useMemo(() => {
     const fmt = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-    return `${fmt(start)} - ${fmt(end)}, ${end.getFullYear()}`;
-  })();
+    if (range.from && range.to) {
+      return `${fmt(range.from)} - ${fmt(range.to)}, ${range.to.getFullYear()}`;
+    }
+    if (range.from) {
+      return `${fmt(range.from)}, ${range.from.getFullYear()}`;
+    }
+    return "Select dates";
+  }, [range.from, range.to]);
 
   return (
     <AdminLayout>
@@ -113,15 +146,60 @@ const Analytics = () => {
               Live · updated {formatRelative(lastUpdated)}
             </div>
             <div className="flex items-center gap-2 bg-white p-1 rounded-full shadow-sm border border-stone-100">
-            <button className="px-4 py-2 text-sm font-bold text-stone-700 hover:bg-stone-50 rounded-full transition-all">
-              7 Days
-            </button>
-            <button className="px-6 py-2 text-sm font-bold bg-orange-500 text-white rounded-full shadow-md shadow-orange-500/20">
-              {dateRange}
-            </button>
-            <button className="p-2 text-stone-400 hover:text-orange-600 transition-colors">
-              <Icon name="calendar_today" />
-            </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const end = new Date(today);
+                  const start = new Date(today);
+                  start.setDate(end.getDate() - 6);
+                  setRange({ from: start, to: end });
+                }}
+                className="px-4 py-2 text-sm font-bold text-stone-700 hover:bg-stone-50 rounded-full transition-all"
+              >
+                7 Days
+              </button>
+              <button
+                type="button"
+                onClick={() => setCalendarOpen(true)}
+                className="px-6 py-2 text-sm font-bold bg-orange-500 text-white rounded-full shadow-md shadow-orange-500/20 hover:opacity-95 transition"
+              >
+                {dateRangeLabel}
+              </button>
+
+              <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="p-2 text-stone-400 hover:text-orange-600 transition-colors"
+                    aria-label="Pick date range"
+                  >
+                    <Icon name="calendar_today" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="end" sideOffset={10} className="w-auto p-0">
+                  <div className="p-4 border-b border-stone-100 flex items-center justify-between gap-3">
+                    <div className="text-sm font-bold text-stone-900">Select date range</div>
+                    <button
+                      type="button"
+                      onClick={() => setRange({ from: today, to: today })}
+                      className="text-xs font-bold text-orange-600 hover:underline"
+                    >
+                      Today
+                    </button>
+                  </div>
+                  <Calendar
+                    mode="range"
+                    selected={range}
+                    defaultMonth={range.from || today}
+                    onSelect={(next) => {
+                      setRange(next || { from: today, to: today });
+                      if (next?.from && next?.to) setCalendarOpen(false);
+                    }}
+                    numberOfMonths={2}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
         </div>

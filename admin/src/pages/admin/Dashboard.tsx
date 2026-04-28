@@ -251,21 +251,29 @@ const Dashboard = () => {
           </div>
 
           {/* Daily Volume */}
-          <div className="lg:col-span-4 bg-gradient-to-br from-orange-500 to-orange-600 text-white p-8 rounded-2xl shadow-lg relative overflow-hidden">
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+            whileHover={{ y: -3, scale: 1.01 }}
+            className="lg:col-span-4 bg-gradient-to-br from-orange-500 to-orange-600 text-white p-8 rounded-2xl shadow-lg relative overflow-hidden transition-shadow hover:shadow-xl"
+          >
             <div className="relative z-10">
               <h4 className="text-xl font-bold mb-2 font-headline">Daily Volume</h4>
               <p className="text-orange-100 text-sm mb-8">Capacity: 92%</p>
               <div className="space-y-6">
-                {dailyVolume.map((d) => (
+                {dailyVolume.map((d, idx) => (
                   <div key={d.label} className="space-y-2">
                     <div className="flex justify-between text-xs font-bold uppercase tracking-widest">
                       <span>{d.label}</span>
                       <span>{d.value}</span>
                     </div>
                     <div className="w-full bg-white/20 h-2 rounded-full overflow-hidden">
-                      <div
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${d.pct}%` }}
+                        transition={{ duration: 0.9, delay: 0.15 + idx * 0.08, ease: [0.22, 1, 0.36, 1] }}
                         className="bg-white h-full rounded-full"
-                        style={{ width: `${d.pct}%` }}
                       />
                     </div>
                   </div>
@@ -281,7 +289,11 @@ const Dashboard = () => {
             <div className="absolute -right-10 -bottom-10 opacity-20 transform rotate-12 pointer-events-none">
               <Icon name="eco" className="text-[150px]" />
             </div>
-          </div>
+            <div className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity pointer-events-none">
+              <div className="absolute -top-24 -right-24 w-64 h-64 bg-white/10 rounded-full blur-2xl" />
+              <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-white/10 rounded-full blur-2xl" />
+            </div>
+          </motion.div>
             </>
           )}
         </section>
