@@ -1,6 +1,7 @@
 import { SiteShell } from "@/components/SiteShell";
 import { Icon } from "@/components/Icon";
 import { ScrollReveal } from "@/components/ScrollReveal";
+import { FreshnessJourneyRoadmap } from "@/components/FreshnessJourneyRoadmap";
 
 /**
  * Freshness — pixel-faithful conversion of user-uploads://freshnes.html.
@@ -49,10 +50,10 @@ const Freshness = () => (
           </div>
         </ScrollReveal>
 
-        {/* JOURNEY */}
+        {/* JOURNEY — interactive roadmap */}
         <ScrollReveal as="section" className="bg-surface-container-low py-24 mt-12 overflow-hidden">
           <div className="max-w-7xl mx-auto px-8">
-            <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 md:mb-16 gap-8">
               <div>
                 <h2 className="font-headline text-4xl md:text-5xl font-bold tracking-tight mb-4">
                   The Freshness Journey
@@ -61,33 +62,14 @@ const Freshness = () => (
                   Our logistical ballet ensures the fruit never lingers. Every minute is accounted for.
                 </p>
               </div>
-              <div className="hidden md:block h-[1px] flex-grow mx-12 bg-outline-variant/30" />
+              <div className="hidden md:block h-[1px] flex-grow mx-12 bg-outline-variant/30 min-w-[4rem]" />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-1">
-              {[
-                { n: "01", icon: "sunny", title: "Plucked at Dawn", text: "We harvest at 5:00 AM when the fruit is cool and brix levels are peak." },
-                { n: "02", icon: "content_paste_search", title: "Sorted with Care", text: "Each mango is manually inspected for bruising, skin integrity, and ripeness." },
-                { n: "03", icon: "ac_unit", title: "Chilled Immediately", text: "Flash-cooling stops the ripening clock, preserving the lush texture." },
-                { n: "04", icon: "local_shipping", title: "Same-Day Dispatch", text: "Our fleet departs by 4:00 PM for overnight transit to your doorstep." },
-              ].map((s) => (
-                <div
-                  key={s.n}
-                  className="group relative p-8 bg-surface-container-lowest rounded-lg hover:bg-primary transition-colors duration-500 overflow-hidden"
-                >
-                  <span className="font-headline text-6xl font-black text-surface-container-high opacity-50 absolute -top-4 -right-4 group-hover:text-on-primary transition-colors">
-                    {s.n}
-                  </span>
-                  <div className="relative z-10">
-                    <Icon name={s.icon} className="text-4xl text-primary group-hover:text-on-primary mb-6" />
-                    <h3 className="font-headline text-xl font-bold mb-3 group-hover:text-on-primary">
-                      {s.title}
-                    </h3>
-                    <p className="text-sm text-on-surface-variant group-hover:text-on-primary/80 leading-relaxed">
-                      {s.text}
-                    </p>
-                  </div>
-                </div>
-              ))}
+            <div
+              className="relative"
+              role="region"
+              aria-label="Interactive freshness journey timeline"
+            >
+              <FreshnessJourneyRoadmap />
             </div>
           </div>
         </ScrollReveal>
