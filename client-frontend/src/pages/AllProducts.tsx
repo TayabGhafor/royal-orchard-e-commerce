@@ -13,15 +13,15 @@ const AllProducts = () => {
   const addItem = useCart((s) => s.addItem);
   const setOpen = useCart((s) => s.setOpen);
   const items = useProducts((s) => s.items);
-  const load = useProducts((s) => s.load);
   const apiLoading = useProducts((s) => s.loading);
   const apiError = useProducts((s) => s.error);
+  const loadedOnce = useProducts((s) => s.loadedOnce);
   const { loading, error, retry } = usePageLoading({ delay: 650 });
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    if (items.length === 0) load().catch(() => {});
-  }, [items.length, load]);
+    if (items.length === 0) useProducts.getState().load().catch(() => {});
+  }, [items.length]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -92,7 +92,7 @@ const AllProducts = () => {
               <Icon name="error" /> {apiError}
             </div>
             <button
-              onClick={() => load()}
+              onClick={() => useProducts.getState().load()}
               className="text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full bg-white border border-rose-200 hover:bg-rose-100"
             >
               Retry
@@ -100,7 +100,7 @@ const AllProducts = () => {
           </div>
         )}
 
-        {(loading || apiLoading) ? (
+        {(!loadedOnce || loading || apiLoading) ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {Array.from({ length: 12 }).map((_, i) => (
               <div key={i} className="bg-surface-container-lowest p-4 rounded-lg">
