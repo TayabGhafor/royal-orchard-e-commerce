@@ -45,7 +45,7 @@ const Shop = () => {
             p.collection.toLowerCase().includes(q)),
       );
     },
-    [variety, weight, search],
+    [items, variety, weight, search],
   );
 
   const featured = filtered.slice(0, 2);

@@ -31,8 +31,39 @@ export const useProducts = create<ProductsState>((set, get) => ({
       set({ loading: true, error: null });
       (get() as any).__lastFetchAt = Date.now();
       try {
-        const res = await api<{ items: any[] }>("/api/products?limit=200");
-        const mapped: Product[] = res.items.map((raw) => ({
+        const candidates = [
+          "/api/products?limit=200&active=true",
+          "/api/products?limit=200",
+          "/api/v1/products?limit=200",
+          "/api/v1/products",
+        ];
+
+        let rawItems: any[] | null = null;
+        let lastErr: unknown = null;
+
+        for (const path of candidates) {
+          try {
+            // eslint-disable-next-line no-await-in-loop
+            const res: any = await api<any>(path);
+            const items =
+              (Array.isArray(res?.items) && res.items) ||
+              (Array.isArray(res?.data?.items) && res.data.items) ||
+              (Array.isArray(res?.data?.data?.items) && res.data.data.items) ||
+              null;
+            if (items) {
+              rawItems = items;
+              break;
+            }
+          } catch (e) {
+            lastErr = e;
+          }
+        }
+
+        if (!rawItems) {
+          throw lastErr || new Error("Failed to load products");
+        }
+
+        const mapped: Product[] = rawItems.map((raw) => ({
           id: String(raw._id || raw.id),
           slug: raw.slug,
           name: raw.name,
