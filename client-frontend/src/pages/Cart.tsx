@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { SiteShell } from "@/components/SiteShell";
+import { ScrollReveal } from "@/components/ScrollReveal";
 import { Icon } from "@/components/Icon";
 import { useCart } from "@/store/cart";
 import { formatPKR } from "@/lib/format";
@@ -14,12 +15,12 @@ const Cart = () => {
   return (
     <SiteShell>
       <div className="pt-32 pb-20 px-4 sm:px-6 max-w-7xl mx-auto">
-        <header className="mb-12">
+        <ScrollReveal variant="fade-up" duration={0.88} className="mb-12 block">
           <h1 className="text-5xl font-headline font-extrabold tracking-tighter mb-2">Your Basket</h1>
           <p className="text-on-surface-variant font-medium">
             {items.length === 0 ? "Empty for now — let's fix that." : `${items.length} item${items.length > 1 ? "s" : ""} ready for harvest`}
           </p>
-        </header>
+        </ScrollReveal>
 
         {error && (
           <div className="flex items-center justify-between gap-4 px-5 py-3 mb-6 rounded-xl bg-rose-50 border border-rose-200 text-rose-700">
@@ -59,7 +60,7 @@ const Cart = () => {
             </div>
           </div>
         ) : items.length === 0 ? (
-          <div className="py-20 flex flex-col items-center gap-6 text-center">
+          <ScrollReveal variant="zoom" className="py-20 flex flex-col items-center gap-6 text-center">
             <Icon name="shopping_basket" className="text-7xl text-primary-fixed-dim" />
             <p className="text-outline">Your basket is empty.</p>
             <Link
@@ -68,14 +69,15 @@ const Cart = () => {
             >
               Browse Harvest
             </Link>
-          </div>
+          </ScrollReveal>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
             <div className="lg:col-span-8 space-y-4">
-              {items.map((item) => (
-                <div
+              {items.map((item, i) => (
+                <ScrollReveal
                   key={`${item.productId}-${item.weight}`}
                   className="flex flex-col sm:flex-row gap-5 sm:gap-6 p-5 sm:p-6 bg-surface-container-lowest rounded-lg shadow-sm"
+                  delay={Math.min(i * 0.05, 0.25)}
                 >
                   <img
                     src={item.image}
@@ -119,11 +121,16 @@ const Cart = () => {
                       </span>
                     </div>
                   </div>
-                </div>
+                </ScrollReveal>
               ))}
             </div>
 
-            <aside className="lg:col-span-4 lg:sticky lg:top-28">
+            <ScrollReveal
+              as="aside"
+              className="lg:col-span-4 lg:sticky lg:top-28"
+              variant="fade-left"
+              delay={0.06}
+            >
               <div className="bg-surface-container-lowest rounded-lg p-8 shadow-sm space-y-6">
                 <h2 className="text-2xl font-headline font-bold tracking-tight">Order Summary</h2>
                 <div className="space-y-3 text-sm">
@@ -154,7 +161,7 @@ const Cart = () => {
                   Continue shopping
                 </Link>
               </div>
-            </aside>
+            </ScrollReveal>
           </div>
         )}
       </div>

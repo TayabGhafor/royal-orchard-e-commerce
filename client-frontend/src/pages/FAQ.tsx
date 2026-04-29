@@ -1,5 +1,6 @@
 import { Icon } from "@/components/Icon";
 import { SiteShell } from "@/components/SiteShell";
+import { ScrollReveal } from "@/components/ScrollReveal";
 
 const faqSections = [
   {
@@ -34,7 +35,7 @@ const faqSections = [
 const FAQ = () => (
   <SiteShell>
     <main className="bg-surface pt-8 text-on-surface">
-      <section className="relative overflow-hidden px-8 pb-32 pt-20">
+      <ScrollReveal as="section" className="relative overflow-hidden px-8 pb-32 pt-20">
         <div className="relative z-10 mx-auto max-w-7xl text-center">
           <span className="mb-6 inline-block rounded-full bg-secondary-fixed px-4 py-1.5 text-xs font-semibold tracking-widest text-on-secondary-fixed-variant">KNOWLEDGE BASE</span>
           <h1 className="mb-8 font-headline text-5xl font-black leading-[1.1] text-on-surface md:text-7xl">How can we assist <br /><span className="italic text-primary">your harvest today?</span></h1>
@@ -45,9 +46,9 @@ const FAQ = () => (
         </div>
         <div className="absolute right-0 top-0 h-[600px] w-[600px] -translate-y-1/4 translate-x-1/4 rounded-full bg-primary-fixed-dim/20 blur-[120px]" />
         <div className="absolute bottom-0 left-0 h-[400px] w-[400px] -translate-x-1/4 translate-y-1/4 rounded-full bg-secondary-container/20 blur-[100px]" />
-      </section>
+      </ScrollReveal>
 
-      <section className="px-8 pb-32">
+      <ScrollReveal as="section" className="px-8 pb-32">
         <div className="mx-auto max-w-7xl">
           <div className="grid grid-cols-1 gap-16 lg:grid-cols-12">
             <aside className="hidden h-fit lg:sticky lg:top-32 lg:col-span-3 lg:block">
@@ -59,9 +60,9 @@ const FAQ = () => (
             </div>
           </div>
         </div>
-      </section>
+      </ScrollReveal>
 
-      <section className="border-t border-surface-container-highest bg-surface-container-lowest px-8 py-32"><div className="mx-auto max-w-4xl text-center"><h2 className="mb-6 font-headline text-4xl font-black md:text-5xl">Still need help?</h2><p className="mb-12 text-lg text-on-surface-variant">Our concierge team is available 24/7 to answer your specific harvest questions.</p><div className="grid grid-cols-1 gap-6 md:grid-cols-3">{[["mail", "Email Us", "concierge@mangoeditorial.com"], ["chat", "Live Chat", "Typical response: 2 mins"], ["call", "Call Support", "+1 (800) MANGO-CON"]].map(([icon, title, text]) => <div key={title} className="rounded-lg bg-surface-container-low p-8 transition-shadow hover:shadow-lg"><Icon name={icon} className="mb-4 text-primary" /><h4 className="mb-2 font-bold">{title}</h4><p className="text-sm text-on-surface-variant">{text}</p></div>)}</div></div></section>
+      <ScrollReveal as="section" className="border-t border-surface-container-highest bg-surface-container-lowest px-8 py-32"><div className="mx-auto max-w-4xl text-center"><h2 className="mb-6 font-headline text-4xl font-black md:text-5xl">Still need help?</h2><p className="mb-12 text-lg text-on-surface-variant">Our concierge team is available 24/7 to answer your specific harvest questions.</p><div className="grid grid-cols-1 gap-6 md:grid-cols-3">{[["mail", "Email Us", "concierge@mangoeditorial.com"], ["chat", "Live Chat", "Typical response: 2 mins"], ["call", "Call Support", "+1 (800) MANGO-CON"]].map(([icon, title, text]) => <div key={title} className="rounded-lg bg-surface-container-low p-8 transition-shadow hover:shadow-lg"><Icon name={icon} className="mb-4 text-primary" /><h4 className="mb-2 font-bold">{title}</h4><p className="text-sm text-on-surface-variant">{text}</p></div>)}</div></div></ScrollReveal>
     </main>
   </SiteShell>
 );

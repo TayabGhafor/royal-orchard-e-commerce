@@ -11,6 +11,7 @@ import { formatPKR } from "@/lib/format";
 import { usePageLoading } from "@/hooks/use-page-loading";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
+import { ScrollReveal } from "@/components/ScrollReveal";
 
 const checkoutSchema = z.object({
   name: z.string().trim().min(2, "Please enter your name").max(100),
@@ -117,14 +118,14 @@ const Checkout = () => {
   return (
     <SiteShell>
       <div className="pt-32 pb-20 px-4 sm:px-6 max-w-7xl mx-auto">
-        <header className="mb-12">
+        <ScrollReveal as="header" className="mb-12" variant="fade-up">
           <h1 className="text-5xl font-headline font-extrabold tracking-tighter text-on-surface mb-2">
             Finalize Your Harvest
           </h1>
           <p className="text-on-surface-variant font-medium">
             Review your selection of sun-ripened premium mangoes.
           </p>
-        </header>
+        </ScrollReveal>
 
         {error && (
           <div className="flex items-center justify-between gap-4 px-5 py-3 mb-6 rounded-xl bg-rose-50 border border-rose-200 text-rose-700">
@@ -161,7 +162,7 @@ const Checkout = () => {
         ) : (
         <form onSubmit={onSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
           <div className="lg:col-span-7 space-y-12">
-            <section>
+            <ScrollReveal as="section" delay={0.04}>
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center">
                   <Icon name="local_shipping" className="text-on-primary-container" />
@@ -202,9 +203,9 @@ const Checkout = () => {
                   />
                 </div>
               </div>
-            </section>
+            </ScrollReveal>
 
-            <section>
+            <ScrollReveal as="section" delay={0.08}>
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center">
                   <Icon name="payments" className="text-on-secondary-container" />
@@ -239,9 +240,9 @@ const Checkout = () => {
                   );
                 })}
               </div>
-            </section>
+            </ScrollReveal>
 
-            <section className="bg-surface-container-lowest rounded-lg p-8 shadow-sm">
+            <ScrollReveal as="section" className="bg-surface-container-lowest rounded-lg p-8 shadow-sm" delay={0.1}>
               <h3 className="text-xl font-headline font-bold mb-8">What happens next?</h3>
               <div className="relative flex items-start justify-between">
                 <div className="absolute top-5 left-0 w-full h-0.5 bg-surface-container-highest -z-0" />
@@ -266,10 +267,15 @@ const Checkout = () => {
                   </div>
                 ))}
               </div>
-            </section>
+            </ScrollReveal>
           </div>
 
-          <aside className="lg:col-span-5 lg:sticky lg:top-28">
+          <ScrollReveal
+            as="aside"
+            className="lg:col-span-5 lg:sticky lg:top-28"
+            variant="fade-left"
+            delay={0.06}
+          >
             <div className="bg-surface-container-lowest rounded-lg p-8 shadow-sm">
               <h2 className="text-2xl font-headline font-bold tracking-tight mb-8">Order Summary</h2>
               <div className="space-y-6 mb-8 max-h-80 overflow-y-auto pr-2">
@@ -327,7 +333,7 @@ const Checkout = () => {
                 Edit basket
               </Link>
             </div>
-          </aside>
+          </ScrollReveal>
         </form>
         )}
       </div>

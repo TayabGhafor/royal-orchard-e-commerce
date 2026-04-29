@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { SiteShell } from "@/components/SiteShell";
+import { ScrollReveal } from "@/components/ScrollReveal";
 import { Icon } from "@/components/Icon";
 import { useCart } from "@/store/cart";
 import { formatPKR } from "@/lib/format";
@@ -38,7 +39,7 @@ const AllProducts = () => {
   return (
     <SiteShell>
       <div className="pt-32 pb-20 px-4 sm:px-6 max-w-screen-2xl mx-auto">
-        <header className="mb-10 flex flex-col gap-6">
+        <ScrollReveal variant="fade-up" duration={0.9} className="mb-10 flex flex-col gap-6">
           <div className="flex items-end justify-between gap-6 flex-wrap">
             <div>
               <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-2">Royal Orchard · Catalog</p>
@@ -70,7 +71,7 @@ const AllProducts = () => {
               className="w-full bg-surface-container-lowest border border-outline-variant/40 rounded-full pl-11 pr-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-on-surface placeholder:text-on-surface-variant"
             />
           </div>
-        </header>
+        </ScrollReveal>
 
         {error && (
           <div className="flex items-center justify-between gap-4 px-5 py-3 mb-6 rounded-xl bg-rose-50 border border-rose-200 text-rose-700">
@@ -118,7 +119,7 @@ const AllProducts = () => {
         ) : filtered.length === 0 ? (
           <div className="py-20 text-center text-outline">No products match your search.</div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <ScrollReveal variant="fade-up" duration={0.86} delay={0.05} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {filtered.map((p) => (
               <motion.div
                 key={p.id}
@@ -154,7 +155,7 @@ const AllProducts = () => {
                 </div>
               </motion.div>
             ))}
-          </div>
+          </ScrollReveal>
         )}
       </div>
     </SiteShell>

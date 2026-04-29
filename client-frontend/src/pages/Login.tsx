@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { toast } from "sonner";
 import { Icon } from "@/components/Icon";
+import { ScrollReveal } from "@/components/ScrollReveal";
 import { useAuth } from "@/store/auth";
 
 const schema = z.object({
@@ -61,7 +62,7 @@ const Login = () => {
           <span className="text-sm font-semibold">Back to store</span>
         </Link>
 
-        <div className="w-full max-w-[1100px] grid md:grid-cols-2 bg-surface-container-lowest rounded-lg shadow-2xl shadow-primary/5 overflow-hidden border border-outline-variant/10">
+        <ScrollReveal variant="fade-up" duration={0.92} className="w-full max-w-[1100px] grid md:grid-cols-2 bg-surface-container-lowest rounded-lg shadow-2xl shadow-primary/5 overflow-hidden border border-outline-variant/10">
           <div className="hidden md:block relative overflow-hidden group">
             <img
               alt="Premium Royal Orchard"
@@ -159,7 +160,7 @@ const Login = () => {
               </Link>
             </p>
           </div>
-        </div>
+        </ScrollReveal>
       </div>
       <footer className="bg-surface-container-highest flex justify-center items-center px-8 py-12 w-full mt-auto">
         <p className="w-full text-center text-xs uppercase tracking-widest text-outline">

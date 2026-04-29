@@ -9,6 +9,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { usePageLoading } from "@/hooks/use-page-loading";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollReveal } from "@/components/ScrollReveal";
 
 const profileSchema = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters").max(100),
@@ -71,11 +72,11 @@ const Account = () => {
   return (
     <SiteShell>
       <div className="pt-32 pb-20 px-4 sm:px-6 max-w-5xl mx-auto">
-        <header className="mb-10">
+        <ScrollReveal as="header" className="mb-10" variant="fade-up">
           <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-2">Royal Orchard · Account</p>
           <h1 className="text-5xl font-headline font-extrabold tracking-tighter text-on-surface mb-2">My Account</h1>
           <p className="text-on-surface-variant font-medium">Manage your profile and review your orchard journey.</p>
-        </header>
+        </ScrollReveal>
 
         {error && (
           <div className="flex items-center justify-between gap-4 px-5 py-3 mb-6 rounded-xl bg-rose-50 border border-rose-200 text-rose-700">
@@ -105,7 +106,7 @@ const Account = () => {
           </div>
         ) : (
         <>
-        <section className="bg-surface-container-lowest rounded-2xl shadow-sm border border-outline-variant/20 p-8 mb-8">
+        <ScrollReveal as="section" className="bg-surface-container-lowest rounded-2xl shadow-sm border border-outline-variant/20 p-8 mb-8" delay={0.04}>
           <div className="flex flex-col md:flex-row items-start gap-6">
             <div className="w-20 h-20 rounded-full bg-primary text-on-primary font-headline font-extrabold text-2xl flex items-center justify-center shadow-md flex-shrink-0">
               {initials || <Icon name="person" />}
@@ -205,18 +206,18 @@ const Account = () => {
               )}
             </div>
           </div>
-        </section>
+        </ScrollReveal>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <ScrollReveal className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8" delay={0.08}>
           <Stat icon="receipt_long" label="Orders" value={String(myOrders.length)} />
           <Stat icon="check_circle" label="Delivered" value={String(myOrders.filter((o) => o.status === "Delivered").length)} />
           <Stat icon="payments" label="Lifetime Spend" value={formatPKR(spent)} />
-        </div>
+        </ScrollReveal>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <ScrollReveal className="grid grid-cols-1 md:grid-cols-2 gap-4" delay={0.1}>
           <ActionCard to="/orders" icon="local_shipping" title="My Orders" subtitle="Track & manage your deliveries" />
           <ActionCard to="/shop" icon="storefront" title="Continue Shopping" subtitle="Discover more orchard treasures" />
-        </div>
+        </ScrollReveal>
         </>
         )}
       </div>

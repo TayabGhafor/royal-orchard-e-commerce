@@ -1,5 +1,6 @@
 import { SiteShell } from "@/components/SiteShell";
 import { Icon } from "@/components/Icon";
+import { ScrollReveal } from "@/components/ScrollReveal";
 
 /**
  * OurStory — pixel-faithful conversion of user-uploads://ourstory.html.
@@ -13,7 +14,7 @@ const OurStory = () => (
       style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/p6.png")' }}
     >
       {/* HERO */}
-      <section className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
+      <ScrollReveal as="section" className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img
             className="w-full h-full object-cover sepia-effect grayscale-[0.2]"
@@ -34,10 +35,10 @@ const OurStory = () => (
         </div>
         <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-ochre/30 blob-shape blur-3xl" />
         <div className="absolute -top-20 -right-20 w-96 h-96 bg-retro-gold/20 blob-shape-alt blur-3xl" />
-      </section>
+      </ScrollReveal>
 
       {/* OUR ROOTS */}
-      <section className="py-32 px-6 relative">
+      <ScrollReveal as="section" className="py-32 px-6 relative">
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
           <div className="relative order-2 lg:order-1">
             <div className="film-grain organic-border overflow-hidden aspect-square border-[16px] border-white shadow-2xl rotate-[-2deg]">
@@ -79,10 +80,10 @@ const OurStory = () => (
             </div>
           </div>
         </div>
-      </section>
+      </ScrollReveal>
 
       {/* PHILOSOPHY */}
-      <section className="bg-dark-soil py-40 relative overflow-hidden">
+      <ScrollReveal as="section" className="bg-dark-soil py-40 relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-32 bg-warm-cream blob-shape scale-x-[2.5] -translate-y-20" />
         <div className="max-w-screen-2xl mx-auto px-8 relative z-10">
           <div className="text-center max-w-3xl mx-auto mb-24">
@@ -144,10 +145,10 @@ const OurStory = () => (
             </div>
           </div>
         </div>
-      </section>
+      </ScrollReveal>
 
       {/* COMMITMENT BLOBS */}
-      <section className="py-40 px-6">
+      <ScrollReveal as="section" className="py-40 px-6">
         <div className="max-w-6xl mx-auto flex flex-col gap-8">
           <div className="flex flex-col md:flex-row gap-8 items-stretch">
             <div className="flex-1 bg-terracotta text-warm-cream blob-shape p-16 shadow-2xl relative overflow-hidden group">
@@ -183,10 +184,10 @@ const OurStory = () => (
             </div>
           </div>
         </div>
-      </section>
+      </ScrollReveal>
 
       {/* TEAM */}
-      <section className="py-32 bg-olive/5 relative">
+      <ScrollReveal as="section" className="py-32 bg-olive/5 relative">
         <div className="max-w-screen-xl mx-auto px-8">
           <h2 className="text-5xl font-headline font-black text-center mb-24 text-terracotta tracking-tighter italic">
             The Faces Behind the Harvest
@@ -228,7 +229,7 @@ const OurStory = () => (
             ))}
           </div>
         </div>
-      </section>
+      </ScrollReveal>
     </div>
   </SiteShell>
 );

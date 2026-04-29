@@ -6,7 +6,7 @@ import { CartDrawer } from "./CartDrawer";
 export const SiteShell = ({ children, hideFooter = false }: { children: ReactNode; hideFooter?: boolean }) => (
   <div className="min-h-screen flex flex-col bg-surface text-on-surface">
     <Navbar />
-    <main className="flex-1">{children}</main>
+    <main className="flex-1 overflow-x-hidden">{children}</main>
     {!hideFooter && <Footer />}
     <CartDrawer />
   </div>

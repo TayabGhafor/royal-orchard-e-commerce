@@ -5,6 +5,7 @@ import { z } from "zod";
 import { Icon } from "@/components/Icon";
 import { useAuth } from "@/store/auth";
 import { PASSWORD_RESET_TOKEN_KEY } from "@/lib/password-reset";
+import { ScrollReveal } from "@/components/ScrollReveal";
 
 const schema = z
   .object({
@@ -99,7 +100,7 @@ const ResetPassword = () => {
         </Link>
 
         <div className="w-full max-w-md relative z-10">
-          <div className="bg-surface-container-lowest rounded-2xl shadow-2xl shadow-primary/5 border border-outline-variant/15 p-8 sm:p-10 md:p-12">
+          <ScrollReveal variant="fade-up" duration={0.9} className="bg-surface-container-lowest rounded-2xl shadow-2xl shadow-primary/5 border border-outline-variant/15 p-8 sm:p-10 md:p-12">
             <div className="flex flex-col items-center text-center mb-8">
               <div className="w-16 h-16 rounded-full bg-primary-container/80 text-primary flex items-center justify-center mb-6 ring-4 ring-primary-fixed/15 shadow-inner">
                 <Icon name="key" className="text-3xl" />
@@ -174,7 +175,7 @@ const ResetPassword = () => {
                 {loading ? "Updating…" : "Update password"}
               </button>
             </form>
-          </div>
+          </ScrollReveal>
         </div>
       </div>
     </main>

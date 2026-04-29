@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { useEffect, useRef } from "react";
+import { motion, useReducedMotion } from "framer-motion";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { SiteShell } from "@/components/SiteShell";
+import { ScrollReveal } from "@/components/ScrollReveal";
 import { Icon } from "@/components/Icon";
 import { useCart } from "@/store/cart";
 import { formatPKR } from "@/lib/format";
@@ -36,24 +37,245 @@ const trending = [
 
 const reviews = [
   {
+    id: "amara",
     text: "The sweetness is unparalleled. I've ordered Chaunsa from many places, but RoyalOrchard's quality and packaging are on another level.",
     name: "Amara Khan",
     role: "Verified Buyer",
     img: "https://lh3.googleusercontent.com/aida-public/AB6AXuA-C-VZKdl6LP0HjV9JDr4KNDi28VbBBSlvccDmgmy5oWrz3syELqahPppnQjTHJ5mX3QPJHFCeb_xNU8nGzIh471qrJTomYA2O3kVjr2vdHlUJdIPH2uU8nc3-3e7TH2HGPmcJzew7x03TWEgVLSfA_2-D3HOsDLfFZuvqmFPmpwvFNW43nJK8xVCY3Sf724YJZHSv4XTpPQVHBcsIeWG5QTRyFha3vCcz6rvgVv8TJ7srb8Gh93l2BNPTS9WYn998BO7K7bZKvGBp",
   },
   {
+    id: "zain",
     text: "Incredible service! Received my order within 20 hours of harvesting. The aroma when I opened the box filled the entire house.",
     name: "Zain Malik",
     role: "Restaurateur",
     img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAJFh6j6ih6svA1KCEuupj0yI9MFC4rZX7PxENslCAupioJjHI549IEPbsE19qi41B1q352DYBLspP5KXlcEIWHGgL20JaDkBDGzXFHD62LMoJ9wkJRaJc728qzxOT5heovYEqDZDeTBtIhl5xAcQGYajWiNQIh0PwKD_gbv7ddiFGdkOMokVMofAgUmSDjgvrohendWMaO_-dHqSQQjabsUsInBuuXNEaad7XnIplch7NLQDMY-X_ck4qsrXIoM19w5VYCM2N1__70",
   },
   {
+    id: "sara",
     text: "Freshness you can taste. This is the first time I've felt like I'm eating a mango straight from the tree here in the city.",
     name: "Sara Ahmed",
     role: "Food Blogger",
     img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCJMNGg7BDxekCa9jRVb5WDzoBDIDDYJaejuOdyiCz9V_oO1Q9JC7w09jN3QOttaQJEjewq1riHDT54P-JuWUa3RnkzisTb47yHVB5uyItkGnvWOlscPSzXVMGzYwbkcmTIa2Hkfb6sf-fKFKhD3oHm-kDCsbB0i2AkdN3mn-eeh-SWUM82ByKNtzneWWx2HjftiEUmQcql6I8TKuMp8eGtnbMAMdxyPGP-ZoeEb1oo7Qavex2XkNNu6z1Nv5HDe2UMlnG9A5oKOLlM",
   },
+  {
+    id: "hassan",
+    text: "Ordered the Langra crate for Eid gifts — every box arrived picture-perfect. Zero bruising, and the stem smell alone sold three colleagues on placing their own orders.",
+    name: "Hassan Raza",
+    role: "Corporate Buyer",
+    img: "https://i.pravatar.cc/128?img=33",
+  },
+  {
+    id: "nadia",
+    text: "My kids usually skip fruit; they finished a whole tray of Anwar Ratol in two days. Customer care even followed up on ripening tips — rare these days.",
+    name: "Nadia Sheikh",
+    role: "Verified Buyer",
+    img: "https://i.pravatar.cc/128?img=45",
+  },
+  {
+    id: "omar",
+    text: "We serve desserts at our café — RoyalOrchard pulp has the depth of flavor our pastry chef was hunting for. Wholesale onboarding was painless.",
+    name: "Omar Siddiqui",
+    role: "Café Owner",
+    img: "https://i.pravatar.cc/128?img=52",
+  },
+  {
+    id: "fatima",
+    text: "Tracked my shipment every step; mangoes were cooler-fresh in Karachi heat. The honey notes in the Sindhri batch were unforgettable.",
+    name: "Fatima Noor",
+    role: "Verified Buyer",
+    img: "https://i.pravatar.cc/128?img=16",
+  },
 ];
+
+const REVIEW_INTERVAL_MS = 4800;
+const REVIEW_GAP_PX = 24;
+
+function CustomerLoveCarousel() {
+  const reduced = useReducedMotion();
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [cw, setCw] = useState(0);
+  const [slideW, setSlideW] = useState(300);
+  const n = reviews.length;
+  const loopTrack = [...reviews, ...reviews, ...reviews];
+  const [idx, setIdx] = useState(n);
+  const [instant, setInstant] = useState(false);
+  const [paused, setPaused] = useState(false);
+
+  const step = slideW + REVIEW_GAP_PX;
+  const translateX = cw > 0 ? cw / 2 - idx * step - slideW / 2 : 0;
+
+  useLayoutEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => {
+      const w = el.offsetWidth;
+      setCw(w);
+      const nextSlide = Math.min(380, Math.max(260, Math.round(w * 0.28)));
+      setSlideW(nextSlide);
+    });
+    ro.observe(el);
+    setCw(el.offsetWidth);
+    setSlideW(Math.min(380, Math.max(260, Math.round(el.offsetWidth * 0.28))));
+    return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (reduced || paused || n < 2) return;
+    const t = window.setInterval(() => {
+      setIdx((i) => i + 1);
+    }, REVIEW_INTERVAL_MS);
+    return () => window.clearInterval(t);
+  }, [reduced, paused, n]);
+
+  useEffect(() => {
+    if (idx < 2 * n) return;
+    setInstant(true);
+    setIdx(n);
+    const id = requestAnimationFrame(() => setInstant(false));
+    return () => cancelAnimationFrame(id);
+  }, [idx, n]);
+
+  const goTo = useCallback((target: number) => {
+    setInstant(false);
+    setIdx(target);
+  }, []);
+
+  const dotActive = ((idx % n) + n) % n;
+
+  if (reduced) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {reviews.map((r) => (
+          <div
+            key={r.id}
+            className="bg-white p-8 rounded-lg shadow-sm border border-outline-variant/10 relative lift-on-hover"
+          >
+            <Icon name="format_quote" className="text-primary-fixed-dim text-6xl absolute -top-4 -left-2 opacity-30" />
+            <div className="flex items-center gap-1 text-tertiary mb-4">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <Icon key={i} name="star" filled />
+              ))}
+            </div>
+            <p className="text-on-surface leading-relaxed mb-8 italic">"{r.text}"</p>
+            <div className="flex items-center gap-4">
+              <img className="w-12 h-12 rounded-full object-cover" src={r.img} alt={r.name} />
+              <div>
+                <h5 className="font-bold text-sm">{r.name}</h5>
+                <p className="text-[10px] text-outline uppercase tracking-wider">{r.role}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={wrapRef}
+      className="relative overflow-hidden py-6 md:py-10"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      style={{ touchAction: "pan-y" }}
+    >
+      <div className="pointer-events-none absolute inset-y-8 left-0 z-20 w-16 md:w-28 bg-gradient-to-r from-surface to-transparent" />
+      <div className="pointer-events-none absolute inset-y-8 right-0 z-20 w-16 md:w-28 bg-gradient-to-l from-surface to-transparent" />
+
+      <motion.div
+        className="flex flex-row items-center will-change-transform"
+        style={{ gap: REVIEW_GAP_PX }}
+        animate={{ x: translateX }}
+        transition={
+          instant
+            ? { duration: 0 }
+            : { type: "spring", stiffness: 118, damping: 26, mass: 0.72 }
+        }
+      >
+        {loopTrack.map((r, i) => {
+          const isCenter = i === idx;
+          return (
+            <motion.div
+              key={`${r.id}-${i}`}
+              className="shrink-0 flex items-center justify-center"
+              style={{ width: slideW }}
+              animate={{
+                scale: isCenter ? 1.06 : 0.88,
+                opacity: isCenter ? 1 : 0.62,
+              }}
+              transition={{
+                type: "spring",
+                stiffness: 220,
+                damping: 30,
+              }}
+            >
+              <motion.article
+                className={`relative w-full rounded-2xl border bg-white p-6 md:p-8 shadow-lg transition-shadow duration-300 ${
+                  isCenter
+                    ? "border-primary/25 shadow-xl shadow-primary/10 ring-1 ring-primary/15"
+                    : "border-outline-variant/15 shadow-sm"
+                }`}
+                whileHover={{
+                  y: isCenter ? -5 : -3,
+                  boxShadow: isCenter
+                    ? "0 28px 60px -12px rgb(0 0 0 / 0.18)"
+                    : "0 18px 40px -12px rgb(0 0 0 / 0.12)",
+                }}
+                transition={{ type: "spring", stiffness: 360, damping: 22 }}
+              >
+                <Icon
+                  name="format_quote"
+                  className="text-primary-fixed-dim text-5xl md:text-6xl absolute -top-3 -left-1 md:-top-4 md:-left-2 opacity-25"
+                />
+                <div className="flex items-center gap-0.5 text-tertiary mb-3 md:mb-4">
+                  {[0, 1, 2, 3, 4].map((s) => (
+                    <Icon key={s} name="star" filled className="text-sm md:text-base" />
+                  ))}
+                </div>
+                <p
+                  className={`text-on-surface leading-relaxed mb-6 md:mb-8 italic ${
+                    isCenter ? "text-base md:text-lg" : "text-sm md:text-base line-clamp-5"
+                  }`}
+                >
+                  "{r.text}"
+                </p>
+                <div className="flex items-center gap-3 md:gap-4">
+                  <img
+                    className={`rounded-full object-cover ring-2 ring-white shadow-md ${
+                      isCenter ? "w-12 h-12 md:w-14 md:h-14" : "w-10 h-10 md:w-11 md:h-11"
+                    }`}
+                    src={r.img}
+                    alt={r.name}
+                  />
+                  <div>
+                    <h5 className={`font-bold ${isCenter ? "text-sm md:text-base" : "text-xs md:text-sm"}`}>
+                      {r.name}
+                    </h5>
+                    <p className="text-[10px] text-outline uppercase tracking-wider">{r.role}</p>
+                  </div>
+                </div>
+              </motion.article>
+            </motion.div>
+          );
+        })}
+      </motion.div>
+
+      <div className="mt-10 flex justify-center gap-2">
+        {reviews.map((r, i) => (
+          <button
+            key={r.id}
+            type="button"
+            aria-label={`Show review from ${r.name}`}
+            aria-current={dotActive === i}
+            className={`h-2 rounded-full transition-all duration-500 ease-out ${
+              dotActive === i ? "w-8 bg-primary" : "w-2 bg-outline-variant/60 hover:bg-outline-variant"
+            }`}
+            onClick={() => goTo(i + n)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 const Home = () => {
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -73,7 +295,7 @@ const Home = () => {
   return (
     <SiteShell>
       {/* HERO */}
-      <section className="relative pt-32 pb-20 overflow-hidden hero-gradient">
+      <ScrollReveal as="section" variant="fade-up" duration={0.92} className="relative pt-32 pb-20 overflow-hidden hero-gradient">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="order-2 lg:order-1 flex flex-col gap-6 relative">
             <motion.div
@@ -178,10 +400,10 @@ const Home = () => {
             </div>
           </div>
         </div>
-      </section>
+      </ScrollReveal>
 
       {/* STATS */}
-      <section className="py-12 px-6">
+      <ScrollReveal as="section" variant="fade-up" duration={0.88} delay={0.04} className="py-12 px-6">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
             { icon: "local_shipping", value: "2390+", label: "Orders Daily", bg: "bg-primary-fixed", color: "text-primary" },
@@ -202,10 +424,10 @@ const Home = () => {
             </div>
           ))}
         </div>
-      </section>
+      </ScrollReveal>
 
       {/* BEST SELLERS CAROUSEL */}
-      <section className="py-24 bg-surface-container-lowest overflow-hidden">
+      <ScrollReveal as="section" variant="fade-up" duration={0.9} className="py-24 bg-surface-container-lowest overflow-hidden">
         <div className="max-w-7xl mx-auto px-6 mb-12 flex items-end justify-between">
           <div className="flex flex-col gap-2">
             <h2 className="font-headline text-4xl font-extrabold text-on-background">Seasonal Best Sellers</h2>
@@ -274,10 +496,10 @@ const Home = () => {
             </Link>
           ))}
         </div>
-      </section>
+      </ScrollReveal>
 
       {/* TRENDING GRID */}
-      <section className="py-24 px-6 bg-surface">
+      <ScrollReveal as="section" variant="fade-up" duration={0.88} className="py-24 px-6 bg-surface">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="font-headline text-4xl font-extrabold mb-4">Top Trending Varieties</h2>
@@ -309,10 +531,10 @@ const Home = () => {
             ))}
           </div>
         </div>
-      </section>
+      </ScrollReveal>
 
       {/* JOIN ORCHARD CIRCLE + QUALITIES */}
-      <section className="py-28 bg-surface-container-low border-y border-outline-variant/10">
+      <ScrollReveal as="section" variant="fade-up" duration={0.9} className="py-28 bg-surface-container-low border-y border-outline-variant/10">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           <div className="flex flex-col gap-6 lg:pr-8">
             <h2 className="font-headline text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary to-on-primary-fixed-variant tracking-tight mb-4">
@@ -364,42 +586,17 @@ const Home = () => {
             ))}
           </div>
         </div>
-      </section>
+      </ScrollReveal>
 
       {/* REVIEWS */}
-      <section className="py-24 px-6 bg-surface">
+      <ScrollReveal as="section" variant="fade-up" duration={0.88} className="py-24 px-6 bg-surface">
         <div className="max-w-7xl mx-auto">
-          <h2 className="font-headline text-4xl font-extrabold text-center mb-16 text-on-background">
+          <h2 className="font-headline text-4xl font-extrabold text-center mb-10 md:mb-14 text-on-background">
             Customer Love
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {reviews.map((r) => (
-              <div
-                key={r.name}
-              className="bg-white p-8 rounded-lg shadow-sm border border-outline-variant/10 relative lift-on-hover tilt-on-hover"
-              >
-                <Icon
-                  name="format_quote"
-                  className="text-primary-fixed-dim text-6xl absolute -top-4 -left-2 opacity-30"
-                />
-                <div className="flex items-center gap-1 text-tertiary mb-4">
-                  {[0, 1, 2, 3, 4].map((i) => (
-                    <Icon key={i} name="star" filled />
-                  ))}
-                </div>
-                <p className="text-on-surface leading-relaxed mb-8 italic">"{r.text}"</p>
-                <div className="flex items-center gap-4">
-                  <img className="w-12 h-12 rounded-full object-cover" src={r.img} alt={r.name} />
-                  <div>
-                    <h5 className="font-bold text-sm">{r.name}</h5>
-                    <p className="text-[10px] text-outline uppercase tracking-wider">{r.role}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <CustomerLoveCarousel />
         </div>
-      </section>
+      </ScrollReveal>
     </SiteShell>
   );
 };

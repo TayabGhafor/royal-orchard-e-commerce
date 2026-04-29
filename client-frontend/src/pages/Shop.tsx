@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { SiteShell } from "@/components/SiteShell";
+import { ScrollReveal } from "@/components/ScrollReveal";
 import { Icon } from "@/components/Icon";
 import { type Product, type WeightOption } from "@/data/products";
 import { useCart } from "@/store/cart";
@@ -55,7 +56,7 @@ const Shop = () => {
     <SiteShell>
       <div className="pt-32 pb-20 px-4 sm:px-6 max-w-screen-2xl mx-auto">
         {/* Editorial header */}
-        <header className="mb-20 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        <ScrollReveal variant="fade-up" duration={0.9} className="mb-20 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           <div className="lg:col-span-5 z-10">
             <span className="inline-block px-4 py-1.5 bg-secondary-fixed text-on-secondary-fixed-variant text-xs font-bold rounded-full mb-6 tracking-widest uppercase">
               Harvest Season 2024
@@ -93,9 +94,9 @@ const Shop = () => {
               />
             </div>
           </div>
-        </header>
+        </ScrollReveal>
 
-        <div id="catalog" className="flex flex-col lg:flex-row gap-12">
+        <ScrollReveal id="catalog" variant="fade-up" duration={0.88} delay={0.06} className="flex flex-col lg:flex-row gap-12">
           {/* SIDEBAR FILTERS */}
           <aside className="w-full lg:w-72 space-y-10">
             <div className="lg:sticky lg:top-32">
@@ -296,7 +297,7 @@ const Shop = () => {
               </>
             )}
           </div>
-        </div>
+        </ScrollReveal>
       </div>
     </SiteShell>
   );

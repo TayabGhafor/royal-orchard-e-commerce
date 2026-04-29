@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { SiteShell } from "@/components/SiteShell";
+import { ScrollReveal } from "@/components/ScrollReveal";
 import { Icon } from "@/components/Icon";
 import { useCart } from "@/store/cart";
 import { formatPKR } from "@/lib/format";
@@ -37,12 +38,14 @@ const ProductDetail = () => {
   return (
     <SiteShell>
       <div className="pt-32 pb-20 px-4 sm:px-6 max-w-7xl mx-auto">
-        <Link
-          to="/shop"
-          className="inline-flex items-center gap-2 text-sm text-outline hover:text-primary transition-colors mb-8"
-        >
-          <Icon name="arrow_back" className="text-base" /> Back to Shop
-        </Link>
+        <ScrollReveal variant="fade" duration={0.75} className="mb-8 block">
+          <Link
+            to="/shop"
+            className="inline-flex items-center gap-2 text-sm text-outline hover:text-primary transition-colors"
+          >
+            <Icon name="arrow_back" className="text-base" /> Back to Shop
+          </Link>
+        </ScrollReveal>
 
         {error && (
           <div className="flex items-center justify-between gap-4 px-5 py-3 mb-6 rounded-xl bg-rose-50 border border-rose-200 text-rose-700">
@@ -78,7 +81,7 @@ const ProductDetail = () => {
             </div>
           </div>
         ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
+        <ScrollReveal variant="fade-up" duration={0.9} className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
           <section className="lg:col-span-7">
             <motion.div
               key={activeImage}
@@ -206,11 +209,11 @@ const ProductDetail = () => {
               </div>
             </div>
           </section>
-        </div>
+        </ScrollReveal>
         )}
 
         {/* Reviews */}
-        <section className="mt-32 space-y-12">
+        <ScrollReveal as="section" variant="fade-up" duration={0.88} className="mt-32 space-y-12">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
               <h2 className="text-3xl font-headline font-bold text-on-surface">Customer Stories</h2>
@@ -257,7 +260,7 @@ const ProductDetail = () => {
               </div>
             ))}
           </div>
-        </section>
+        </ScrollReveal>
       </div>
     </SiteShell>
   );

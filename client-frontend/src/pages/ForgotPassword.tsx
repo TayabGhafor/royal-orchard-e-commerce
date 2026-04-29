@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Icon } from "@/components/Icon";
 import { useAuth } from "@/store/auth";
+import { ScrollReveal } from "@/components/ScrollReveal";
 
 const schema = z.object({ email: z.string().trim().email("Enter a valid email") });
 
@@ -39,7 +40,7 @@ const ForgotPassword = () => {
         </Link>
 
         <div className="w-full max-w-md relative z-10">
-          <div className="bg-surface-container-lowest rounded-2xl shadow-2xl shadow-primary/5 border border-outline-variant/15 p-8 sm:p-10 md:p-12">
+          <ScrollReveal variant="fade-up" duration={0.9} className="bg-surface-container-lowest rounded-2xl shadow-2xl shadow-primary/5 border border-outline-variant/15 p-8 sm:p-10 md:p-12">
             <div className="flex flex-col items-center text-center mb-8">
               <div className="w-16 h-16 rounded-full bg-primary-container/80 text-primary flex items-center justify-center mb-6 ring-4 ring-primary-fixed/15 shadow-inner">
                 <Icon name="lock_reset" className="text-3xl" />
@@ -80,7 +81,7 @@ const ForgotPassword = () => {
                 Sign in
               </Link>
             </p>
-          </div>
+          </ScrollReveal>
         </div>
       </div>
     </main>

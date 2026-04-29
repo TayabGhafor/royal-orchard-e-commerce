@@ -1,5 +1,6 @@
 import { SiteShell } from "@/components/SiteShell";
 import { Icon } from "@/components/Icon";
+import { ScrollReveal } from "@/components/ScrollReveal";
 
 /**
  * Freshness — pixel-faithful conversion of user-uploads://freshnes.html.
@@ -10,7 +11,7 @@ const Freshness = () => (
     <div className="bg-surface font-body text-on-surface antialiased">
       <main className="pt-24">
         {/* HERO */}
-        <section className="relative px-8 lg:px-16 py-12 max-w-7xl mx-auto">
+        <ScrollReveal as="section" className="relative px-8 lg:px-16 py-12 max-w-7xl mx-auto">
           <div className="flex flex-col lg:flex-row items-center gap-12">
             <div className="w-full lg:w-1/2 z-10">
               <span className="inline-block px-4 py-1.5 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant text-xs font-bold tracking-widest uppercase mb-6">
@@ -46,10 +47,10 @@ const Freshness = () => (
               </div>
             </div>
           </div>
-        </section>
+        </ScrollReveal>
 
         {/* JOURNEY */}
-        <section className="bg-surface-container-low py-24 mt-12 overflow-hidden">
+        <ScrollReveal as="section" className="bg-surface-container-low py-24 mt-12 overflow-hidden">
           <div className="max-w-7xl mx-auto px-8">
             <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
               <div>
@@ -89,10 +90,10 @@ const Freshness = () => (
               ))}
             </div>
           </div>
-        </section>
+        </ScrollReveal>
 
         {/* STANDARDS */}
-        <section className="py-24 max-w-7xl mx-auto px-8">
+        <ScrollReveal as="section" className="py-24 max-w-7xl mx-auto px-8">
           <h2 className="font-headline text-center text-4xl font-bold mb-16">The Orchard Standards</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
@@ -112,10 +113,10 @@ const Freshness = () => (
               </div>
             ))}
           </div>
-        </section>
+        </ScrollReveal>
 
         {/* COLD CHAIN */}
-        <section className="py-24 bg-stone-900 text-white overflow-hidden">
+        <ScrollReveal as="section" className="py-24 bg-stone-900 text-white overflow-hidden">
           <div className="max-w-7xl mx-auto px-8 flex flex-col lg:flex-row gap-16 items-center">
             <div className="w-full lg:w-1/2">
               <h2 className="font-headline text-4xl md:text-5xl font-bold leading-tight mb-8">
@@ -152,10 +153,10 @@ const Freshness = () => (
               <div className="absolute -top-10 -right-10 w-64 h-64 bg-primary/20 rounded-full blur-[100px]" />
             </div>
           </div>
-        </section>
+        </ScrollReveal>
 
         {/* GUARANTEE */}
-        <section className="py-32 bg-surface">
+        <ScrollReveal as="section" className="py-32 bg-surface">
           <div className="max-w-4xl mx-auto px-8">
             <div className="bg-surface-container-lowest p-16 rounded-xl text-center relative overflow-hidden border border-primary-fixed">
               <div className="absolute top-0 left-0 w-2 h-full bg-primary" />
@@ -174,7 +175,7 @@ const Freshness = () => (
               </div>
             </div>
           </div>
-        </section>
+        </ScrollReveal>
       </main>
     </div>
   </SiteShell>

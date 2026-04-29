@@ -8,6 +8,7 @@ import { formatPKR } from "@/lib/format";
 import { toast } from "sonner";
 import { usePageLoading } from "@/hooks/use-page-loading";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollReveal } from "@/components/ScrollReveal";
 
 type TabKey =
   | "all"
@@ -160,7 +161,7 @@ const Orders = () => {
   return (
     <SiteShell>
       <div className="pt-32 pb-20 px-4 sm:px-6 max-w-7xl mx-auto">
-        <header className="mb-10">
+        <ScrollReveal as="header" className="mb-10" variant="fade-up">
           <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-2">Royal Orchard · Account</p>
           <h1 className="text-5xl font-headline font-extrabold tracking-tighter text-on-surface mb-2">
             My Orders
@@ -168,7 +169,7 @@ const Orders = () => {
           <p className="text-on-surface-variant font-medium">
             Track every basket of mangoes from the orchard to your doorstep.
           </p>
-        </header>
+        </ScrollReveal>
 
         {/* Summary cards */}
         {error && (
@@ -196,15 +197,15 @@ const Orders = () => {
           </div>
         ) : (
         <>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+        <ScrollReveal className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10" delay={0.04}>
           <SummaryCard icon="receipt_long" label="Total Orders" value={String(counts.all)} accent="bg-primary-container text-on-primary-container" />
           <SummaryCard icon="local_shipping" label="In Transit" value={String(counts["to-receive"])} accent="bg-secondary-container text-on-secondary-container" />
           <SummaryCard icon="check_circle" label="Delivered" value={String(myOrders.filter((o) => o.status === "Delivered").length)} accent="bg-emerald-100 text-emerald-800" />
           <SummaryCard icon="payments" label="Total Spent" value={formatPKR(totalSpent)} accent="bg-amber-100 text-amber-800" />
-        </div>
+        </ScrollReveal>
 
         {/* Tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-3 mb-8 -mx-2 px-2">
+        <ScrollReveal className="flex gap-2 overflow-x-auto pb-3 mb-8 -mx-2 px-2" delay={0.06}>
           {TABS.map((t) => {
             const active = tab === t.key;
             const count = counts[t.key];
@@ -232,11 +233,11 @@ const Orders = () => {
               </button>
             );
           })}
-        </div>
+        </ScrollReveal>
 
         {/* Orders list */}
         {/* Search + Sort */}
-        <div className="flex flex-col md:flex-row gap-3 mb-6">
+        <ScrollReveal className="flex flex-col md:flex-row gap-3 mb-6" delay={0.08}>
           <div className="relative flex-1">
             <Icon
               name="search"
@@ -271,7 +272,7 @@ const Orders = () => {
               className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none"
             />
           </div>
-        </div>
+        </ScrollReveal>
 
         {search && (
           <p className="text-xs text-on-surface-variant mb-4 -mt-2">
@@ -280,16 +281,20 @@ const Orders = () => {
         )}
 
         {filteredSorted.length === 0 ? (
-          <EmptyState tab={tab} />
+          <ScrollReveal>
+            <EmptyState tab={tab} />
+          </ScrollReveal>
         ) : (
           <div className="space-y-5">
-            {filteredSorted.map((order) => {
+            {filteredSorted.map((order, i) => {
               const stepIdx = TIMELINE_INDEX[order.status];
               const isClosed = order.status === "Returned" || order.status === "Cancelled";
               return (
-                <article
+                <ScrollReveal
+                  as="article"
                   key={order.id}
                   className="bg-surface-container-lowest rounded-2xl shadow-sm border border-outline-variant/20 overflow-hidden"
+                  delay={Math.min(i * 0.045, 0.35)}
                 >
                   <header className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 border-b border-outline-variant/20 bg-surface-container/40">
                     <div className="flex items-center gap-3">
@@ -457,20 +462,20 @@ const Orders = () => {
                       </div>
                     </div>
                   </div>
-                </article>
+                </ScrollReveal>
               );
             })}
           </div>
         )}
 
-        <div className="mt-12 flex justify-center">
+        <ScrollReveal className="mt-12 flex justify-center" delay={0.06}>
           <Link
             to="/shop"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-primary text-on-primary font-bold text-sm shadow-lg hover:opacity-90 transition-opacity"
           >
             <Icon name="storefront" /> Continue Shopping
           </Link>
-        </div>
+        </ScrollReveal>
         </>
         )}
       </div>
