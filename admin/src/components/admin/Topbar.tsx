@@ -35,26 +35,24 @@ export default function AdminTopbar() {
       .slice(0, 8);
   }, [orders]);
 
-  const computeNewCount = useMemo(() => {
-    return () => {
-      try {
-        const lastSeen = localStorage.getItem("royalorchard-admin:lastSeenOrderAt") || "";
-        const lastSeenMs = lastSeen ? new Date(lastSeen).getTime() : 0;
-        const count = newest.filter((o) => new Date(o.createdAt).getTime() > lastSeenMs).length;
-        setNewCount(count);
-      } catch {
-        setNewCount(0);
-      }
-    };
+  useEffect(() => {
+    try {
+      const lastSeen = localStorage.getItem("royalorchard-admin:lastSeenOrderAt") || "";
+      const lastSeenMs = lastSeen ? new Date(lastSeen).getTime() : 0;
+      const count = newest.filter((o) => new Date(o.createdAt).getTime() > lastSeenMs).length;
+      setNewCount(count);
+    } catch {
+      setNewCount(0);
+    }
   }, [newest]);
 
   useEffect(() => {
-    loadOrders().finally(() => computeNewCount());
+    loadOrders().catch(() => {});
     const id = window.setInterval(() => {
-      loadOrders().finally(() => computeNewCount());
+      loadOrders().catch(() => {});
     }, 30_000);
     return () => window.clearInterval(id);
-  }, [loadOrders, computeNewCount]);
+  }, [loadOrders]);
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -254,7 +252,7 @@ export default function AdminTopbar() {
           onOpenChange={(v) => {
             setNotifOpen(v);
             if (v) {
-              loadOrders().finally(() => computeNewCount());
+              loadOrders().catch(() => {});
             } else {
               try {
                 const newestAt = newest[0]?.createdAt;
