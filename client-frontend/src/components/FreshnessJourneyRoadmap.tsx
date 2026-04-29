@@ -154,9 +154,12 @@ export function FreshnessJourneyRoadmap() {
                   animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
                   exit={{ opacity: 0, x: -28, filter: "blur(4px)" }}
                   transition={springSoft}
-                  className="relative overflow-hidden rounded-3xl border border-outline-variant/20 bg-surface-container-lowest p-8 md:p-10 shadow-2xl shadow-primary/10 ring-1 ring-primary/10"
+                  className="relative rounded-3xl border border-outline-variant/20 bg-surface-container-lowest p-8 md:p-10 shadow-2xl shadow-primary/10 ring-1 ring-primary/10"
                 >
-                  <div className="pointer-events-none absolute -right-8 -top-8 text-[10rem] font-headline font-black leading-none text-primary/[0.07] select-none">
+                  <div
+                    aria-hidden
+                    className="pointer-events-none absolute right-4 top-4 text-right font-headline font-black tabular-nums leading-none tracking-tight text-primary/[0.09] select-none whitespace-nowrap text-7xl sm:right-6 sm:top-6 sm:text-8xl md:right-8 md:top-8 md:text-9xl"
+                  >
                     {JOURNEY_STEPS[stepIndex].n}
                   </div>
                   <div className="relative z-10">

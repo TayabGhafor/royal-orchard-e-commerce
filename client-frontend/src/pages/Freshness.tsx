@@ -32,19 +32,23 @@ const Freshness = () => (
                 </button>
               </div>
             </div>
-            <div className="w-full lg:w-1/2 relative">
-              <div className="aspect-[4/5] rounded-xl overflow-hidden editorial-shadow transform rotate-1 translate-x-4">
-                <img
-                  className="w-full h-full object-cover"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuBDfVk5Qg_LGn0BywrDHOs_HK288jlTohFPgNT1z0_8TWK4WUrFXX6dWS2RdHi1LSxkbly5yqfKdHZMN_dcxLLPIzg-3sopoEt24EGFxYINPUz9ZRLlsHOJYEsQwAusarfeQTYqMAuWRn3xqB8aHTNVgSLxjki4L-7uLJPvn9q3dYQqYcEL-qYiJ02WQ7dk1Ds0o9SzDlfN4RHG1NSwzLmMLgL_HY2_KfeAuS_cm5Cf89f_M2RSJGEv-riE7sMKYBBWUeFzN3vaVfHI"
-                  alt="Golden ripe mangoes on the tree branch"
-                />
-              </div>
-              <div className="absolute -bottom-8 -left-8 w-48 h-48 bg-tertiary-container rounded-lg p-6 flex-col justify-end hidden md:flex">
-                <span className="text-on-tertiary-container font-headline font-black text-4xl">100%</span>
-                <p className="text-on-tertiary-container text-xs font-bold uppercase tracking-widest leading-none">
-                  Organic Harvest
-                </p>
+            <div className="w-full lg:w-1/2 relative flex justify-center lg:justify-end">
+              <div className="relative w-full max-w-[min(100%,300px)] sm:max-w-[340px] md:max-w-[380px] lg:max-w-none lg:w-full">
+                <div className="aspect-[3/4] sm:aspect-[4/5] lg:aspect-[4/5] w-full rounded-xl overflow-hidden editorial-shadow shadow-lg lg:shadow-xl sm:rotate-1 lg:translate-x-2 translate-x-0">
+                  <img
+                    className="w-full h-full object-cover"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBDfVk5Qg_LGn0BywrDHOs_HK288jlTohFPgNT1z0_8TWK4WUrFXX6dWS2RdHi1LSxkbly5yqfKdHZMN_dcxLLPIzg-3sopoEt24EGFxYINPUz9ZRLlsHOJYEsQwAusarfeQTYqMAuWRn3xqB8aHTNVgSLxjki4L-7uLJPvn9q3dYQqYcEL-qYiJ02WQ7dk1Ds0o9SzDlfN4RHG1NSwzLmMLgL_HY2_KfeAuS_cm5Cf89f_M2RSJGEv-riE7sMKYBBWUeFzN3vaVfHI"
+                    alt="Golden ripe mangoes on the tree branch"
+                  />
+                </div>
+                <div className="absolute -bottom-2 -right-2 sm:-bottom-3 sm:-right-2 md:-bottom-4 md:-right-1 lg:-bottom-8 lg:-left-8 lg:right-auto w-[6.5rem] h-[6.5rem] sm:w-28 sm:h-28 md:w-32 md:h-32 lg:w-48 lg:h-48 bg-tertiary-container rounded-lg p-3.5 sm:p-4 lg:p-6 flex flex-col justify-end shadow-md ring-1 ring-black/5">
+                  <span className="text-on-tertiary-container font-headline font-black text-xl sm:text-2xl md:text-3xl lg:text-4xl leading-none">
+                    100%
+                  </span>
+                  <p className="text-on-tertiary-container text-[10px] sm:text-[11px] lg:text-xs font-bold uppercase tracking-widest leading-snug mt-1">
+                    Organic Harvest
+                  </p>
+                </div>
               </div>
             </div>
           </div>
