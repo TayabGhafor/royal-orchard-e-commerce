@@ -36,7 +36,7 @@ const ProductDetail = () => {
 
   return (
     <SiteShell>
-      <div className="pt-32 pb-20 px-6 max-w-7xl mx-auto">
+      <div className="pt-32 pb-20 px-4 sm:px-6 max-w-7xl mx-auto">
         <Link
           to="/shop"
           className="inline-flex items-center gap-2 text-sm text-outline hover:text-primary transition-colors mb-8"
@@ -151,7 +151,7 @@ const ProductDetail = () => {
                 <label className="text-sm font-bold uppercase tracking-widest text-outline">
                   Select Weight
                 </label>
-                <div className="flex gap-4">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   {(["3kg", "5kg", "8kg"] as const).map((w) => {
                     const available = product.weights.includes(w);
                     const active = selectedWeight === w;

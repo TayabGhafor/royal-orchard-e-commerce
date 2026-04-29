@@ -13,7 +13,7 @@ const Cart = () => {
 
   return (
     <SiteShell>
-      <div className="pt-32 pb-20 px-6 max-w-7xl mx-auto">
+      <div className="pt-32 pb-20 px-4 sm:px-6 max-w-7xl mx-auto">
         <header className="mb-12">
           <h1 className="text-5xl font-headline font-extrabold tracking-tighter mb-2">Your Basket</h1>
           <p className="text-on-surface-variant font-medium">
@@ -75,15 +75,15 @@ const Cart = () => {
               {items.map((item) => (
                 <div
                   key={`${item.productId}-${item.weight}`}
-                  className="flex gap-6 p-6 bg-surface-container-lowest rounded-lg shadow-sm"
+                  className="flex flex-col sm:flex-row gap-5 sm:gap-6 p-5 sm:p-6 bg-surface-container-lowest rounded-lg shadow-sm"
                 >
                   <img
                     src={item.image}
                     alt={item.name}
-                    className="w-28 h-28 object-cover rounded-md flex-shrink-0"
+                    className="w-full sm:w-28 h-48 sm:h-28 object-cover rounded-md flex-shrink-0"
                   />
                   <div className="flex-1 min-w-0 flex flex-col">
-                    <div className="flex justify-between gap-4">
+                    <div className="flex items-start justify-between gap-3">
                       <div>
                         <h3 className="font-headline font-bold text-xl">{item.name}</h3>
                         <p className="text-sm text-outline mt-1">Weight: {item.weight}</p>
@@ -96,8 +96,8 @@ const Cart = () => {
                         <Icon name="delete" />
                       </button>
                     </div>
-                    <div className="flex items-center justify-between mt-auto pt-4">
-                      <div className="flex items-center gap-1 bg-surface-container rounded-full">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-auto pt-4">
+                      <div className="flex items-center gap-1 bg-surface-container rounded-full w-fit">
                         <button
                           onClick={() => updateQuantity(item.productId, item.weight, item.quantity - 1)}
                           className="w-9 h-9 rounded-full hover:bg-primary hover:text-on-primary transition-colors flex items-center justify-center"

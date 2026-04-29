@@ -53,7 +53,7 @@ const Shop = () => {
 
   return (
     <SiteShell>
-      <div className="pt-32 pb-20 px-6 max-w-screen-2xl mx-auto">
+      <div className="pt-32 pb-20 px-4 sm:px-6 max-w-screen-2xl mx-auto">
         {/* Editorial header */}
         <header className="mb-20 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           <div className="lg:col-span-5 z-10">

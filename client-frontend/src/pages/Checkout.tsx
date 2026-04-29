@@ -116,7 +116,7 @@ const Checkout = () => {
 
   return (
     <SiteShell>
-      <div className="pt-32 pb-20 px-6 max-w-7xl mx-auto">
+      <div className="pt-32 pb-20 px-4 sm:px-6 max-w-7xl mx-auto">
         <header className="mb-12">
           <h1 className="text-5xl font-headline font-extrabold tracking-tighter text-on-surface mb-2">
             Finalize Your Harvest

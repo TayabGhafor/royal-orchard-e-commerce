@@ -37,7 +37,7 @@ const AllProducts = () => {
 
   return (
     <SiteShell>
-      <div className="pt-32 pb-20 px-6 max-w-screen-2xl mx-auto">
+      <div className="pt-32 pb-20 px-4 sm:px-6 max-w-screen-2xl mx-auto">
         <header className="mb-10 flex flex-col gap-6">
           <div className="flex items-end justify-between gap-6 flex-wrap">
             <div>

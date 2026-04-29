@@ -165,12 +165,21 @@ export const Navbar = () => {
               </PopoverContent>
             </Popover>
           ) : (
-            <Link
-              to="/login"
-              className="hidden sm:block px-5 py-2 bg-primary text-on-primary font-bold rounded-full cta-glow transition-all text-sm"
-            >
-              Sign In
-            </Link>
+            <>
+              <Link
+                to="/login"
+                className="sm:hidden p-2 hover:bg-surface-container rounded-full transition-colors"
+                aria-label="Sign in"
+              >
+                <Icon name="person" />
+              </Link>
+              <Link
+                to="/login"
+                className="hidden sm:block px-5 py-2 bg-primary text-on-primary font-bold rounded-full cta-glow transition-all text-sm"
+              >
+                Sign In
+              </Link>
+            </>
           )}
         </div>
       </div>
@@ -193,6 +202,15 @@ export const Navbar = () => {
               {l.label}
             </NavLink>
           ))}
+          {!user && (
+            <NavLink
+              to="/login"
+              onClick={() => setMenuOpen(false)}
+              className="mt-2 px-4 py-3 rounded-full text-sm font-bold bg-primary text-on-primary flex items-center justify-center gap-2"
+            >
+              <Icon name="person" className="text-base" /> Sign In
+            </NavLink>
+          )}
         </div>
       )}
     </nav>

@@ -1,8 +1,3 @@
-import { useMemo, useState } from "react";
-import { Link, Navigate } from "react-router-dom";
-import { SiteShell } from "@/components/SiteShell";
-import { Icon } from "@/components/Icon";
-import { useAuth } from "@/store/auth";
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { SiteShell } from "@/components/SiteShell";
@@ -164,7 +159,7 @@ const Orders = () => {
 
   return (
     <SiteShell>
-      <div className="pt-32 pb-20 px-6 max-w-7xl mx-auto">
+      <div className="pt-32 pb-20 px-4 sm:px-6 max-w-7xl mx-auto">
         <header className="mb-10">
           <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-2">Royal Orchard · Account</p>
           <h1 className="text-5xl font-headline font-extrabold tracking-tighter text-on-surface mb-2">
