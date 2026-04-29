@@ -14,7 +14,15 @@ import Profile from "@/pages/admin/Profile";
 import Login from "@/pages/Login";
 import NotFound from "@/pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 const AdminRoute = ({ children }: { children: ReactNode }) => (
   <RequireAdmin>{children}</RequireAdmin>
