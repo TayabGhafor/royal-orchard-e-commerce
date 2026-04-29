@@ -1,11 +1,11 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { SiteShell } from "@/components/SiteShell";
 import { Icon } from "@/components/Icon";
-import { products } from "@/data/products";
 import { useCart } from "@/store/cart";
 import { formatPKR } from "@/lib/format";
+import { useProducts } from "@/store/products";
 
 const trending = [
   {
@@ -59,6 +59,14 @@ const Home = () => {
   const carouselRef = useRef<HTMLDivElement>(null);
   const addItem = useCart((s) => s.addItem);
   const setOpen = useCart((s) => s.setOpen);
+  const items = useProducts((s) => s.items);
+  const load = useProducts((s) => s.load);
+
+  const bestSellers = items.slice(0, 5);
+
+  useEffect(() => {
+    if (items.length === 0) void load();
+  }, [items.length, load]);
 
   const scrollBy = (delta: number) => carouselRef.current?.scrollBy({ left: delta, behavior: "smooth" });
 
@@ -221,7 +229,7 @@ const Home = () => {
           </div>
         </div>
         <div ref={carouselRef} className="flex gap-8 px-6 overflow-x-auto no-scrollbar pb-10 max-w-7xl mx-auto">
-          {products.slice(0, 5).map((p, i) => (
+          {bestSellers.map((p, i) => (
             <Link
               to={`/product/${p.slug}`}
               key={p.id}

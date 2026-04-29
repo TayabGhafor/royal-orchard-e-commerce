@@ -3,10 +3,12 @@ require("dotenv").config();
 const { loadEnv } = require("./config/env");
 const { connectDB } = require("./config/db");
 const { createApp } = require("./app");
+const { seedDefaultProducts } = require("./modules/products/products.seed");
 
 async function main() {
   const env = loadEnv(process.env);
   await connectDB(env.MONGODB_URI, env);
+  await seedDefaultProducts();
 
   const app = createApp(env);
   app.listen(env.PORT, "0.0.0.0", () => {
