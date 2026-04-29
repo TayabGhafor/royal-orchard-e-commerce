@@ -21,13 +21,15 @@ const Shop = () => {
   const setOpen = useCart((s) => s.setOpen);
   const { loading, error, retry } = usePageLoading({ delay: 700 });
   const items = useProducts((s) => s.items);
-  const load = useProducts((s) => s.load);
   const apiLoading = useProducts((s) => s.loading);
   const apiError = useProducts((s) => s.error);
+  const loadedOnce = useProducts((s) => s.loadedOnce);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    if (!loadedOnce) {
+      useProducts.getState().load();
+    }
+  }, [loadedOnce]);
 
   const filtered = useMemo(
     () => {
@@ -195,7 +197,7 @@ const Shop = () => {
               </div>
             )}
 
-            {(loading || apiLoading) ? (
+            {(!loadedOnce || loading || apiLoading) ? (
               <section>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-20">
                   {Array.from({ length: 2 }).map((_, i) => (

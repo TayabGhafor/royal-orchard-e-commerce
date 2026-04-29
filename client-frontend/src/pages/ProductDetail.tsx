@@ -12,12 +12,11 @@ import { useProducts } from "@/store/products";
 
 const ProductDetail = () => {
   const { slug } = useParams();
-  const load = useProducts((s) => s.load);
   const findBySlug = useProducts((s) => s.findBySlug);
   const items = useProducts((s) => s.items);
   useEffect(() => {
-    if (items.length === 0) load();
-  }, [items.length, load]);
+    if (items.length === 0) useProducts.getState().load();
+  }, [items.length]);
 
   const product = slug ? findBySlug(slug) : undefined;
   const [activeImage, setActiveImage] = useState(0);
