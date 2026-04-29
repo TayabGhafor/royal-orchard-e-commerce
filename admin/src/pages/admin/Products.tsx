@@ -51,6 +51,18 @@ const Products = () => {
   const [imageMode, setImageMode] = useState<"urls" | "upload">("urls");
   const [uploading, setUploading] = useState(false);
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
+  const [failedUrlPreviews, setFailedUrlPreviews] = useState<Record<string, boolean>>({});
+
+  const uploadPreviewUrls = useMemo(
+    () => uploadFiles.map((f) => ({ key: `${f.name}-${f.size}-${f.lastModified}`, file: f, url: URL.createObjectURL(f) })),
+    [uploadFiles],
+  );
+
+  useEffect(() => {
+    return () => {
+      uploadPreviewUrls.forEach((p) => URL.revokeObjectURL(p.url));
+    };
+  }, [uploadPreviewUrls]);
 
   useEffect(() => {
     loadProducts().catch((e) => toast.error(e?.message || "Failed to load products"));
@@ -72,6 +84,9 @@ const Products = () => {
 
   const openCreate = () => {
     setForm(empty);
+    setUploadFiles([]);
+    setFailedUrlPreviews({});
+    setImageMode("urls");
     setOpen(true);
   };
 
@@ -88,6 +103,9 @@ const Products = () => {
       imagesText: p.images.join("\n"),
       stock: p.stock,
     });
+    setUploadFiles([]);
+    setFailedUrlPreviews({});
+    setImageMode("urls");
     setOpen(true);
   };
 
@@ -463,24 +481,20 @@ const Products = () => {
                           className="aspect-square rounded-lg overflow-hidden bg-stone-50 border border-stone-200"
                           title={src}
                         >
-                          <img
-                            src={src}
-                            alt=""
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              const el = e.currentTarget;
-                              el.style.display = "none";
-                              const parent = el.parentElement;
-                              if (parent && !parent.querySelector("[data-fallback]")) {
-                                const d = document.createElement("div");
-                                d.dataset.fallback = "1";
-                                d.className =
-                                  "w-full h-full flex items-center justify-center text-stone-400 text-xs font-semibold";
-                                d.textContent = "Invalid";
-                                parent.appendChild(d);
+                          {failedUrlPreviews[`${src}-${idx}`] ? (
+                            <div className="w-full h-full flex items-center justify-center text-stone-400 text-xs font-semibold">
+                              Invalid
+                            </div>
+                          ) : (
+                            <img
+                              src={src}
+                              alt=""
+                              className="w-full h-full object-cover"
+                              onError={() =>
+                                setFailedUrlPreviews((prev) => ({ ...prev, [`${src}-${idx}`]: true }))
                               }
-                            }}
-                          />
+                            />
+                          )}
                         </div>
                       ))}
                   </div>
@@ -493,8 +507,21 @@ const Products = () => {
                       accept="image/*"
                       multiple
                       onChange={(e) => {
-                        const files = Array.from(e.target.files || []).slice(0, 5);
-                        setUploadFiles(files);
+                        const incoming = Array.from(e.target.files || []);
+                        setUploadFiles((prev) => {
+                          const merged = [...prev];
+                          for (const file of incoming) {
+                            const exists = merged.some(
+                              (f) =>
+                                f.name === file.name &&
+                                f.size === file.size &&
+                                f.lastModified === file.lastModified,
+                            );
+                            if (!exists && merged.length < 5) merged.push(file);
+                          }
+                          return merged.slice(0, 5);
+                        });
+                        e.currentTarget.value = "";
                       }}
                       className="text-sm"
                     />
@@ -504,13 +531,13 @@ const Products = () => {
                   </div>
                   {uploadFiles.length > 0 && (
                     <div className="mt-3 grid grid-cols-5 gap-2">
-                      {uploadFiles.map((f) => (
+                      {uploadPreviewUrls.map((p) => (
                         <div
-                          key={f.name}
+                          key={p.key}
                           className="aspect-square rounded-lg overflow-hidden bg-stone-50 border border-stone-200"
-                          title={f.name}
+                          title={p.file.name}
                         >
-                          <img src={URL.createObjectURL(f)} alt="" className="w-full h-full object-cover" />
+                          <img src={p.url} alt="" className="w-full h-full object-cover" />
                         </div>
                       ))}
                     </div>
