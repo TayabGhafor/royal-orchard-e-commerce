@@ -30,7 +30,6 @@ const next: Record<OrderStatus, OrderStatus | null> = {
 const Orders = () => {
   const orders = useAdmin((s) => s.orders);
   const setOrderStatus = useAdmin((s) => s.setOrderStatus);
-  const loadOrders = useAdmin((s) => s.loadOrders);
   const [tab, setTab] = useState<(typeof tabs)[number]>("All");
   const [search, setSearch] = useState("");
   const { loading, error, retry } = usePageLoading({ delay: 600 });
@@ -38,8 +37,8 @@ const Orders = () => {
   const highlight = (location.state as any)?.highlight as string | undefined;
 
   useEffect(() => {
-    loadOrders().catch(() => {});
-  }, [loadOrders]);
+    useAdmin.getState().loadOrders().catch(() => {});
+  }, []);
 
   const filtered = useMemo(
     () => {
