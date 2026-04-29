@@ -19,6 +19,8 @@ const UserSchema = new mongoose.Schema(
     avatar: { type: String, trim: true },
     address: { type: AddressSchema, default: {} },
     isVerified: { type: Boolean, default: false },
+    passwordResetCodeHash: { type: String, select: false },
+    passwordResetExpires: { type: Date },
   },
   { timestamps: true },
 );

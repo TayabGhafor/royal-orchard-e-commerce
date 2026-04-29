@@ -24,11 +24,11 @@ async function loginAs(app, email, password) {
 describe("Orders API", () => {
   beforeAll(async () => {
     await startMongo();
-  });
+  }, 120_000);
 
   afterAll(async () => {
     await stopMongo();
-  });
+  }, 30_000);
 
   beforeEach(async () => {
     await clearMongo();
@@ -45,11 +45,12 @@ describe("Orders API", () => {
     });
 
     const prod = await Product.create({
-      title: "Sindhri Mango Box",
+      name: "Sindhri Mango Box",
+      slug: `sindhri-mango-box-${Date.now()}`,
       variety: "Sindhri",
-      collection: "Premium",
-      pricePerKg: 500,
-      weights: [3, 5, 8],
+      collection: "Premium Reserve",
+      price: 500,
+      weights: ["3kg", "5kg", "8kg"],
       stock: 10,
       images: ["https://img"],
       isActive: true,

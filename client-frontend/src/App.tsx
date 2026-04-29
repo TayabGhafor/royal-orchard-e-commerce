@@ -14,6 +14,7 @@ import Signup from "./pages/Signup";
 import OurStory from "./pages/OurStory";
 import Freshness from "./pages/Freshness";
 import ForgotPassword from "./pages/ForgotPassword";
+import VerifyResetCode from "./pages/VerifyResetCode";
 import ResetPassword from "./pages/ResetPassword";
 import ShippingPolicy from "./pages/ShippingPolicy";
 import RefundPolicy from "./pages/RefundPolicy";
@@ -53,6 +54,7 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/verify-reset-code" element={<VerifyResetCode />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/our-story" element={<OurStory />} />
           <Route path="/freshness" element={<Freshness />} />

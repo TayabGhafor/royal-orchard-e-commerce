@@ -18,6 +18,13 @@ interface AuthState {
   updateProfile: (patch: Partial<Pick<User, "address" | "phone" | "name">>) => Promise<void>;
   signOut: () => void;
   isAdmin: () => boolean;
+  forgotPassword: (email: string) => Promise<{ ok: boolean; error?: string }>;
+  verifyResetCode: (email: string, code: string) => Promise<{ ok: boolean; resetToken?: string; error?: string }>;
+  resetPasswordWithToken: (
+    resetToken: string,
+    password: string,
+    confirmPassword: string,
+  ) => Promise<{ ok: boolean; error?: string }>;
 }
 
 export const useAuth = create<AuthState>((set, get) => ({
@@ -92,4 +99,43 @@ export const useAuth = create<AuthState>((set, get) => ({
     set({ user: null });
   },
   isAdmin: () => get().user?.role === "admin",
+
+  forgotPassword: async (email) => {
+    try {
+      await api<{ ok?: boolean; message?: string }>("/api/auth/forgot-password", {
+        method: "POST",
+        body: JSON.stringify({ email }),
+      });
+      return { ok: true };
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      return { ok: false, error: err?.message || "Unable to send reset code" };
+    }
+  },
+
+  verifyResetCode: async (email, code) => {
+    try {
+      const res = await api<{ resetToken: string }>("/api/auth/verify-reset-code", {
+        method: "POST",
+        body: JSON.stringify({ email, code }),
+      });
+      return { ok: true, resetToken: res.resetToken };
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      return { ok: false, error: err?.message || "Verification failed" };
+    }
+  },
+
+  resetPasswordWithToken: async (resetToken, password, confirmPassword) => {
+    try {
+      await api("/api/auth/reset-password", {
+        method: "POST",
+        body: JSON.stringify({ resetToken, password, confirmPassword }),
+      });
+      return { ok: true };
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      return { ok: false, error: err?.message || "Unable to update password" };
+    }
+  },
 }));
