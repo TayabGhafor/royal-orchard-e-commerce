@@ -3,6 +3,11 @@ import { Link, Navigate } from "react-router-dom";
 import { SiteShell } from "@/components/SiteShell";
 import { Icon } from "@/components/Icon";
 import { useAuth } from "@/store/auth";
+import { useEffect, useMemo, useState } from "react";
+import { Link, Navigate } from "react-router-dom";
+import { SiteShell } from "@/components/SiteShell";
+import { Icon } from "@/components/Icon";
+import { useAuth } from "@/store/auth";
 import { useOrders, type StoreOrder, type OrderStatus } from "@/store/orders";
 import { formatPKR } from "@/lib/format";
 import { toast } from "sonner";
@@ -86,11 +91,17 @@ const filterFor = (orders: StoreOrder[], tab: TabKey) => {
 const Orders = () => {
   const user = useAuth((s) => s.user);
   const allOrders = useOrders((s) => s.orders);
-  const setOrderStatus = useOrders((s) => s.setOrderStatus);
+  const loadOrders = useOrders((s) => s.loadOrders);
   const [tab, setTab] = useState<TabKey>("all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortKey>("newest");
   const { loading, error, retry } = usePageLoading({ delay: 700 });
+
+  useEffect(() => {
+    if (user) {
+      loadOrders().catch(() => {});
+    }
+  }, [user, loadOrders]);
 
   const myOrders = useMemo(() => {
     if (!user) return [];
@@ -142,16 +153,13 @@ const Orders = () => {
   if (!user) return <Navigate to="/login" replace />;
 
   const cancelOrder = (id: string) => {
-    setOrderStatus(id, "Cancelled");
-    toast.success(`Order #${id} cancelled`);
+    toast("Cancelling orders from the customer portal is not wired to the backend yet.");
   };
   const returnOrder = (id: string) => {
-    setOrderStatus(id, "Returned");
-    toast.success(`Return requested for #${id}`);
+    toast("Return requests from the customer portal are not wired to the backend yet.");
   };
   const confirmReceived = (id: string) => {
-    setOrderStatus(id, "Delivered");
-    toast.success(`Order #${id} marked as received`);
+    toast("Marking as received is currently informational only.");
   };
 
   return (

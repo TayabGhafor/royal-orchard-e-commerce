@@ -22,8 +22,8 @@ type Payment = "cod" | "card" | "easypaisa" | "jazzcash";
 
 const Checkout = () => {
   const { items, subtotal, clear } = useCart();
-  const addOrder = useOrders((s) => s.addOrder);
-  const upsertCustomer = useOrders((s) => s.upsertCustomer);
+  const addOrderLocal = useOrders((s) => s.addOrderLocal);
+  const upsertCustomerLocal = useOrders((s) => s.upsertCustomerLocal);
   const user = useAuth((s) => s.user);
   const updateProfile = useAuth((s) => s.updateProfile);
   const [form, setForm] = useState({
@@ -60,7 +60,7 @@ const Checkout = () => {
       const totalQty = items.reduce((n, it) => n + it.quantity, 0);
       const email = user?.email ?? `${form.name.toLowerCase().replace(/\s+/g, ".")}@guest.local`;
       try {
-        await api<{ order: unknown }>("/api/orders/guest", {
+        const res = await api<{ order: any }>("/api/orders/guest", {
           method: "POST",
           body: JSON.stringify({
             guest: { email },
@@ -82,8 +82,8 @@ const Checkout = () => {
           }),
         });
 
-        // Keep local order store in sync for UI sections that still read it.
-        addOrder({
+        // Optionally mirror into local store for optimistic UI.
+        addOrderLocal({
           customer: form.name,
           email,
           product: productSummary,
@@ -92,9 +92,9 @@ const Checkout = () => {
           address: form.address,
           paid: payment !== "cod",
           paymentMethod: payment,
-          status: "Processing",
+          status: "Pending",
         });
-        upsertCustomer({ name: form.name, email, spent: total });
+        upsertCustomerLocal({ name: form.name, email, spent: total });
         if (user) updateProfile({ address: form.address, phone: form.phone, name: form.name });
         clear();
         toast.success("Order placed! We'll be in touch shortly.");

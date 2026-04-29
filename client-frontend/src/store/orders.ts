@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { api } from "@/lib/api";
 
 export type OrderStatus =
   | "Pending"
@@ -37,11 +38,12 @@ export interface StoreCustomer {
 interface OrdersState {
   orders: StoreOrder[];
   customers: StoreCustomer[];
-  addOrder: (
+  loadOrders: () => Promise<void>;
+  addOrderLocal: (
     order: Omit<StoreOrder, "id" | "createdAt" | "status"> & { status?: OrderStatus },
   ) => StoreOrder;
-  setOrderStatus: (id: string, status: OrderStatus) => void;
-  upsertCustomer: (customer: { name: string; email: string; spent: number }) => void;
+  setOrderStatusLocal: (id: string, status: OrderStatus) => void;
+  upsertCustomerLocal: (customer: { name: string; email: string; spent: number }) => void;
 }
 
 const seedOrders: StoreOrder[] = [
@@ -91,7 +93,39 @@ export const useOrders = create<OrdersState>()(
     (set) => ({
       orders: seedOrders,
       customers: seedCustomers,
-      addOrder: (input) => {
+      loadOrders: async () => {
+        const res = await api<{ items: any[] }>("/api/orders/my-orders", { auth: true });
+        const mapped: StoreOrder[] = res.items.map((o) => {
+          const total = Number(o?.pricing?.total || 0);
+          const qty = Array.isArray(o?.items) ? o.items.reduce((n: number, it: any) => n + Number(it.quantity || 0), 0) : 0;
+          const first = Array.isArray(o?.items) && o.items[0] ? o.items[0] : null;
+          const productSummary = first ? `${first.title || "Order"} (${first.weight || ""}kg)` : "Order";
+          const statusMap: Record<string, OrderStatus> = {
+            Placed: "Pending",
+            Processing: "Processing",
+            Shipped: "Shipped",
+            Delivered: "Delivered",
+            Cancelled: "Cancelled",
+            Returned: "Returned",
+          };
+          const status: OrderStatus = statusMap[o.orderStatus] || "Pending";
+          return {
+            id: String(o._id || o.id || ""),
+            customer: o?.deliveryDetails?.name || o?.guest?.name || "Customer",
+            email: o?.guest?.email || "",
+            product: productSummary,
+            quantity: qty,
+            total,
+            status,
+            address: o?.deliveryDetails?.address || "",
+            createdAt: o?.createdAt || new Date().toISOString(),
+            paid: o?.paymentStatus === "Paid",
+            paymentMethod: o?.paymentMethod,
+          };
+        });
+        set({ orders: mapped });
+      },
+      addOrderLocal: (input) => {
         const order: StoreOrder = {
           ...input,
           id: `RO-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -101,13 +135,13 @@ export const useOrders = create<OrdersState>()(
         set((state) => ({ orders: [order, ...state.orders] }));
         return order;
       },
-      setOrderStatus: (id, status) =>
+      setOrderStatusLocal: (id, status) =>
         set((state) => ({
           orders: state.orders.map((order) =>
             order.id === id ? { ...order, status } : order,
           ),
         })),
-      upsertCustomer: ({ name, email, spent }) =>
+      upsertCustomerLocal: ({ name, email, spent }) =>
         set((state) => {
           const idx = state.customers.findIndex(
             (customer) => customer.email.toLowerCase() === email.toLowerCase(),
