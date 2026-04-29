@@ -267,6 +267,12 @@ const Shop = () => {
                   <h2 className="text-3xl font-headline font-extrabold tracking-tight">All Varieties</h2>
                   <p className="text-on-surface-variant">The full catalog of Royal Orchard excellence.</p>
                 </div>
+                <Link
+                  to="/all-products"
+                  className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-surface-container-lowest border border-outline-variant/40 text-sm font-bold hover:border-primary/40 hover:text-primary transition-all"
+                >
+                  View all <Icon name="arrow_forward" className="text-base" />
+                </Link>
               </div>
               {rest.length === 0 && filtered.length === 0 ? (
                 <div className="py-20 text-center text-outline">No products match these filters.</div>

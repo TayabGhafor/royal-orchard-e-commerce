@@ -46,13 +46,8 @@ export default function AdminTopbar() {
     }
   }, [newest]);
 
-  useEffect(() => {
-    loadOrders().catch(() => {});
-    const id = window.setInterval(() => {
-      loadOrders().catch(() => {});
-    }, 30_000);
-    return () => window.clearInterval(id);
-  }, [loadOrders]);
+  // Orders are now loaded only when explicitly needed (e.g. notifications opened or Orders page),
+  // to avoid unnecessary background polling against the backend.
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
