@@ -160,15 +160,10 @@ const Signup = () => {
           </div>
         </div>
       </div>
-      <footer className="bg-surface-container-highest flex flex-col md:flex-row justify-between items-center px-8 py-12 w-full mt-auto">
-        <span className="text-xs uppercase tracking-widest text-outline mb-4 md:mb-0">
-          © 2024 ROYAL ORCHARD. ALL RIGHTS RESERVED.
-        </span>
-        <div className="flex gap-8">
-          <a href="#" className="text-xs uppercase tracking-widest text-outline hover:text-primary">PRIVACY</a>
-          <a href="#" className="text-xs uppercase tracking-widest text-outline hover:text-primary">TERMS</a>
-          <a href="#" className="text-xs uppercase tracking-widest text-outline hover:text-primary">SUPPORT</a>
-        </div>
+      <footer className="bg-surface-container-highest flex justify-center items-center px-8 py-12 w-full mt-auto">
+        <p className="w-full text-center text-xs uppercase tracking-widest text-outline">
+          © 2024 RoyalOrchard. All rights reserved.
+        </p>
       </footer>
     </main>
   );

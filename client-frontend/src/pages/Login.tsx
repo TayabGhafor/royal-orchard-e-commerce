@@ -161,15 +161,10 @@ const Login = () => {
           </div>
         </div>
       </div>
-      <footer className="bg-surface-container-highest flex flex-col md:flex-row justify-between items-center px-8 py-12 w-full mt-auto">
-        <span className="text-xs uppercase tracking-widest text-outline mb-4 md:mb-0">
+      <footer className="bg-surface-container-highest flex justify-center items-center px-8 py-12 w-full mt-auto">
+        <p className="w-full text-center text-xs uppercase tracking-widest text-outline">
           © 2024 RoyalOrchard. All rights reserved.
-        </span>
-        <div className="flex gap-8">
-          <a href="#" className="text-xs uppercase tracking-widest text-outline hover:text-primary">Privacy Policy</a>
-          <a href="#" className="text-xs uppercase tracking-widest text-outline hover:text-primary">Terms</a>
-          <a href="#" className="text-xs uppercase tracking-widest text-outline hover:text-primary">Support</a>
-        </div>
+        </p>
       </footer>
     </main>
   );
