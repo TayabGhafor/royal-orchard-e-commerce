@@ -133,8 +133,11 @@ const Login = () => {
                 </div>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <input type="checkbox" className="w-5 h-5 rounded border-outline-variant text-primary" />
+                <label className="flex items-center gap-3 cursor-pointer group select-none">
+                  <input
+                    type="checkbox"
+                    className="w-5 h-5 rounded-full border-outline-variant text-primary cursor-pointer transition-all duration-300 ease-out hover:scale-110 hover:shadow-[0_0_0_4px_rgba(255,191,0,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-container-low checked:shadow-[0_0_0_4px_rgba(255,191,0,0.18)]"
+                  />
                   <span className="text-on-surface-variant group-hover:text-on-surface font-medium">Remember me</span>
                 </label>
                 <Link to="/forgot-password" className="text-primary font-bold hover:underline">
