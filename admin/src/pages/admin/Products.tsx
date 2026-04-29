@@ -376,26 +376,36 @@ const Products = () => {
                 />
               </Field>
               <Field label="Variety">
-                <select
-                  value={form.variety}
-                  onChange={(e) => setForm({ ...form, variety: e.target.value as AdminProduct["variety"] })}
-                  className={inputCls}
-                >
-                  {(["Sindhri", "Chaunsa", "Anwar Ratol", "Langra", "Mixed", "Other"] as const).map((v) => (
-                    <option key={v}>{v}</option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    value={form.variety}
+                    onChange={(e) => setForm({ ...form, variety: e.target.value as AdminProduct["variety"] })}
+                    className={`${inputCls} appearance-none pr-10`}
+                  >
+                    {(["Sindhri", "Chaunsa", "Anwar Ratol", "Langra", "Mixed", "Other"] as const).map((v) => (
+                      <option key={v}>{v}</option>
+                    ))}
+                  </select>
+                  <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-stone-400">
+                    <Icon name="expand_more" className="text-base" />
+                  </span>
+                </div>
               </Field>
               <Field label="Collection">
-                <select
-                  value={form.collection}
-                  onChange={(e) => setForm({ ...form, collection: e.target.value as AdminProduct["collection"] })}
-                  className={inputCls}
-                >
-                  <option>Premium Reserve</option>
-                  <option>Seasonal Specials</option>
-                  <option>Bulk Harvest</option>
-                </select>
+                <div className="relative">
+                  <select
+                    value={form.collection}
+                    onChange={(e) => setForm({ ...form, collection: e.target.value as AdminProduct["collection"] })}
+                    className={`${inputCls} appearance-none pr-10`}
+                  >
+                    <option>Premium Reserve</option>
+                    <option>Seasonal Specials</option>
+                    <option>Bulk Harvest</option>
+                  </select>
+                  <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-stone-400">
+                    <Icon name="expand_more" className="text-base" />
+                  </span>
+                </div>
               </Field>
             </div>
 
@@ -502,29 +512,33 @@ const Products = () => {
               ) : (
                 <div className="mt-2">
                   <div className="flex items-center justify-between gap-3">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={(e) => {
-                        const incoming = Array.from(e.target.files || []);
-                        setUploadFiles((prev) => {
-                          const merged = [...prev];
-                          for (const file of incoming) {
-                            const exists = merged.some(
-                              (f) =>
-                                f.name === file.name &&
-                                f.size === file.size &&
-                                f.lastModified === file.lastModified,
-                            );
-                            if (!exists && merged.length < 5) merged.push(file);
-                          }
-                          return merged.slice(0, 5);
-                        });
-                        e.currentTarget.value = "";
-                      }}
-                      className="text-sm"
-                    />
+                    <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-stone-200 bg-stone-50 text-stone-700 text-sm font-semibold cursor-pointer hover:bg-stone-100 hover:border-stone-300 transition-colors">
+                      <Icon name="upload" className="text-base text-stone-500" />
+                      <span>Choose files</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={(e) => {
+                          const incoming = Array.from(e.target.files || []);
+                          setUploadFiles((prev) => {
+                            const merged = [...prev];
+                            for (const file of incoming) {
+                              const exists = merged.some(
+                                (f) =>
+                                  f.name === file.name &&
+                                  f.size === file.size &&
+                                  f.lastModified === file.lastModified,
+                              );
+                              if (!exists && merged.length < 5) merged.push(file);
+                            }
+                            return merged.slice(0, 5);
+                          });
+                          e.currentTarget.value = "";
+                        }}
+                        className="sr-only"
+                      />
+                    </label>
                     <span className="text-xs text-stone-500 font-semibold">
                       {uploadFiles.length}/5 selected
                     </span>
