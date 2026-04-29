@@ -184,6 +184,12 @@ const seedCustomers: AdminCustomer[] = [
   { id: "C-005", name: "Sara Ahmed", email: "sara@example.com", status: "Inactive", orders: 1, spent: 3200, joinedAt: "2024-03-02" },
 ];
 
+// De-dupe + throttle order fetches across the whole admin app.
+// This prevents backend overload even if a component accidentally calls `loadOrders()` repeatedly.
+let ordersInFlight: Promise<void> | null = null;
+let lastOrdersFetchAt = 0;
+const ORDERS_STALE_MS = 30_000;
+
 export const useAdmin = create<AdminState>()(
   persist(
     (set) => ({
@@ -221,29 +227,42 @@ export const useAdmin = create<AdminState>()(
         set((state) => ({ products: state.products.filter((p) => p.id !== id) }));
       },
       loadOrders: async () => {
-        const res = await api<{ items: any[] }>("/api/orders?limit=50", { admin: true });
-        const mapped: AdminOrder[] = res.items.map((o) => {
-          const total = Number(o?.pricing?.total || 0);
-          const qty = Array.isArray(o?.items) ? o.items.reduce((n: number, it: any) => n + Number(it.quantity || 0), 0) : 0;
-          const first = Array.isArray(o?.items) && o.items[0] ? o.items[0] : null;
-          const productSummary = first ? `${first.title || "Order"} (${first.weight || ""}kg)` : "Order";
-          const customer = o?.deliveryDetails?.name || o?.guest?.name || "Customer";
-          const email = o?.guest?.email || "—";
-          return {
-            id: String(o._id || o.id || ""),
-            customer,
-            email,
-            product: productSummary,
-            quantity: qty,
-            total,
-            status: mapBackendStatus(o.orderStatus),
-            address: o?.deliveryDetails?.address || "",
-            createdAt: o?.createdAt || new Date().toISOString(),
-            paid: o?.paymentStatus === "Paid",
-            paymentMethod: o?.paymentMethod,
-          };
-        });
-        set({ orders: mapped });
+        const now = Date.now();
+        if (ordersInFlight) return ordersInFlight;
+        if (now - lastOrdersFetchAt < ORDERS_STALE_MS) return;
+
+        ordersInFlight = (async () => {
+          try {
+            const res = await api<{ items: any[] }>("/api/orders?limit=50", { admin: true });
+            const mapped: AdminOrder[] = res.items.map((o) => {
+              const total = Number(o?.pricing?.total || 0);
+              const qty = Array.isArray(o?.items) ? o.items.reduce((n: number, it: any) => n + Number(it.quantity || 0), 0) : 0;
+              const first = Array.isArray(o?.items) && o.items[0] ? o.items[0] : null;
+              const productSummary = first ? `${first.title || "Order"} (${first.weight || ""}kg)` : "Order";
+              const customer = o?.deliveryDetails?.name || o?.guest?.name || "Customer";
+              const email = o?.guest?.email || "—";
+              return {
+                id: String(o._id || o.id || ""),
+                customer,
+                email,
+                product: productSummary,
+                quantity: qty,
+                total,
+                status: mapBackendStatus(o.orderStatus),
+                address: o?.deliveryDetails?.address || "",
+                createdAt: o?.createdAt || new Date().toISOString(),
+                paid: o?.paymentStatus === "Paid",
+                paymentMethod: o?.paymentMethod,
+              };
+            });
+            set({ orders: mapped });
+            lastOrdersFetchAt = Date.now();
+          } finally {
+            ordersInFlight = null;
+          }
+        })();
+
+        return ordersInFlight;
       },
       setOrderStatus: async (id, status) => {
         const backendStatus = mapUiStatusToBackend(status);

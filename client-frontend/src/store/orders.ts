@@ -88,42 +88,62 @@ const seedCustomers: StoreCustomer[] = [
   { id: "C-003", name: "Elena Vance", email: "elena@example.com", status: "Active", orders: 22, spent: 88600, joinedAt: "2023-11-23" },
 ];
 
+// De-dupe + throttle order fetches across the whole storefront app.
+let myOrdersInFlight: Promise<void> | null = null;
+let lastMyOrdersFetchAt = 0;
+const MY_ORDERS_STALE_MS = 30_000;
+
 export const useOrders = create<OrdersState>()(
   persist(
     (set) => ({
       orders: seedOrders,
       customers: seedCustomers,
       loadOrders: async () => {
-        const res = await api<{ items: any[] }>("/api/orders/my-orders", { auth: true });
-        const mapped: StoreOrder[] = res.items.map((o) => {
-          const total = Number(o?.pricing?.total || 0);
-          const qty = Array.isArray(o?.items) ? o.items.reduce((n: number, it: any) => n + Number(it.quantity || 0), 0) : 0;
-          const first = Array.isArray(o?.items) && o.items[0] ? o.items[0] : null;
-          const productSummary = first ? `${first.title || "Order"} (${first.weight || ""}kg)` : "Order";
-          const statusMap: Record<string, OrderStatus> = {
-            Placed: "Pending",
-            Processing: "Processing",
-            Shipped: "Shipped",
-            Delivered: "Delivered",
-            Cancelled: "Cancelled",
-            Returned: "Returned",
-          };
-          const status: OrderStatus = statusMap[o.orderStatus] || "Pending";
-          return {
-            id: String(o._id || o.id || ""),
-            customer: o?.deliveryDetails?.name || o?.guest?.name || "Customer",
-            email: o?.guest?.email || "",
-            product: productSummary,
-            quantity: qty,
-            total,
-            status,
-            address: o?.deliveryDetails?.address || "",
-            createdAt: o?.createdAt || new Date().toISOString(),
-            paid: o?.paymentStatus === "Paid",
-            paymentMethod: o?.paymentMethod,
-          };
-        });
-        set({ orders: mapped });
+        const now = Date.now();
+        if (myOrdersInFlight) return myOrdersInFlight;
+        if (now - lastMyOrdersFetchAt < MY_ORDERS_STALE_MS) return;
+
+        myOrdersInFlight = (async () => {
+          try {
+            const res = await api<{ items: any[] }>("/api/orders/my-orders", { auth: true });
+            const mapped: StoreOrder[] = res.items.map((o) => {
+              const total = Number(o?.pricing?.total || 0);
+              const qty = Array.isArray(o?.items)
+                ? o.items.reduce((n: number, it: any) => n + Number(it.quantity || 0), 0)
+                : 0;
+              const first = Array.isArray(o?.items) && o.items[0] ? o.items[0] : null;
+              const productSummary = first ? `${first.title || "Order"} (${first.weight || ""}kg)` : "Order";
+              const statusMap: Record<string, OrderStatus> = {
+                Placed: "Pending",
+                Processing: "Processing",
+                Shipped: "Shipped",
+                Delivered: "Delivered",
+                Cancelled: "Cancelled",
+                Returned: "Returned",
+              };
+              const status: OrderStatus = statusMap[o.orderStatus] || "Pending";
+              return {
+                id: String(o._id || o.id || ""),
+                customer: o?.deliveryDetails?.name || o?.guest?.name || "Customer",
+                email: o?.guest?.email || "",
+                product: productSummary,
+                quantity: qty,
+                total,
+                status,
+                address: o?.deliveryDetails?.address || "",
+                createdAt: o?.createdAt || new Date().toISOString(),
+                paid: o?.paymentStatus === "Paid",
+                paymentMethod: o?.paymentMethod,
+              };
+            });
+            set({ orders: mapped });
+            lastMyOrdersFetchAt = Date.now();
+          } finally {
+            myOrdersInFlight = null;
+          }
+        })();
+
+        return myOrdersInFlight;
       },
       addOrderLocal: (input) => {
         const order: StoreOrder = {
