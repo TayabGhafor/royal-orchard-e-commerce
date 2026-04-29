@@ -4,7 +4,7 @@ import { toast } from "sonner";
 interface Options {
   /** Average loading delay in ms (default 600). */
   delay?: number;
-  /** Probability (0-1) of simulating a fetch error (default 0.08 = 8%). */
+  /** Probability (0-1) of simulating a fetch error (default 0 = disabled). */
   errorRate?: number;
   /** Toast message shown on simulated error. */
   errorMessage?: string;
@@ -21,7 +21,7 @@ interface Options {
  */
 export function usePageLoading({
   delay = 600,
-  errorRate = 0.08,
+  errorRate = 0,
   errorMessage = "We couldn't reach the orchard servers. Showing cached data.",
   silent = false,
 }: Options = {}) {
