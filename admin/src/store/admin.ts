@@ -40,6 +40,22 @@ export interface AdminProduct extends Product {
   stock: number;
 }
 
+const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) || "http://localhost:5000";
+
+function toAbsoluteImageUrl(src: string) {
+  if (!src) return src;
+  if (src.startsWith("http://") || src.startsWith("https://")) return src;
+  if (src.startsWith("/")) return `${API_BASE}${src}`;
+  return `${API_BASE}/${src}`;
+}
+
+function normalizeProductImages<T extends { images?: string[] }>(product: T): T {
+  return {
+    ...product,
+    images: Array.isArray(product.images) ? product.images.map((s) => toAbsoluteImageUrl(String(s || ""))) : [],
+  };
+}
+
 interface AdminState {
   products: AdminProduct[];
   orders: AdminOrder[];
@@ -156,7 +172,7 @@ export const useAdmin = create<AdminState>()(
       customers: seedCustomers,
       loadProducts: async () => {
         const res = await api<{ items: AdminProduct[] }>("/api/products?limit=50");
-        set({ products: res.items });
+        set({ products: res.items.map((p) => normalizeProductImages(p)) });
       },
       addProduct: async (p) => {
         const res = await api<{ product: AdminProduct }>("/api/products", {
@@ -164,8 +180,9 @@ export const useAdmin = create<AdminState>()(
           admin: true,
           body: JSON.stringify(p),
         });
-        set((state) => ({ products: [res.product, ...state.products] }));
-        return res.product;
+        const next = normalizeProductImages(res.product);
+        set((state) => ({ products: [next, ...state.products] }));
+        return next;
       },
       updateProduct: async (id, patch) => {
         const res = await api<{ product: AdminProduct }>(`/api/products/${id}`, {
@@ -173,10 +190,11 @@ export const useAdmin = create<AdminState>()(
           admin: true,
           body: JSON.stringify(patch),
         });
+        const next = normalizeProductImages(res.product);
         set((state) => ({
-          products: state.products.map((p) => (p.id === id ? res.product : p)),
+          products: state.products.map((p) => (p.id === id ? next : p)),
         }));
-        return res.product;
+        return next;
       },
       deleteProduct: async (id) => {
         await api<{ ok: true }>(`/api/products/${id}`, { method: "DELETE", admin: true });
