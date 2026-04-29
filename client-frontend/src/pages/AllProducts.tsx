@@ -125,7 +125,7 @@ const AllProducts = () => {
                 initial={{ opacity: 0, y: 16 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="bg-surface-container-lowest p-4 rounded-lg group hover:bg-white transition-all shadow-sm hover:shadow-xl hover:shadow-primary/5"
+                className="bg-surface-container-lowest p-4 rounded-lg group hover:bg-white transition-all shadow-sm hover:shadow-xl hover:shadow-primary/5 card-hover shine-on-hover"
               >
                 <Link to={`/product/${p.slug}`}>
                   <div className="aspect-square rounded-md overflow-hidden mb-4">

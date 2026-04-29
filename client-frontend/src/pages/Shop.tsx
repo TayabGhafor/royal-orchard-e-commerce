@@ -305,7 +305,7 @@ const FeaturedCard = ({ p, onAdd }: { p: Product; onAdd: () => void }) => (
     initial={{ opacity: 0, y: 20 }}
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true }}
-    className="bg-surface-container-lowest rounded-lg overflow-hidden group border border-transparent hover:border-primary-fixed/50 transition-all duration-500"
+    className="bg-surface-container-lowest rounded-lg overflow-hidden group border border-transparent hover:border-primary-fixed/50 transition-all duration-500 card-hover shine-on-hover"
   >
     <Link to={`/product/${p.slug}`} className="block">
       <div className="relative aspect-[4/3] overflow-hidden m-4 rounded-md">
@@ -362,7 +362,7 @@ const SmallCard = ({ p, onAdd }: { p: Product; onAdd: () => void }) => (
     initial={{ opacity: 0, y: 20 }}
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true }}
-    className="bg-surface-container-lowest p-4 rounded-lg group hover:bg-white transition-all shadow-sm hover:shadow-xl hover:shadow-primary/5"
+    className="bg-surface-container-lowest p-4 rounded-lg group hover:bg-white transition-all shadow-sm hover:shadow-xl hover:shadow-primary/5 card-hover shine-on-hover"
   >
     <Link to={`/product/${p.slug}`}>
       <div className="aspect-square rounded-md overflow-hidden mb-4">
