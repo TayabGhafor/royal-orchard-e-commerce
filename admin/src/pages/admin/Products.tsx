@@ -295,8 +295,9 @@ const Products = () => {
                       <button
                         onClick={() => {
                           if (confirm(`Delete "${p.name}"?`)) {
-                            deleteProduct(p.id);
-                            toast.success("Product deleted");
+                            deleteProduct(p.id)
+                              .then(() => toast.success("Product deleted"))
+                              .catch((err: any) => toast.error(err?.message || "Failed to delete product"));
                           }
                         }}
                         className="w-8 h-8 rounded-full hover:bg-rose-50 text-rose-500 flex items-center justify-center"

@@ -56,6 +56,26 @@ function normalizeProductImages<T extends { images?: string[] }>(product: T): T 
   };
 }
 
+function normalizeProductShape(product: any): AdminProduct {
+  const normalizedImages = normalizeProductImages(product);
+  return {
+    ...normalizedImages,
+    id: String(product.id || product._id || ""),
+    slug: String(product.slug || ""),
+    name: String(product.name || ""),
+    tagline: String(product.tagline || ""),
+    description: String(product.description || ""),
+    price: Number(product.price || 0),
+    variety: product.variety,
+    collection: product.collection,
+    weights: Array.isArray(product.weights) ? product.weights : ["3kg", "5kg", "8kg"],
+    stock: Number(product.stock || 0),
+    rating: Number(product.rating || 0),
+    reviews: Number(product.reviews || 0),
+    badge: product.badge,
+  };
+}
+
 interface AdminState {
   products: AdminProduct[];
   orders: AdminOrder[];
@@ -171,26 +191,26 @@ export const useAdmin = create<AdminState>()(
       orders: seedOrders,
       customers: seedCustomers,
       loadProducts: async () => {
-        const res = await api<{ items: AdminProduct[] }>("/api/products?limit=50");
-        set({ products: res.items.map((p) => normalizeProductImages(p)) });
+        const res = await api<{ items: any[] }>("/api/products?limit=50");
+        set({ products: res.items.map((p) => normalizeProductShape(p)) });
       },
       addProduct: async (p) => {
-        const res = await api<{ product: AdminProduct }>("/api/products", {
+        const res = await api<{ product: any }>("/api/products", {
           method: "POST",
           admin: true,
           body: JSON.stringify(p),
         });
-        const next = normalizeProductImages(res.product);
+        const next = normalizeProductShape(res.product);
         set((state) => ({ products: [next, ...state.products] }));
         return next;
       },
       updateProduct: async (id, patch) => {
-        const res = await api<{ product: AdminProduct }>(`/api/products/${id}`, {
+        const res = await api<{ product: any }>(`/api/products/${id}`, {
           method: "PUT",
           admin: true,
           body: JSON.stringify(patch),
         });
-        const next = normalizeProductImages(res.product);
+        const next = normalizeProductShape(res.product);
         set((state) => ({
           products: state.products.map((p) => (p.id === id ? next : p)),
         }));
