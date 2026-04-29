@@ -70,7 +70,7 @@ const ForgotPassword = () => {
                 disabled={loading}
                 className="w-full editorial-gradient text-on-primary font-headline font-bold py-4 rounded-full shadow-lg shadow-primary/20 hover:scale-[0.98] active:scale-[0.98] transition-transform disabled:opacity-60"
               >
-                {loading ? "Sending…" : "Send reset code"}
+                {loading ? "Sending…" : "Send Code"}
               </button>
             </form>
 

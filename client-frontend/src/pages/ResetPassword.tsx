@@ -18,7 +18,8 @@ const ResetPassword = () => {
   const emailHint = params.get("email") || "";
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [showPwd, setShowPwd] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [tokenReady] = useState(() => {
     try {
@@ -124,7 +125,7 @@ const ResetPassword = () => {
                 <div className="relative">
                   <input
                     id="password"
-                    type={showPwd ? "text" : "password"}
+                    type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     autoComplete="new-password"
@@ -133,11 +134,11 @@ const ResetPassword = () => {
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPwd((v) => !v)}
+                    onClick={() => setShowPassword((v) => !v)}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-outline hover:text-primary"
-                    aria-label="Toggle password visibility"
+                    aria-label="Toggle new password visibility"
                   >
-                    <Icon name={showPwd ? "visibility_off" : "visibility"} />
+                    <Icon name={showPassword ? "visibility_off" : "visibility"} />
                   </button>
                 </div>
               </div>
@@ -145,15 +146,25 @@ const ResetPassword = () => {
                 <label htmlFor="confirm" className="block text-sm font-semibold text-on-surface-variant ml-1">
                   Confirm password
                 </label>
-                <input
-                  id="confirm"
-                  type={showPwd ? "text" : "password"}
-                  value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
-                  autoComplete="new-password"
-                  placeholder="Repeat password"
-                  className="w-full px-5 py-4 bg-surface-container-low border border-transparent outline-none focus:ring-2 focus:ring-primary rounded-xl"
-                />
+                <div className="relative">
+                  <input
+                    id="confirm"
+                    type={showConfirm ? "text" : "password"}
+                    value={confirm}
+                    onChange={(e) => setConfirm(e.target.value)}
+                    autoComplete="new-password"
+                    placeholder="Repeat password"
+                    className="w-full px-5 py-4 bg-surface-container-low border border-transparent outline-none focus:ring-2 focus:ring-primary rounded-xl pr-12"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm((v) => !v)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-outline hover:text-primary"
+                    aria-label="Toggle confirm password visibility"
+                  >
+                    <Icon name={showConfirm ? "visibility_off" : "visibility"} />
+                  </button>
+                </div>
               </div>
               <button
                 type="submit"
