@@ -10,6 +10,7 @@ import { formatPKR } from "@/lib/format";
 import { usePageLoading } from "@/hooks/use-page-loading";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProducts } from "@/store/products";
+import { HeroCarousel } from "@/components/HeroCarousel";
 
 const varieties = ["All", "Sindhri", "Chaunsa", "Anwar Ratol", "Langra"] as const;
 const weights: (WeightOption | "All")[] = ["All", "3kg", "5kg", "8kg"];
@@ -55,45 +56,9 @@ const Shop = () => {
   return (
     <SiteShell>
       <div className="pt-32 pb-20 px-4 sm:px-6 max-w-screen-2xl mx-auto">
-        {/* Editorial header */}
-        <ScrollReveal variant="fade-up" duration={0.9} className="mb-20 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          <div className="lg:col-span-5 z-10">
-            <span className="inline-block px-4 py-1.5 bg-secondary-fixed text-on-secondary-fixed-variant text-xs font-bold rounded-full mb-6 tracking-widest uppercase">
-              Harvest Season 2024
-            </span>
-            <h1 className="text-6xl md:text-7xl font-headline font-extrabold tracking-tighter leading-tight mb-6 text-editorial-gradient">
-              Pure Golden
-              <br />
-              Indulgence.
-            </h1>
-            <p className="text-lg text-on-surface-variant max-w-md leading-relaxed mb-8">
-              Hand-picked at the peak of ripeness from the sun-drenched groves of Sindh. Experience the artisanal
-              heritage of Royal Orchard.
-            </p>
-            <button
-              onClick={() => document.getElementById("catalog")?.scrollIntoView({ behavior: "smooth" })}
-              className="px-8 py-4 bg-primary text-on-primary rounded-full font-semibold shadow-lg shadow-primary/20 hover:scale-105 transition-transform"
-            >
-              Browse Collection
-            </button>
-          </div>
-          <div className="lg:col-span-7 relative">
-            <div className="aspect-[16/10] rounded-xl overflow-hidden bg-surface-container-low shadow-2xl relative">
-              <img
-                className="w-full h-full object-cover"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBz_Rv5_wd9vDrI4h58XmSfhYZghD1GZrWjgdbhXXJS3P8uKmPp4HULPSewShQmV-Ii6eftIMRvYzBuAzDW_6SPp8R9ST4M8KuYX0QILUhAxLtU9mCxMdjT51BRvdl2zdfKWptohN3WUVNa3QXeiEsZSIlqdQOd5v65BOAWJY38cv3HOAmzErRdUvNW_GXh9-gHobn4nTp9ajj27gez84f7Z7kJGFoeAKztH5chrNjpNHfJT5zOC7P0F7bHNjVOXB2xj0c0eg7Oqlpm"
-                alt="Ripe yellow mangoes"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-primary/10 to-transparent" />
-            </div>
-            <div className="hidden md:block absolute -bottom-12 -left-12 w-64 h-80 rounded-lg overflow-hidden shadow-xl border-8 border-surface transform -rotate-6">
-              <img
-                className="w-full h-full object-cover"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCv3CJi_8VFDrlb6kF-hdUwylBzavCfM7znd7Mzhfhldjaf-RNry-_E52AJS7J6xEqSkvVjVqMxpRfu8DJIvEQ6FMWfiIMDn11mW_waLztLsceyJ9czQhCXqJvjQ9l831sCd40ZPj53bcIHlqkFHKYe8MTV-IT8jmD-W5FgM525JZNzgPSj95I8zhXsbfS7VpVbSRxOVPEoCWYlfsqhzj5yB0PR0110t0BPTF1FlMIaQ2FVoP39v0A6L0vh2S_OM4hgI2aX1lNPXQA0"
-                alt="Sliced mango"
-              />
-            </div>
-          </div>
+        {/* Hero carousel */}
+        <ScrollReveal variant="fade-up" duration={0.9} className="mb-12 sm:mb-16 md:mb-20">
+          <HeroCarousel />
         </ScrollReveal>
 
         <ScrollReveal id="catalog" variant="fade-up" duration={0.88} delay={0.06} className="flex flex-col lg:flex-row gap-12">
