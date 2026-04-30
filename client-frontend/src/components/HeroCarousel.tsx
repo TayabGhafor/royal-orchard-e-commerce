@@ -53,6 +53,11 @@ export const HeroCarousel = memo(function HeroCarousel() {
   const active = HERO_SLIDES[index];
   const autoplay = !reduced && !paused;
 
+  const prevIndex = (index - 1 + count) % count;
+  const nextIndex = (index + 1) % count;
+  const prev = HERO_SLIDES[prevIndex];
+  const next = HERO_SLIDES[nextIndex];
+
   const go = useCallback(
     (dir: -1 | 1) => {
       setDirection(dir);
@@ -97,115 +102,155 @@ export const HeroCarousel = memo(function HeroCarousel() {
       aria-roledescription="carousel"
       aria-label="Shop highlights"
     >
-      <div className="relative min-h-[min(72vh,520px)] sm:min-h-[380px] md:min-h-[420px] lg:min-h-[460px]">
-        <div className="pointer-events-none absolute inset-y-10 left-0 z-[15] w-14 sm:w-20 md:w-28 bg-gradient-to-r from-black/55 via-black/20 to-transparent" />
-        <div className="pointer-events-none absolute inset-y-10 right-0 z-[15] w-14 sm:w-20 md:w-28 bg-gradient-to-l from-black/55 via-black/20 to-transparent" />
+      <div className="relative min-h-[min(58vh,460px)] sm:min-h-[360px] md:min-h-[400px] lg:min-h-[420px] bg-surface">
+        {/* Soft wash like the reference */}
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(900px_420px_at_50%_20%,rgba(255,255,255,0.95),rgba(255,255,255,0.60)_55%,rgba(255,255,255,0.0))]" />
 
-        <AnimatePresence initial={false} custom={direction} mode="sync">
-          <motion.div
-            key={active.id}
-            custom={direction}
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={panelTransition}
-            className="absolute inset-0"
-          >
-            {reduced ? (
-              <img
-                src={active.image}
-                alt={active.imageAlt}
-                className="absolute inset-0 h-full w-full object-cover"
-                decoding="async"
-                fetchPriority="high"
-                sizes="100vw"
-              />
-            ) : (
-              <motion.div
-                className="absolute inset-0 will-change-transform"
-                initial={false}
-                animate={{ scale: [1, 1.045] }}
-                transition={{
-                  duration: 16,
-                  repeat: Infinity,
-                  repeatType: "reverse",
-                  ease: "easeInOut",
-                }}
-              >
-                <img
-                  src={active.image}
-                  alt={active.imageAlt}
-                  className="h-full w-full object-cover"
-                  decoding="async"
-                  fetchPriority={index === 0 ? "high" : "auto"}
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, min(1280px, 100vw)"
-                />
-              </motion.div>
-            )}
+        {/* Cards track */}
+        <div className="relative mx-auto flex min-h-[inherit] max-w-[980px] items-center justify-center px-3 sm:px-6">
+          <AnimatePresence initial={false} custom={direction} mode="sync">
+            <motion.div
+              key={active.id}
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={panelTransition}
+              className="relative w-full"
+            >
+              {/* Side cards (desktop/tablet) */}
+              <div className="pointer-events-none absolute inset-0 hidden items-center justify-center sm:flex">
+                <div className="relative w-full">
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2">
+                    <div className="relative h-[300px] w-[240px] md:h-[340px] md:w-[270px] lg:h-[360px] lg:w-[285px]">
+                      <div className="absolute inset-0 overflow-hidden rounded-2xl bg-surface-container-low shadow-[0_18px_40px_-20px_rgba(0,0,0,0.35)] ring-1 ring-black/10">
+                        <img
+                          src={prev.image}
+                          alt={prev.imageAlt}
+                          className="h-full w-full object-cover opacity-70 blur-[1.5px]"
+                          decoding="async"
+                          sizes="(min-width: 640px) 240px"
+                        />
+                        <div className="absolute inset-0 bg-black/10" aria-hidden />
+                      </div>
+                      <div className="absolute inset-0 grid place-items-center px-6" aria-hidden>
+                        <div className="text-center font-headline text-5xl font-light tracking-wide text-white/90 drop-shadow-[0_10px_26px_rgba(0,0,0,0.30)]">
+                          {prev.title}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
-            <div
-              className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/15 md:from-black/78 md:via-black/35"
-              aria-hidden
-            />
-            <div
-              className="absolute inset-0 bg-gradient-to-br from-amber-950/25 via-transparent to-primary/20"
-              aria-hidden
-            />
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2">
+                    <div className="relative h-[300px] w-[240px] md:h-[340px] md:w-[270px] lg:h-[360px] lg:w-[285px]">
+                      <div className="absolute inset-0 overflow-hidden rounded-2xl bg-surface-container-low shadow-[0_18px_40px_-20px_rgba(0,0,0,0.35)] ring-1 ring-black/10">
+                        <img
+                          src={next.image}
+                          alt={next.imageAlt}
+                          className="h-full w-full object-cover opacity-70 blur-[1.5px]"
+                          decoding="async"
+                          sizes="(min-width: 640px) 240px"
+                        />
+                        <div className="absolute inset-0 bg-black/10" aria-hidden />
+                      </div>
+                      <div className="absolute inset-0 grid place-items-center px-6" aria-hidden>
+                        <div className="text-center font-headline text-5xl font-light tracking-wide text-white/90 drop-shadow-[0_10px_26px_rgba(0,0,0,0.30)]">
+                          {next.title}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-            {/* Copy: bottom-left — CTA: top-right (opposite corner) */}
-            <div className="relative z-10 flex min-h-[inherit] flex-col p-5 pt-16 sm:p-7 sm:pt-20 md:p-10 lg:p-11 xl:p-12">
-              <motion.div
-                key={`cta-${active.id}`}
-                initial={reduced ? false : { opacity: 0, y: -16, scale: 0.94 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ ...springContent, delay: reduced ? 0 : 0.08 }}
-                className="self-end z-20 w-full max-w-[min(100%,280px)] sm:max-w-xs md:max-w-sm"
-              >
-                <HeroCta
-                  to={active.to}
-                  className="ml-auto flex w-fit items-center gap-2 rounded-full border border-white/35 bg-white/12 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-black/25 backdrop-blur-md transition-all hover:border-primary/60 hover:bg-primary hover:text-on-primary hover:shadow-primary/30 sm:px-7 sm:py-3 sm:text-base md:py-3.5"
-                >
-                  {active.cta}
-                  <Icon name="arrow_forward" className="text-lg" />
-                </HeroCta>
-              </motion.div>
+              {/* Center card */}
+              <div className="relative mx-auto w-[min(92%,360px)] sm:w-[min(56%,420px)] md:w-[min(56%,460px)] lg:w-[min(56%,500px)]">
+                <div className="relative overflow-hidden rounded-2xl bg-surface-container-low shadow-[0_28px_70px_-22px_rgba(0,0,0,0.45)] ring-1 ring-black/10">
+                  {reduced ? (
+                    <img
+                      src={active.image}
+                      alt={active.imageAlt}
+                      className="h-[330px] w-full object-cover sm:h-[360px] md:h-[390px] lg:h-[410px]"
+                      decoding="async"
+                      fetchPriority={index === 0 ? "high" : "auto"}
+                      sizes="(max-width: 640px) 360px, (max-width: 1024px) 460px, 500px"
+                    />
+                  ) : (
+                    <motion.div
+                      className="will-change-transform"
+                      initial={false}
+                      animate={{ scale: [1.01, 1.06] }}
+                      transition={{
+                        duration: 18,
+                        repeat: Infinity,
+                        repeatType: "reverse",
+                        ease: "easeInOut",
+                      }}
+                    >
+                      <img
+                        src={active.image}
+                        alt={active.imageAlt}
+                        className="h-[330px] w-full object-cover sm:h-[360px] md:h-[390px] lg:h-[410px]"
+                        decoding="async"
+                        fetchPriority={index === 0 ? "high" : "auto"}
+                        sizes="(max-width: 640px) 360px, (max-width: 1024px) 460px, 500px"
+                      />
+                    </motion.div>
+                  )}
 
-              <div className="mt-auto flex w-full flex-1 flex-col justify-end pb-1 sm:pb-2">
+                  {/* Gentle haze + title like reference */}
+                  <div className="absolute inset-0 bg-black/10" aria-hidden />
+                  <div className="absolute inset-0 grid place-items-center px-8">
+                    <motion.div
+                      key={`title-${active.id}`}
+                      initial={reduced ? false : { opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ ...springContent, delay: reduced ? 0 : 0.04 }}
+                      className="text-center font-headline text-6xl font-light tracking-wide text-white drop-shadow-[0_14px_34px_rgba(0,0,0,0.30)] sm:text-7xl md:text-7xl lg:text-8xl"
+                    >
+                      {active.title}
+                    </motion.div>
+                  </div>
+                </div>
+
+                {/* CTA pill sits bottom-center (keeps your existing CTA) */}
                 <motion.div
-                  key={`copy-${active.id}`}
-                  initial={reduced ? false : { opacity: 0, y: 22 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ ...springContent, delay: reduced ? 0 : 0.04 }}
-                  className="w-full max-w-xl lg:max-w-2xl"
+                  key={`cta-${active.id}`}
+                  initial={reduced ? false : { opacity: 0, y: 14, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ ...springContent, delay: reduced ? 0 : 0.08 }}
+                  className="mt-5 flex justify-center"
                 >
-                  <h1 className="font-headline text-[1.6rem] font-extrabold leading-[1.1] tracking-tight text-white drop-shadow-[0_2px_24px_rgba(0,0,0,0.45)] sm:text-4xl md:text-5xl lg:text-6xl">
-                    {active.title}
-                  </h1>
-                  <p className="mt-3 max-w-xl text-sm font-medium leading-relaxed text-amber-50/95 sm:mt-4 sm:text-base md:text-lg md:leading-relaxed">
-                    {active.subtitle}
-                  </p>
+                  <HeroCta
+                    to={active.to}
+                    className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/70 px-6 py-3 text-sm font-bold text-on-surface shadow-lg shadow-black/10 backdrop-blur-md transition-all hover:bg-white hover:shadow-xl"
+                  >
+                    {active.cta}
+                    <Icon name="arrow_forward" className="text-lg" />
+                  </HeroCta>
                 </motion.div>
               </div>
-            </div>
-          </motion.div>
-        </AnimatePresence>
+            </motion.div>
+          </AnimatePresence>
+        </div>
 
+        {/* Reference-like arrows */}
         <button
           type="button"
           onClick={() => go(-1)}
-          className="absolute left-2 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/35 bg-black/35 text-white shadow-lg backdrop-blur-md transition-colors hover:bg-black/50 sm:left-3 sm:h-11 sm:w-11 md:left-4 md:h-12 md:w-12"
+          className="absolute left-3 top-1/2 z-30 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/55 text-on-surface shadow-md ring-1 ring-black/10 backdrop-blur-md transition-colors hover:bg-white sm:left-5 sm:h-12 sm:w-12"
           aria-label="Previous slide"
         >
-          <Icon name="chevron_left" className="text-xl md:text-2xl" />
+          <Icon name="chevron_left" className="text-2xl" />
         </button>
         <button
           type="button"
           onClick={() => go(1)}
-          className="absolute right-2 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/35 bg-black/35 text-white shadow-lg backdrop-blur-md transition-colors hover:bg-black/50 sm:right-3 sm:h-11 sm:w-11 md:right-4 md:h-12 md:w-12"
+          className="absolute right-3 top-1/2 z-30 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/55 text-on-surface shadow-md ring-1 ring-black/10 backdrop-blur-md transition-colors hover:bg-white sm:right-5 sm:h-12 sm:w-12"
           aria-label="Next slide"
         >
-          <Icon name="chevron_right" className="text-xl md:text-2xl" />
+          <Icon name="chevron_right" className="text-2xl" />
         </button>
       </div>
 
