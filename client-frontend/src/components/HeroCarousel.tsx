@@ -254,22 +254,7 @@ export const HeroCarousel = memo(function HeroCarousel() {
         </button>
       </div>
 
-      <div className="relative z-20 flex flex-wrap items-center justify-center gap-2 border-t border-outline-variant/15 bg-surface-container-lowest/95 px-3 py-3.5 backdrop-blur-md sm:gap-2.5 sm:px-4 md:py-4">
-        {HERO_SLIDES.map((slide, i) => (
-          <button
-            key={slide.id}
-            type="button"
-            aria-label={`Go to slide ${i + 1}: ${slide.title}`}
-            aria-current={i === index}
-            onClick={() => goTo(i)}
-            className={`h-2 rounded-full transition-all duration-500 ease-out ${
-              i === index
-                ? "w-8 bg-primary shadow-sm shadow-primary/40 sm:w-9"
-                : "w-2 bg-outline-variant/55 hover:bg-outline-variant"
-            }`}
-          />
-        ))}
-      </div>
+      {/* Dots removed to match the reference UI */}
     </div>
   );
 });
