@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useState, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import { Icon } from "@/components/Icon";
@@ -7,14 +7,6 @@ import { HERO_SLIDES } from "@/data/hero-carousel-slides";
 export type { HeroSlide } from "@/data/hero-carousel-slides";
 
 const AUTO_MS = 4800;
-
-function shortestDelta(i: number, activeIndex: number, count: number) {
-  // returns values like -2,-1,0,1,2 ... choosing the shortest wrap direction
-  let d = (i - activeIndex) % count;
-  if (d > count / 2) d -= count;
-  if (d < -count / 2) d += count;
-  return d;
-}
 
 function HeroCta({ to, className, children }: { to: string; className?: string; children: ReactNode }) {
   if (to.startsWith("#")) {
@@ -34,41 +26,85 @@ function HeroCta({ to, className, children }: { to: string; className?: string; 
 export const HeroCarousel = memo(function HeroCarousel() {
   const reduced = useReducedMotion();
   const count = HERO_SLIDES.length;
+  const wrapRef = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
 
   const autoplay = !reduced && !paused;
 
+  const [cw, setCw] = useState(0);
+  const [slideW, setSlideW] = useState(420);
+  const gap = 26;
+  const loopTrack = [...HERO_SLIDES, ...HERO_SLIDES, ...HERO_SLIDES];
+  const n = HERO_SLIDES.length;
+  const [idx, setIdx] = useState(n);
+  const [instant, setInstant] = useState(false);
+
   const go = useCallback(
     (dir: -1 | 1) => {
-      setIndex((i) => (i + dir + count) % count);
+      setInstant(false);
+      setIdx((i) => i + dir);
     },
-    [count],
+    [],
   );
 
-  const goTo = useCallback(
-    (i: number) => {
-      if (i === index) return;
-      setIndex(i);
-    },
-    [count, index],
-  );
+  useLayoutEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => {
+      const w = el.offsetWidth;
+      setCw(w);
+      // closer to the reference sizing
+      const next = Math.min(520, Math.max(320, Math.round(w * 0.52)));
+      setSlideW(next);
+    });
+    ro.observe(el);
+    setCw(el.offsetWidth);
+    setSlideW(Math.min(520, Math.max(320, Math.round(el.offsetWidth * 0.52))));
+    return () => ro.disconnect();
+  }, []);
+
+  // keep index in sync with looped track
+  useEffect(() => {
+    setIndex(((idx % n) + n) % n);
+  }, [idx, n]);
 
   useEffect(() => {
     if (!autoplay) return;
     const id = window.setInterval(() => {
-      setIndex((i) => (i + 1) % count);
+      setInstant(false);
+      setIdx((i) => i + 1);
     }, AUTO_MS);
     return () => window.clearInterval(id);
-  }, [autoplay, count]);
+  }, [autoplay]);
 
   const springContent = reduced
     ? { duration: 0 }
     : { type: "spring" as const, stiffness: 200, damping: 28, mass: 0.65 };
 
-  const cardSpring = reduced
+  const trackSpring = reduced
     ? { duration: 0.12 }
-    : { type: "spring" as const, stiffness: 130, damping: 26, mass: 1.05 };
+    : { type: "spring" as const, stiffness: 165, damping: 26, mass: 0.9 };
+
+  // infinite-ish loop reset (same trick as CustomerLoveCarousel)
+  useEffect(() => {
+    if (idx < 2 * n) return;
+    setInstant(true);
+    setIdx(n);
+    const id = requestAnimationFrame(() => setInstant(false));
+    return () => cancelAnimationFrame(id);
+  }, [idx, n]);
+
+  useEffect(() => {
+    if (idx > 0) return;
+    setInstant(true);
+    setIdx(n);
+    const id = requestAnimationFrame(() => setInstant(false));
+    return () => cancelAnimationFrame(id);
+  }, [idx, n]);
+
+  const step = slideW + gap;
+  const translateX = cw > 0 ? cw / 2 - idx * step - slideW / 2 : 0;
 
   return (
     <div
@@ -80,90 +116,56 @@ export const HeroCarousel = memo(function HeroCarousel() {
       aria-label="Shop highlights"
     >
       <div className="relative min-h-[min(58vh,460px)] sm:min-h-[360px] md:min-h-[400px] lg:min-h-[420px] bg-transparent">
-        {/* Cards track (smooth premium motion) */}
-        <div className="relative mx-auto flex min-h-[inherit] max-w-[980px] items-center justify-center px-3 sm:px-6">
-          <div className="relative h-[330px] w-full sm:h-[360px] md:h-[390px] lg:h-[410px]">
-            {HERO_SLIDES.map((slide, i) => {
-              const d = shortestDelta(i, index, count);
-              if (Math.abs(d) > 1) return null;
-
-              const isActive = d === 0;
-              const isSide = d !== 0;
-
-              return (
-                <motion.button
-                  key={slide.id}
-                  type="button"
-                  onClick={() => (d === -1 ? go(-1) : d === 1 ? go(1) : undefined)}
-                  disabled={isActive}
-                  className="absolute left-1/2 top-0 block h-full w-[min(92%,360px)] sm:w-[420px] md:w-[460px] lg:w-[500px] -translate-x-1/2 rounded-2xl focus:outline-none"
-                  style={{
-                    zIndex: isActive ? 30 : 20,
-                    pointerEvents: isActive ? "auto" : "auto",
-                  }}
-                  initial={false}
-                  animate={{
-                    x: d * 230,
-                    scale: isActive ? 1 : 0.88,
-                    opacity: isActive ? 1 : 0.52,
-                    filter: isActive ? "blur(0px)" : "blur(2.2px)",
-                  }}
-                  transition={cardSpring}
-                  aria-current={isActive}
-                  aria-label={isActive ? `Current slide: ${slide.title}` : `Go to slide: ${slide.title}`}
-                >
-                  <div
-                    className={`relative h-full w-full overflow-hidden rounded-2xl shadow-[0_24px_60px_-24px_rgba(0,0,0,0.40)] ring-1 ${
-                      isActive ? "ring-black/10" : "ring-black/5"
-                    }`}
+        {/* Simple smooth track */}
+        <div ref={wrapRef} className="relative mx-auto flex min-h-[inherit] max-w-[980px] items-center justify-center px-3 sm:px-6">
+          <div className="relative w-full" style={{ height: "min(410px, 58vh)" }}>
+            <motion.div
+              className="flex flex-row items-center will-change-transform"
+              style={{ gap }}
+              animate={{ x: translateX }}
+              transition={instant ? { duration: 0 } : trackSpring}
+            >
+              {loopTrack.map((slide, i) => {
+                const isCenter = i === idx;
+                return (
+                  <motion.button
+                    key={`${slide.id}-${i}`}
+                    type="button"
+                    onClick={() => setIdx(i)}
+                    className="shrink-0 focus:outline-none"
+                    style={{ width: slideW }}
+                    animate={{
+                      scale: isCenter ? 1 : 0.86,
+                      opacity: isCenter ? 1 : 0.45,
+                      filter: isCenter ? "blur(0px)" : "blur(2.4px)",
+                    }}
+                    transition={instant ? { duration: 0 } : { type: "spring", stiffness: 240, damping: 30, mass: 0.9 }}
+                    aria-current={isCenter}
+                    aria-label={isCenter ? `Current slide: ${slide.title}` : `Go to slide: ${slide.title}`}
                   >
-                    {/* Image */}
-                    <img
-                      src={slide.image}
-                      alt={slide.imageAlt}
-                      className="h-full w-full object-cover"
-                      decoding="async"
-                      fetchPriority={isActive && index === 0 ? "high" : "auto"}
-                      sizes="(max-width: 640px) 360px, (max-width: 1024px) 460px, 500px"
-                    />
-
-                    {/* Overlay tint */}
-                    <div
-                      className={isActive ? "absolute inset-0 bg-black/15" : "absolute inset-0 bg-black/10"}
-                      aria-hidden
-                    />
-
-                    {/* Title */}
-                    <div className="absolute inset-0 grid place-items-center px-7" aria-hidden={isSide}>
-                      <motion.div
-                        initial={false}
-                        animate={{
-                          opacity: isActive ? 1 : 0.85,
-                          y: isActive ? 0 : 0,
-                        }}
-                        transition={springContent}
-                        className="text-center font-headline font-light tracking-wide text-white drop-shadow-[0_14px_34px_rgba(0,0,0,0.28)] leading-[0.95] text-[42px] sm:text-[52px] md:text-[58px] lg:text-[64px]"
-                      >
-                        {slide.title}
-                      </motion.div>
+                    <div className="relative overflow-hidden rounded-2xl shadow-[0_24px_60px_-24px_rgba(0,0,0,0.40)] ring-1 ring-black/10">
+                      <img
+                        src={slide.image}
+                        alt={slide.imageAlt}
+                        className="h-[330px] w-full object-cover sm:h-[360px] md:h-[390px] lg:h-[410px]"
+                        decoding="async"
+                        fetchPriority={isCenter && index === 0 ? "high" : "auto"}
+                        sizes="(max-width: 640px) 360px, (max-width: 1024px) 460px, 500px"
+                      />
+                      <div className="absolute inset-0 bg-black/15" aria-hidden />
+                      <div className="absolute inset-0 grid place-items-center px-7">
+                        <div className="text-center font-headline font-light tracking-wide text-white drop-shadow-[0_14px_34px_rgba(0,0,0,0.28)] leading-[0.98] text-[38px] sm:text-[48px] md:text-[54px] lg:text-[60px]">
+                          {slide.title}
+                        </div>
+                      </div>
                     </div>
-
-                    {/* Soft edge fade so side cards feel tucked behind */}
-                    <div
-                      className="pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-black/12 to-transparent"
-                      aria-hidden
-                    />
-                    <div
-                      className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-black/12 to-transparent"
-                      aria-hidden
-                    />
-                  </div>
-                </motion.button>
-              );
-            })}
+                  </motion.button>
+                );
+              })}
+            </motion.div>
           </div>
 
-          {/* CTA pill (only current slide) */}
+          {/* CTA pill */}
           <motion.div
             key={`cta-${HERO_SLIDES[index]?.id ?? index}`}
             initial={reduced ? false : { opacity: 0, y: 10, scale: 0.98 }}
