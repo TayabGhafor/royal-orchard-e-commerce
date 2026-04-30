@@ -29,6 +29,7 @@ import Wholesale from "./pages/Wholesale";
 import Account from "./pages/Account";
 import Orders from "./pages/Orders";
 import NotFound from "./pages/NotFound.tsx";
+import { SupportDock } from "@/components/support/SupportDock";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -74,6 +75,7 @@ const App = () => (
           <Route path="/orders" element={<Orders />} />
           <Route path="*" element={<NotFound />} />
           </Routes>
+          <SupportDock />
         </BrowserRouter>
       </TooltipProvider>
     </LazyMotion>

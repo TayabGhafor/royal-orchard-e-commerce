@@ -8,6 +8,7 @@ const menu = [
   { name: "Orders", path: "/orders", icon: "receipt_long", end: false },
   { name: "Customers", path: "/customers", icon: "groups", end: false },
   { name: "Analytics", path: "/analytics", icon: "analytics", end: false },
+  { name: "Chatbot KB", path: "/chatbot-knowledge", icon: "smart_toy", end: false },
 ];
 
 export default function AdminSidebar({

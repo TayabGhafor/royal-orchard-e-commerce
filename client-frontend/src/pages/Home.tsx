@@ -188,7 +188,7 @@ function CustomerLoveCarousel() {
         transition={
           instant
             ? { duration: 0 }
-            : { type: "spring", stiffness: 118, damping: 26, mass: 0.72 }
+            : { type: "spring", stiffness: 168, damping: 28, mass: 0.68 }
         }
       >
         {loopTrack.map((r, i) => {
@@ -199,19 +199,19 @@ function CustomerLoveCarousel() {
               className="shrink-0 flex items-center justify-center"
               style={{ width: slideW }}
               animate={{
-                scale: isCenter ? 1.06 : 0.88,
-                opacity: isCenter ? 1 : 0.62,
+                scale: isCenter ? 1.075 : 0.87,
+                opacity: isCenter ? 1 : 0.58,
               }}
               transition={{
                 type: "spring",
-                stiffness: 220,
-                damping: 30,
+                stiffness: 240,
+                damping: 32,
               }}
             >
               <motion.article
                 className={`relative w-full rounded-2xl border bg-white p-6 md:p-8 shadow-lg transition-shadow duration-300 ${
                   isCenter
-                    ? "border-primary/25 shadow-xl shadow-primary/10 ring-1 ring-primary/15"
+                    ? "border-primary/30 shadow-2xl shadow-primary/15 ring-1 ring-primary/20"
                     : "border-outline-variant/15 shadow-sm"
                 }`}
                 whileHover={{
@@ -594,7 +594,9 @@ const Home = () => {
           <h2 className="font-headline text-4xl font-extrabold text-center mb-10 md:mb-14 text-on-background">
             Customer Love
           </h2>
-          <CustomerLoveCarousel />
+          <div className="relative overflow-hidden rounded-2xl md:rounded-3xl border border-outline-variant/20 bg-surface-container-low/60 shadow-2xl shadow-primary/10 ring-1 ring-white/55">
+            <CustomerLoveCarousel />
+          </div>
         </div>
       </ScrollReveal>
     </SiteShell>

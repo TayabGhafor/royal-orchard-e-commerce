@@ -30,6 +30,7 @@ function loadEnv(processEnv) {
     LOG_HTTP_PAYLOADS: toBool(processEnv.LOG_HTTP_PAYLOADS, nodeEnv !== "production"),
     LOG_USER_PAYLOADS: toBool(processEnv.LOG_USER_PAYLOADS, nodeEnv !== "production"),
     LOG_MONGO_QUERIES: toBool(processEnv.LOG_MONGO_QUERIES, false),
+    OPENAI_API_KEY: String(processEnv.OPENAI_API_KEY || "").trim(),
   };
 
   return env;

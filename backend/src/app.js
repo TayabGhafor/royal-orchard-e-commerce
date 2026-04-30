@@ -132,6 +132,7 @@ function createApp(env) {
   app.use("/api/uploads", require("./modules/uploads/uploads.routes")(env));
   app.use("/api/orders", require("./modules/orders/orders.routes")(env));
   app.use("/api/analytics", require("./modules/analytics/analytics.routes")(env));
+  app.use("/api/chatbot", require("./modules/chatbot/chatbot.routes")(env));
 
   app.use((_req, res) => res.status(404).json({ error: { code: "not_found", message: "Route not found" } }));
   app.use(errorMiddleware);
