@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { startTransition, useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Icon } from "@/components/Icon";
 import { postChatbotQuery } from "@/lib/chatbot-api";
@@ -132,6 +132,9 @@ export function ChatbotPopup({ open, onOpenChange }: ChatbotPopupProps) {
   const [sending, setSending] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  /** Latest input for send() — avoids stale closure when `send` is memoized with `[sending]` only. */
+  const inputLatestRef = useRef(input);
+  inputLatestRef.current = input;
 
   useSoftTypingSound(sending, reduced ?? false);
 
@@ -140,14 +143,19 @@ export function ChatbotPopup({ open, onOpenChange }: ChatbotPopupProps) {
   }, [reduced]);
 
   useEffect(() => {
-    if (open) {
-      scrollToEnd();
-      setTimeout(() => inputRef.current?.focus(), 200);
-    }
-  }, [open, messages, scrollToEnd]);
+    if (!open) return;
+    const id = requestAnimationFrame(() => scrollToEnd());
+    return () => cancelAnimationFrame(id);
+  }, [open, messages.length, scrollToEnd]);
+
+  useEffect(() => {
+    if (!open) return;
+    const t = window.setTimeout(() => inputRef.current?.focus(), 200);
+    return () => clearTimeout(t);
+  }, [open]);
 
   const send = useCallback(async () => {
-    const text = input.trim();
+    const text = inputLatestRef.current.trim();
     if (!text || sending) return;
     setInput("");
     const userMsg: ChatMessage = { id: `u-${Date.now()}`, role: "user", text };
@@ -157,27 +165,31 @@ export function ChatbotPopup({ open, onOpenChange }: ChatbotPopupProps) {
 
     try {
       const [replyText] = await Promise.all([postChatbotQuery(text), sleep(MIN_TYPING_MS)]);
-      setMessages((m) => [
-        ...m,
-        {
-          id: `a-${Date.now()}`,
-          role: "assistant",
-          text: replyText,
-          revealContent: true,
-        },
-      ]);
+      startTransition(() => {
+        setMessages((m) => [
+          ...m,
+          {
+            id: `a-${Date.now()}`,
+            role: "assistant",
+            text: replyText,
+            revealContent: true,
+          },
+        ]);
+      });
     } catch {
       const elapsed = Date.now() - started;
       if (elapsed < MIN_TYPING_MS) await sleep(MIN_TYPING_MS - elapsed);
-      setMessages((m) => [
-        ...m,
-        {
-          id: `a-${Date.now()}-e`,
-          role: "assistant",
-          text: "Something went wrong. Please try again or use WhatsApp / email from the support button.",
-          revealContent: true,
-        },
-      ]);
+      startTransition(() => {
+        setMessages((m) => [
+          ...m,
+          {
+            id: `a-${Date.now()}-e`,
+            role: "assistant",
+            text: "Something went wrong. Please try again or use WhatsApp / email from the support button.",
+            revealContent: true,
+          },
+        ]);
+      });
     } finally {
       setSending(false);
     }
