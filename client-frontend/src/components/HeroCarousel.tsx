@@ -95,16 +95,14 @@ export const HeroCarousel = memo(function HeroCarousel() {
 
   return (
     <div
-      className="relative overflow-hidden rounded-2xl md:rounded-3xl border border-outline-variant/20 bg-surface-container-low shadow-2xl shadow-primary/15 ring-1 ring-white/60"
+      className="relative overflow-hidden rounded-2xl md:rounded-3xl bg-transparent"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       role="region"
       aria-roledescription="carousel"
       aria-label="Shop highlights"
     >
-      <div className="relative min-h-[min(58vh,460px)] sm:min-h-[360px] md:min-h-[400px] lg:min-h-[420px] bg-surface">
-        {/* Soft wash like the reference */}
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(900px_420px_at_50%_20%,rgba(255,255,255,0.95),rgba(255,255,255,0.60)_55%,rgba(255,255,255,0.0))]" />
+      <div className="relative min-h-[min(58vh,460px)] sm:min-h-[360px] md:min-h-[400px] lg:min-h-[420px] bg-transparent">
 
         {/* Cards track */}
         <div className="relative mx-auto flex min-h-[inherit] max-w-[980px] items-center justify-center px-3 sm:px-6">
