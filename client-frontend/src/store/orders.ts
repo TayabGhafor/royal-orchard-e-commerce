@@ -46,47 +46,8 @@ interface OrdersState {
   upsertCustomerLocal: (customer: { name: string; email: string; spent: number }) => void;
 }
 
-const seedOrders: StoreOrder[] = [
-  {
-    id: "RO-1234",
-    customer: "Amara Vance",
-    email: "amara@example.com",
-    product: "Sindhri Honey Gold (5kg)",
-    quantity: 1,
-    total: 4500,
-    status: "Pending",
-    address: "Apt 4, Clifton Block 2, Karachi",
-    createdAt: new Date(Date.now() - 86400000).toISOString(),
-  },
-  {
-    id: "RO-1235",
-    customer: "Julian Ricci",
-    email: "julian@example.com",
-    product: "Anwar Ratol Special (3kg)",
-    quantity: 2,
-    total: 10400,
-    status: "Shipped",
-    address: "DHA Phase 6, Lahore",
-    createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-  },
-  {
-    id: "RO-1236",
-    customer: "Elena Vance",
-    email: "elena@example.com",
-    product: "Chaunsa Delight (8kg)",
-    quantity: 1,
-    total: 3800,
-    status: "Delivered",
-    address: "F-7 Markaz, Islamabad",
-    createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
-  },
-];
-
-const seedCustomers: StoreCustomer[] = [
-  { id: "C-001", name: "Amara Vance", email: "amara@example.com", status: "Active", orders: 14, spent: 62800, joinedAt: "2024-01-12" },
-  { id: "C-002", name: "Julian Ricci", email: "julian@example.com", status: "Active", orders: 8, spent: 31200, joinedAt: "2024-02-04" },
-  { id: "C-003", name: "Elena Vance", email: "elena@example.com", status: "Active", orders: 22, spent: 88600, joinedAt: "2023-11-23" },
-];
+const seedOrders: StoreOrder[] = [];
+const seedCustomers: StoreCustomer[] = [];
 
 // De-dupe + throttle order fetches across the whole storefront app.
 let myOrdersInFlight: Promise<void> | null = null;

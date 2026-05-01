@@ -101,7 +101,9 @@ const Orders = () => {
 
   const myOrders = useMemo(() => {
     if (!user) return [];
-    return allOrders.filter((o) => o.email.toLowerCase() === user.email.toLowerCase());
+    // `loadOrders()` already fetches server-side "my orders" for this user.
+    // Keep local filtering out of the way so authenticated orders (which may not have guest.email) still show.
+    return allOrders;
   }, [allOrders, user]);
 
   const counts = useMemo(

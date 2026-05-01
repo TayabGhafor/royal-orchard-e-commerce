@@ -12,6 +12,7 @@ import { usePageLoading } from "@/hooks/use-page-loading";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
 import { ScrollReveal } from "@/components/ScrollReveal";
+import { useProducts } from "@/store/products";
 
 const checkoutSchema = z.object({
   name: z.string().trim().min(2, "Please enter your name").max(100),
@@ -21,12 +22,23 @@ const checkoutSchema = z.object({
 
 type Payment = "cod" | "card" | "easypaisa" | "jazzcash";
 
+function isObjectId(id: string) {
+  return /^[a-f\d]{24}$/i.test(id);
+}
+
+function weightToNumber(w: string) {
+  const n = Number(String(w).replace(/[^\d]/g, ""));
+  return [3, 5, 8].includes(n) ? n : null;
+}
+
 const Checkout = () => {
   const { items, subtotal, clear } = useCart();
   const addOrderLocal = useOrders((s) => s.addOrderLocal);
   const upsertCustomerLocal = useOrders((s) => s.upsertCustomerLocal);
   const user = useAuth((s) => s.user);
   const updateProfile = useAuth((s) => s.updateProfile);
+  const products = useProducts((s) => s.items);
+  const productsLoadedOnce = useProducts((s) => s.loadedOnce);
   const [form, setForm] = useState({
     name: user?.name ?? "",
     phone: user?.phone ?? "",
@@ -61,10 +73,39 @@ const Checkout = () => {
       const totalQty = items.reduce((n, it) => n + it.quantity, 0);
       const email = user?.email ?? `${form.name.toLowerCase().replace(/\s+/g, ".")}@guest.local`;
       try {
-        const res = await api<{ order: any }>("/api/orders/guest", {
+        // Ensure persisted carts from older builds (non-ObjectId product ids) can still checkout.
+        // Best effort: resolve by product name to the currently loaded product list (which uses Mongo _id).
+        if (!productsLoadedOnce) {
+          await useProducts.getState().load();
+        }
+        const resolveProductId = (productId: string, name: string) => {
+          if (isObjectId(productId)) return productId;
+          const match = products.find((p) => p.name.trim().toLowerCase() === name.trim().toLowerCase());
+          return match?.id || "";
+        };
+
+        const normalizedItems = items.map((it) => {
+          const resolvedId = resolveProductId(it.productId, it.name);
+          const weightNum = weightToNumber(it.weight);
+          return {
+            product: resolvedId,
+            weight: weightNum,
+            quantity: it.quantity,
+            name: it.name,
+          };
+        });
+
+        const bad = normalizedItems.find((it) => !isObjectId(it.product) || !it.weight);
+        if (bad) {
+          throw new Error(`Some cart items are out of date. Please remove and re-add "${bad.name}" to continue.`);
+        }
+
+        const path = user ? "/api/orders" : "/api/orders/guest";
+        const res = await api<{ order: any }>(path, {
           method: "POST",
+          auth: Boolean(user),
           body: JSON.stringify({
-            guest: { email },
+            ...(user ? {} : { guest: { email } }),
             deliveryDetails: { name: form.name, phone: form.phone, address: form.address },
             paymentMethod:
               payment === "cod"
@@ -75,8 +116,8 @@ const Checkout = () => {
                 ? "JazzCash"
                 : "Card",
             pricing: { shipping: 0, tax, total },
-            items: items.map((it) => ({
-              product: it.productId,
+            items: normalizedItems.map((it) => ({
+              product: it.product,
               weight: it.weight,
               quantity: it.quantity,
             })),
@@ -99,7 +140,7 @@ const Checkout = () => {
         if (user) updateProfile({ address: form.address, phone: form.phone, name: form.name });
         clear();
         toast.success("Order placed! We'll be in touch shortly.");
-        navigate("/");
+        navigate("/orders");
       } catch (err: any) {
         toast.error(err?.message || "Unable to place order right now");
       } finally {
