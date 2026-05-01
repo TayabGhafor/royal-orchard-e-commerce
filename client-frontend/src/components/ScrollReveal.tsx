@@ -1,4 +1,4 @@
-import { Children, type ComponentPropsWithoutRef, type ElementType, type ReactNode } from "react";
+import { Children, useMemo, type ComponentPropsWithoutRef, type ElementType, type ReactNode } from "react";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
 
 /** Premium ease-out — slow start, confident finish (no bounce). */
@@ -99,7 +99,11 @@ export function ScrollReveal<T extends ElementType = "div">({
 }: ScrollRevealProps<T>) {
   const prefersReducedMotion = useReducedMotion();
   const Component = (as || "div") as ElementType;
-  const MotionComponent = motion(Component as keyof JSX.IntrinsicElements) as typeof motion.div;
+  // IMPORTANT: memoize motion(Component) to avoid remounting children on every re-render
+  // (remounting causes input focus loss on controlled fields while typing).
+  const MotionComponent = useMemo(() => {
+    return motion(Component as keyof JSX.IntrinsicElements) as typeof motion.div;
+  }, [Component]);
 
   if (prefersReducedMotion) {
     return <Component className={className}>{children}</Component>;
