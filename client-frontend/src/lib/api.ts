@@ -2,18 +2,31 @@ type ApiError = Error & { status?: number; code?: string; details?: unknown };
 
 const API_URL = (import.meta.env.VITE_API_URL as string | undefined) || "http://localhost:5000";
 
+const TOKEN_KEY = "royalorchard-token";
+
 export function getAuthToken() {
   try {
-    return localStorage.getItem("royalorchard-token") || "";
+    // Prefer persistent login (localStorage), fall back to session-only login.
+    return localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY) || "";
   } catch {
     return "";
   }
 }
 
-export function setAuthToken(token: string) {
+export function setAuthToken(token: string, mode: "local" | "session" = "local") {
   try {
-    if (token) localStorage.setItem("royalorchard-token", token);
-    else localStorage.removeItem("royalorchard-token");
+    if (token) {
+      if (mode === "local") {
+        localStorage.setItem(TOKEN_KEY, token);
+        sessionStorage.removeItem(TOKEN_KEY);
+      } else {
+        sessionStorage.setItem(TOKEN_KEY, token);
+        localStorage.removeItem(TOKEN_KEY);
+      }
+      return;
+    }
+    localStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(TOKEN_KEY);
   } catch {
     // ignore
   }

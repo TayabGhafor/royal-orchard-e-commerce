@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -15,11 +15,18 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPwd, setShowPwd] = useState(false);
+  const [remember, setRemember] = useState(true);
   const signIn = useAuth((s) => s.signIn);
+  const rememberedEmail = useAuth((s) => s.getRememberedEmail);
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
   const adminUrl = import.meta.env.VITE_ADMIN_URL as string | undefined;
+
+  useEffect(() => {
+    const saved = rememberedEmail();
+    if (saved) setEmail(saved);
+  }, [rememberedEmail]);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +36,7 @@ const Login = () => {
       return;
     }
     (async () => {
-      const result = await signIn(email, password);
+      const result = await signIn(email, password, remember);
       if (!result.ok) {
         toast.error(result.error || "Unable to sign in");
         return;
@@ -107,6 +114,7 @@ const Login = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="hello@royalorchard.com"
+                  autoComplete="email"
                   className="w-full px-5 py-4 bg-surface-container-low border-0 outline-none focus:ring-2 focus:ring-primary rounded-t-xl"
                 />
               </div>
@@ -121,6 +129,7 @@ const Login = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
+                    autoComplete="current-password"
                     className="w-full px-5 py-4 bg-surface-container-low border-0 outline-none focus:ring-2 focus:ring-primary rounded-t-xl"
                   />
                   <button
@@ -137,6 +146,8 @@ const Login = () => {
                 <label className="flex items-center gap-3 cursor-pointer group select-none">
                   <input
                     type="checkbox"
+                    checked={remember}
+                    onChange={(e) => setRemember(e.target.checked)}
                     className="w-5 h-5 rounded-full border-outline-variant text-primary cursor-pointer transition-all duration-300 ease-out hover:scale-110 hover:shadow-[0_0_0_4px_rgba(255,191,0,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-container-low checked:shadow-[0_0_0_4px_rgba(255,191,0,0.18)]"
                   />
                   <span className="text-on-surface-variant group-hover:text-on-surface font-medium">Remember me</span>

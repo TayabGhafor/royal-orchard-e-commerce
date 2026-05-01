@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { api, setAuthToken } from "@/lib/api";
 
+const REMEMBER_EMAIL_KEY = "royalorchard-remember-email";
+
 export interface User {
   id: string;
   name: string;
@@ -12,12 +14,17 @@ export interface User {
 
 interface AuthState {
   user: User | null;
-  signIn: (email: string, password: string) => Promise<{ ok: boolean; role: "admin" | "customer"; error?: string }>;
+  signIn: (
+    email: string,
+    password: string,
+    remember?: boolean,
+  ) => Promise<{ ok: boolean; role: "admin" | "customer"; error?: string }>;
   signUp: (name: string, email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   loadMe: () => Promise<void>;
   updateProfile: (patch: Partial<Pick<User, "address" | "phone" | "name">>) => Promise<void>;
   signOut: () => void;
   isAdmin: () => boolean;
+  getRememberedEmail: () => string;
   forgotPassword: (email: string) => Promise<{ ok: boolean; error?: string }>;
   verifyResetCode: (email: string, code: string) => Promise<{ ok: boolean; resetToken?: string; error?: string }>;
   resetPasswordWithToken: (
@@ -29,13 +36,26 @@ interface AuthState {
 
 export const useAuth = create<AuthState>((set, get) => ({
   user: null,
-  signIn: async (email, password) => {
+  getRememberedEmail: () => {
+    try {
+      return localStorage.getItem(REMEMBER_EMAIL_KEY) || "";
+    } catch {
+      return "";
+    }
+  },
+  signIn: async (email, password, remember = true) => {
     try {
       const res = await api<{ token: string; user: { id: string; name: string; email: string; role: "admin" | "customer" } }>(
         "/api/auth/login",
         { method: "POST", body: JSON.stringify({ email, password }) },
       );
-      setAuthToken(res.token);
+      setAuthToken(res.token, remember ? "local" : "session");
+      try {
+        if (remember) localStorage.setItem(REMEMBER_EMAIL_KEY, email);
+        else localStorage.removeItem(REMEMBER_EMAIL_KEY);
+      } catch {
+        // ignore
+      }
       set({ user: { ...res.user } });
       return { ok: true, role: res.user.role };
     } catch (e: any) {

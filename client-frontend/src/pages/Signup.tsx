@@ -109,6 +109,7 @@ const Signup = () => {
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   placeholder="hello@royalorchard.com"
+                  autoComplete="email"
                   className="w-full px-5 py-3.5 bg-surface-container-low outline-none focus:ring-2 focus:ring-primary rounded-t-xl"
                 />
               </div>
@@ -130,6 +131,7 @@ const Signup = () => {
                     value={form.password}
                     onChange={(e) => setForm({ ...form, password: e.target.value })}
                     placeholder="••••••••"
+                  autoComplete="new-password"
                     className="w-full px-5 py-3.5 bg-surface-container-low outline-none focus:ring-2 focus:ring-primary rounded-t-xl"
                   />
                 </div>
@@ -140,6 +142,7 @@ const Signup = () => {
                     value={form.confirm}
                     onChange={(e) => setForm({ ...form, confirm: e.target.value })}
                     placeholder="••••••••"
+                    autoComplete="new-password"
                     className="w-full px-5 py-3.5 bg-surface-container-low outline-none focus:ring-2 focus:ring-primary rounded-t-xl"
                   />
                 </div>
