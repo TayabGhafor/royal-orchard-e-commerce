@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { SiteShell } from "@/components/SiteShell";
-import { ScrollReveal } from "@/components/ScrollReveal";
 import { Icon } from "@/components/Icon";
 import { type Product, type WeightOption } from "@/data/products";
 import { useCart } from "@/store/cart";
@@ -57,11 +56,11 @@ const Shop = () => {
     <SiteShell>
       <div className="pt-32 pb-20 px-4 sm:px-6 max-w-screen-2xl mx-auto">
         {/* Hero carousel */}
-        <ScrollReveal variant="fade-up" duration={0.9} className="mb-12 sm:mb-16 md:mb-20">
+        <div className="mb-12 sm:mb-16 md:mb-20">
           <HeroCarousel />
-        </ScrollReveal>
+        </div>
 
-        <ScrollReveal id="catalog" variant="fade-up" duration={0.88} delay={0.06} className="flex flex-col lg:flex-row gap-12">
+        <div id="catalog" className="flex flex-col lg:flex-row gap-12">
           {/* SIDEBAR FILTERS */}
           <aside className="w-full lg:w-72 space-y-10">
             <div className="lg:sticky lg:top-32">
@@ -262,7 +261,7 @@ const Shop = () => {
               </>
             )}
           </div>
-        </ScrollReveal>
+        </div>
       </div>
     </SiteShell>
   );
