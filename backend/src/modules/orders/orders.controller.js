@@ -53,6 +53,7 @@ function createOrder() {
       if (!["COD", "Easypaisa", "JazzCash", "Card"].includes(paymentMethod)) {
         throw Object.assign(new Error("Invalid payment method"), { statusCode: 400, code: "invalid_payment_method" });
       }
+      const paymentStatus = paymentMethod === "COD" ? "Unpaid" : "Paid";
 
       // Build order items with snapshots; enforce stock with atomic $inc updates.
       // If anything fails mid-way, roll back applied stock decrements.
@@ -110,7 +111,7 @@ function createOrder() {
           items: builtItems,
           deliveryDetails,
           paymentMethod,
-          paymentStatus: "Pending",
+          paymentStatus,
           orderStatus: "Placed",
           pricing: { subtotal, shipping, tax, total },
           timeline: [{ status: "Placed", date: new Date() }],
@@ -154,6 +155,7 @@ function createGuestOrder() {
       if (!["COD", "Easypaisa", "JazzCash", "Card"].includes(paymentMethod)) {
         throw Object.assign(new Error("Invalid payment method"), { statusCode: 400, code: "invalid_payment_method" });
       }
+      const paymentStatus = paymentMethod === "COD" ? "Unpaid" : "Paid";
 
       const guestEmail = sanitizeText(body.guest?.email || body.email);
       const applied = [];
@@ -209,7 +211,7 @@ function createGuestOrder() {
           items: builtItems,
           deliveryDetails,
           paymentMethod,
-          paymentStatus: paymentMethod === "COD" ? "Unpaid" : "Pending",
+          paymentStatus,
           orderStatus: "Placed",
           pricing: { subtotal, shipping, tax, total },
           timeline: [{ status: "Placed", date: new Date() }],

@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { LazyMotion, domAnimation } from "framer-motion";
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "./pages/Home";
 import { SupportDock } from "@/components/support/SupportDock";
+import { useAuth } from "@/store/auth";
 
 const Shop = lazy(() => import("./pages/Shop"));
 const AllProducts = lazy(() => import("./pages/AllProducts"));
@@ -54,6 +55,14 @@ function RouteFallback() {
   );
 }
 
+function AuthBootstrap() {
+  const loadMe = useAuth((s) => s.loadMe);
+  useEffect(() => {
+    loadMe().catch(() => {});
+  }, [loadMe]);
+  return null;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <LazyMotion features={domAnimation} strict>
@@ -61,6 +70,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <AuthBootstrap />
           <ScrollToTop />
           <Suspense fallback={<RouteFallback />}>
             <Routes>

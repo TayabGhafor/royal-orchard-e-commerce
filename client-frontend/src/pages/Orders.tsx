@@ -13,6 +13,7 @@ import { ScrollReveal } from "@/components/ScrollReveal";
 type TabKey =
   | "all"
   | "to-pay"
+  | "processed"
   | "to-ship"
   | "to-receive"
   | "to-review"
@@ -21,6 +22,7 @@ type TabKey =
 const TABS: { key: TabKey; label: string; icon: string }[] = [
   { key: "all", label: "All Orders", icon: "list_alt" },
   { key: "to-pay", label: "To Pay", icon: "payments" },
+  { key: "processed", label: "Processed", icon: "verified" },
   { key: "to-ship", label: "To Ship", icon: "inventory_2" },
   { key: "to-receive", label: "To Receive", icon: "local_shipping" },
   { key: "to-review", label: "To Review", icon: "rate_review" },
@@ -29,6 +31,7 @@ const TABS: { key: TabKey; label: string; icon: string }[] = [
 
 const STATUS_STYLES: Record<OrderStatus, string> = {
   Pending: "bg-amber-100 text-amber-800",
+  Processed: "bg-violet-100 text-violet-800",
   Processing: "bg-blue-100 text-blue-800",
   Shipped: "bg-indigo-100 text-indigo-800",
   Delivered: "bg-emerald-100 text-emerald-800",
@@ -38,6 +41,7 @@ const STATUS_STYLES: Record<OrderStatus, string> = {
 
 const TIMELINE: { key: OrderStatus; label: string; icon: string }[] = [
   { key: "Pending", label: "Placed", icon: "task_alt" },
+  { key: "Processed", label: "Processed", icon: "verified" },
   { key: "Processing", label: "Processing", icon: "inventory" },
   { key: "Shipped", label: "Shipped", icon: "local_shipping" },
   { key: "Delivered", label: "Delivered", icon: "check_circle" },
@@ -45,9 +49,10 @@ const TIMELINE: { key: OrderStatus; label: string; icon: string }[] = [
 
 const TIMELINE_INDEX: Record<OrderStatus, number> = {
   Pending: 0,
-  Processing: 1,
-  Shipped: 2,
-  Delivered: 3,
+  Processed: 1,
+  Processing: 2,
+  Shipped: 3,
+  Delivered: 4,
   Returned: -1,
   Cancelled: -1,
 };
@@ -71,6 +76,8 @@ const filterFor = (orders: StoreOrder[], tab: TabKey) => {
       return orders;
     case "to-pay":
       return orders.filter((o) => o.paid === false && o.status !== "Cancelled" && o.status !== "Returned");
+    case "processed":
+      return orders.filter((o) => o.paid === true && (o.status === "Processed" || o.status === "Processing"));
     case "to-ship":
       return orders.filter((o) => o.status === "Pending" || o.status === "Processing");
     case "to-receive":
@@ -110,6 +117,7 @@ const Orders = () => {
     () => ({
       all: myOrders.length,
       "to-pay": filterFor(myOrders, "to-pay").length,
+      processed: filterFor(myOrders, "processed").length,
       "to-ship": filterFor(myOrders, "to-ship").length,
       "to-receive": filterFor(myOrders, "to-receive").length,
       "to-review": filterFor(myOrders, "to-review").length,
@@ -415,7 +423,10 @@ const Orders = () => {
                         <p className="text-3xl font-black text-primary">{formatPKR(order.total)}</p>
                         {order.paymentMethod && (
                           <p className="text-xs text-on-surface-variant mt-2 capitalize">
-                            Paid via {order.paymentMethod === "cod" ? "Cash on Delivery" : order.paymentMethod}
+                            {order.paid === false ? "Pay via" : "Paid via"}{" "}
+                            {order.paymentMethod === "COD"
+                              ? "Cash on Delivery"
+                              : String(order.paymentMethod).toLowerCase()}
                           </p>
                         )}
                       </div>

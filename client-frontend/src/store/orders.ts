@@ -4,6 +4,7 @@ import { api } from "@/lib/api";
 
 export type OrderStatus =
   | "Pending"
+  | "Processed"
   | "Processing"
   | "Shipped"
   | "Delivered"
@@ -75,7 +76,7 @@ export const useOrders = create<OrdersState>()(
               const first = Array.isArray(o?.items) && o.items[0] ? o.items[0] : null;
               const productSummary = first ? `${first.title || "Order"} (${first.weight || ""}kg)` : "Order";
               const statusMap: Record<string, OrderStatus> = {
-                Placed: "Pending",
+                Placed: o?.paymentStatus === "Paid" ? "Processed" : "Pending",
                 Processing: "Processing",
                 Shipped: "Shipped",
                 Delivered: "Delivered",
