@@ -154,12 +154,6 @@ const ProductDetail = () => {
                       {product.badge.label}
                     </span>
                   )}
-                  <div className="flex items-center gap-1 text-tertiary">
-                    <Icon name="star" filled className="text-sm" />
-                    <span className="text-xs sm:text-sm font-bold">
-                      {product.rating} ({product.reviews} Reviews)
-                    </span>
-                  </div>
                 </div>
                 <h1 className="text-3xl sm:text-4xl lg:text-5xl font-headline font-extrabold text-on-surface tracking-tight leading-tight">
                   {product.name}
@@ -167,10 +161,18 @@ const ProductDetail = () => {
                 <p className="mt-3 text-on-surface-variant text-sm sm:text-base leading-relaxed lg:hidden">
                   {product.tagline}
                 </p>
-                <p className="mt-5 sm:mt-6 text-lg sm:text-xl font-bold text-primary font-headline">
-                  {formatPKR(unitPriceForWeight(product, selectedWeight))}
-                  <span className="text-sm font-normal text-outline"> / {selectedWeight}</span>
-                </p>
+                <div className="mt-3 sm:mt-4 lg:mt-6 flex flex-row justify-between items-center gap-4">
+                  <div className="flex items-center gap-1 text-tertiary min-w-0">
+                    <Icon name="star" filled className="text-sm shrink-0" />
+                    <span className="text-xs sm:text-sm font-bold truncate">
+                      {product.rating} ({product.reviews} Reviews)
+                    </span>
+                  </div>
+                  <p className="text-lg sm:text-xl font-bold text-primary font-headline text-right shrink-0 m-0 tabular-nums">
+                    {formatPKR(unitPriceForWeight(product, selectedWeight))}
+                    <span className="text-sm font-normal text-outline"> / {selectedWeight}</span>
+                  </p>
+                </div>
                 {product.availabilityStatus === "Out of Stock" && (
                   <p className="mt-2 text-sm font-semibold text-rose-600">Out of stock</p>
                 )}
