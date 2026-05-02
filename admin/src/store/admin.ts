@@ -38,7 +38,13 @@ export interface AdminCustomer {
 
 export type AdminProduct = Product;
 
-const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) || "http://localhost:5000";
+const envApi = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
+const API_BASE =
+  envApi !== undefined && envApi !== ""
+    ? envApi
+    : import.meta.env.DEV
+      ? ""
+      : "http://localhost:5000";
 
 function toAbsoluteImageUrl(src: string) {
   if (!src) return src;

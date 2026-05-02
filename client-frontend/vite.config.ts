@@ -11,6 +11,16 @@ export default defineConfig(({ mode }) => ({
     hmr: {
       overlay: false,
     },
+    // Same-origin /api in dev (avoids CORS + localhost vs 127.0.0.1 cookie issues). Cursor / IDE preview hosts:
+    ...(mode === "development"
+      ? {
+          allowedHosts: true,
+          proxy: {
+            "/api": { target: "http://127.0.0.1:5000", changeOrigin: true },
+            "/uploads": { target: "http://127.0.0.1:5000", changeOrigin: true },
+          },
+        }
+      : {}),
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {

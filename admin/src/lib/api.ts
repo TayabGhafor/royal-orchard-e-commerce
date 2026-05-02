@@ -1,6 +1,12 @@
 type ApiError = Error & { status?: number; code?: string; details?: unknown };
 
-const API_URL = (import.meta.env.VITE_API_URL as string | undefined) || "http://localhost:5000";
+const envApi = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
+const API_URL =
+  envApi !== undefined && envApi !== ""
+    ? envApi
+    : import.meta.env.DEV
+      ? ""
+      : "http://localhost:5000";
 const ADMIN_KEY = (import.meta.env.VITE_ADMIN_API_KEY as string | undefined) || "dev-admin-key";
 
 async function parseJsonSafe(res: Response) {

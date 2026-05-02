@@ -22,6 +22,35 @@ function stripMongoOperators(value) {
   return value;
 }
 
+/** In development, treat localhost and 127.0.0.1 as the same origin for CORS when one is listed. */
+function isOriginAllowed(env, origin) {
+  if (!origin) return true;
+  if (!env.CORS_ORIGINS || env.CORS_ORIGINS.length === 0) return true;
+  if (env.CORS_ORIGINS.includes(origin)) return true;
+  if (env.NODE_ENV === "production") return false;
+  try {
+    const u = new URL(origin);
+    return env.CORS_ORIGINS.some((allowed) => {
+      try {
+        const a = new URL(allowed);
+        if (u.protocol !== a.protocol) return false;
+        const portU = u.port || (u.protocol === "https:" ? "443" : "80");
+        const portA = a.port || (a.protocol === "https:" ? "443" : "80");
+        if (portU !== portA) return false;
+        if (u.hostname === a.hostname) return true;
+        return (
+          (u.hostname === "localhost" && a.hostname === "127.0.0.1") ||
+          (u.hostname === "127.0.0.1" && a.hostname === "localhost")
+        );
+      } catch {
+        return false;
+      }
+    });
+  } catch {
+    return false;
+  }
+}
+
 function redactSensitive(value) {
   if (Array.isArray(value)) return value.map(redactSensitive);
   if (value && typeof value === "object") {
@@ -52,9 +81,7 @@ function createApp(env) {
   app.use(
     cors({
       origin: (origin, cb) => {
-        if (!origin) return cb(null, true);
-        if (env.CORS_ORIGINS.length === 0) return cb(null, true);
-        if (env.CORS_ORIGINS.includes(origin)) return cb(null, true);
+        if (isOriginAllowed(env, origin)) return cb(null, true);
         return cb(new Error("CORS origin not allowed"), false);
       },
       credentials: true,
