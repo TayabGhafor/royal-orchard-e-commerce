@@ -41,9 +41,9 @@ function dashboard() {
         activeUsers,
         topSellingProducts: topProducts.map((p) => ({
           id: p._id,
-          title: p.title,
+          title: p.name,
           totalSold: p.totalSold,
-          stock: p.stock,
+          availabilityStatus: p.availabilityStatus,
         })),
         weeklyRevenueTrends: weekly.map((row) => ({
           date: `${row._id.y}-${String(row._id.m).padStart(2, "0")}-${String(row._id.d).padStart(2, "0")}`,

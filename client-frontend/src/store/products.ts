@@ -1,6 +1,33 @@
 import { create } from "zustand";
-import type { Product } from "@/data/products";
+import type { Product, ProductAvailability, WeightOption } from "@/data/products";
 import { api } from "@/lib/api";
+
+function normalizeWeightPrices(raw: any): Partial<Record<WeightOption, number>> {
+  const wp = raw.weightPrices;
+  const out: Partial<Record<WeightOption, number>> = {};
+  if (wp && typeof wp === "object") {
+    (["3kg", "5kg", "8kg"] as const).forEach((k) => {
+      const v = Number(wp[k]);
+      if (Number.isFinite(v) && v > 0) out[k] = v;
+    });
+  }
+  if (Object.keys(out).length > 0) return out;
+  const legacy = Number(raw.price);
+  const weights = Array.isArray(raw.weights) ? raw.weights : [];
+  if (Number.isFinite(legacy) && legacy > 0) {
+    for (const w of weights) {
+      if (w === "3kg" || w === "5kg" || w === "8kg") out[w] = legacy;
+    }
+  }
+  return out;
+}
+
+function normalizeAvailability(raw: any): ProductAvailability {
+  if (raw.availabilityStatus === "In Stock" || raw.availabilityStatus === "Out of Stock") {
+    return raw.availabilityStatus;
+  }
+  return Number(raw.stock) > 0 ? "In Stock" : "Out of Stock";
+}
 
 type ProductsState = {
   items: Product[];
@@ -69,7 +96,8 @@ export const useProducts = create<ProductsState>((set, get) => ({
           name: raw.name,
           tagline: raw.tagline,
           description: raw.description,
-          price: Number(raw.price),
+          weightPrices: normalizeWeightPrices(raw),
+          availabilityStatus: normalizeAvailability(raw),
           variety: raw.variety,
           collection: raw.collection,
           weights: Array.isArray(raw.weights) ? raw.weights : [],

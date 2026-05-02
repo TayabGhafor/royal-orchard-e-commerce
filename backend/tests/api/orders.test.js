@@ -34,7 +34,7 @@ describe("Orders API", () => {
     await clearMongo();
   });
 
-  test("create order reduces stock, cancel restores stock", async () => {
+  test("create order increments totalSold; cancel restores totalSold", async () => {
     const app = createApp(env);
 
     await User.create({
@@ -49,9 +49,9 @@ describe("Orders API", () => {
       slug: `sindhri-mango-box-${Date.now()}`,
       variety: "Sindhri",
       collection: "Premium Reserve",
-      price: 500,
+      weightPrices: { "3kg": 500, "5kg": 800, "8kg": 1200 },
       weights: ["3kg", "5kg", "8kg"],
-      stock: 10,
+      availabilityStatus: "In Stock",
       images: ["https://img"],
       isActive: true,
     });
@@ -72,7 +72,6 @@ describe("Orders API", () => {
     expect(created.body.order.orderStatus).toBe("Placed");
 
     const afterCreate = await Product.findById(prod._id).lean();
-    expect(afterCreate.stock).toBe(8);
     expect(afterCreate.totalSold).toBe(2);
 
     const cancelled = await request(app)
@@ -82,7 +81,6 @@ describe("Orders API", () => {
     expect(cancelled.body.order.orderStatus).toBe("Cancelled");
 
     const afterCancel = await Product.findById(prod._id).lean();
-    expect(afterCancel.stock).toBe(10);
     expect(afterCancel.totalSold).toBe(0);
   });
 });

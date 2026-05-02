@@ -5,7 +5,8 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import { Icon } from "@/components/Icon";
 import { useAdmin, type AdminProduct } from "@/store/admin";
 import { formatPKR } from "@/lib/format";
-import type { WeightOption } from "@/data/products";
+import type { ProductAvailability, WeightOption } from "@/data/products";
+import { minListedPrice } from "@/lib/productPricing";
 import { usePageLoading } from "@/hooks/use-page-loading";
 import { TableSkeleton } from "@/components/admin/AdminSkeletons";
 import { uploadImages } from "@/lib/api";
@@ -15,24 +16,24 @@ type FormState = {
   name: string;
   tagline: string;
   description: string;
-  price: number;
+  weightPrices: Partial<Record<WeightOption, number>>;
+  availabilityStatus: ProductAvailability;
   variety: AdminProduct["variety"];
   collection: AdminProduct["collection"];
   weights: WeightOption[];
   imagesText: string;
-  stock: number;
 };
 
 const empty: FormState = {
   name: "",
   tagline: "",
   description: "",
-  price: 0,
+  weightPrices: { "3kg": 0, "5kg": 0, "8kg": 0 },
+  availabilityStatus: "In Stock",
   variety: "Sindhri",
   collection: "Premium Reserve",
   weights: ["3kg", "5kg", "8kg"],
   imagesText: "",
-  stock: 0,
 };
 
 const Products = () => {
@@ -45,7 +46,7 @@ const Products = () => {
 
   const [search, setSearch] = useState("");
   const [collectionFilter, setCollectionFilter] = useState<string>("All");
-  const [stockFilter, setStockFilter] = useState<"All" | "In Stock" | "Low" | "Out">("All");
+  const [statusFilter, setStatusFilter] = useState<"All" | ProductAvailability>("All");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(empty);
   const [imageMode, setImageMode] = useState<"urls" | "upload">("urls");
@@ -72,15 +73,10 @@ const Products = () => {
     return products.filter((p) => {
       const m1 = !search || p.name.toLowerCase().includes(search.toLowerCase());
       const m2 = collectionFilter === "All" || p.collection === collectionFilter;
-      const stock = p.stock ?? 0;
-      const m3 =
-        stockFilter === "All" ||
-        (stockFilter === "In Stock" && stock > 10) ||
-        (stockFilter === "Low" && stock > 0 && stock <= 10) ||
-        (stockFilter === "Out" && stock === 0);
+      const m3 = statusFilter === "All" || p.availabilityStatus === statusFilter;
       return m1 && m2 && m3;
     });
-  }, [products, search, collectionFilter, stockFilter]);
+  }, [products, search, collectionFilter, statusFilter]);
 
   const openCreate = () => {
     setForm(empty);
@@ -96,12 +92,12 @@ const Products = () => {
       name: p.name,
       tagline: p.tagline,
       description: p.description,
-      price: p.price,
+      weightPrices: { ...p.weightPrices },
+      availabilityStatus: p.availabilityStatus,
       variety: p.variety,
       collection: p.collection,
       weights: p.weights,
       imagesText: p.images.join("\n"),
-      stock: p.stock,
     });
     setUploadFiles([]);
     setFailedUrlPreviews({});
@@ -121,7 +117,10 @@ const Products = () => {
 
     if (!form.name.trim()) return toast.error("Name is required");
     if (form.weights.length === 0) return toast.error("Select at least one weight option");
-    if (form.price <= 0) return toast.error("Enter a valid price");
+    for (const w of form.weights) {
+      const n = Number(form.weightPrices[w]);
+      if (!Number.isFinite(n) || n <= 0) return toast.error(`Enter a valid PKR price for ${w}`);
+    }
 
     let images: string[] = [];
     try {
@@ -144,16 +143,20 @@ const Products = () => {
       setUploading(false);
     }
 
+    const weightPrices = Object.fromEntries(
+      form.weights.map((w) => [w, Number(form.weightPrices[w])]),
+    ) as Record<WeightOption, number>;
+
     const payload = {
       name: form.name,
       tagline: form.tagline,
       description: form.description,
-      price: form.price,
+      weightPrices,
+      availabilityStatus: form.availabilityStatus,
       variety: form.variety,
       collection: form.collection,
       weights: form.weights,
       images,
-      stock: form.stock,
       rating: 4.5,
       reviews: 0,
     };
@@ -173,10 +176,13 @@ const Products = () => {
   };
 
   const toggleWeight = (w: WeightOption) => {
-    setForm((f) => ({
-      ...f,
-      weights: f.weights.includes(w) ? f.weights.filter((x) => x !== w) : [...f.weights, w],
-    }));
+    setForm((f) => {
+      const on = f.weights.includes(w);
+      const weights = on ? f.weights.filter((x) => x !== w) : [...f.weights, w];
+      const weightPrices = { ...f.weightPrices };
+      if (on) delete weightPrices[w];
+      return { ...f, weights, weightPrices };
+    });
   };
 
   return (
@@ -219,14 +225,13 @@ const Products = () => {
             <option>Bulk Harvest</option>
           </select>
           <select
-            value={stockFilter}
-            onChange={(e) => setStockFilter(e.target.value as typeof stockFilter)}
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
             className="px-4 py-2 bg-white border border-stone-200 rounded-full text-sm outline-none"
           >
-            <option value="All">Stock: All</option>
+            <option value="All">Status: All</option>
             <option value="In Stock">In Stock</option>
-            <option value="Low">Low</option>
-            <option value="Out">Out of Stock</option>
+            <option value="Out of Stock">Out of Stock</option>
           </select>
         </div>
 
@@ -253,9 +258,9 @@ const Products = () => {
               <tr className="text-stone-400 text-xs uppercase tracking-wider border-b border-stone-100">
                 <th className="text-left px-6 py-4 font-semibold">Product</th>
                 <th className="text-left font-semibold">Collection</th>
-                <th className="text-left font-semibold">Price</th>
+                <th className="text-left font-semibold">From (PKR)</th>
                 <th className="text-left font-semibold">Weights</th>
-                <th className="text-left font-semibold">Stock</th>
+                <th className="text-left font-semibold">Status</th>
                 <th className="text-right pr-6 font-semibold">Actions</th>
               </tr>
             </thead>
@@ -272,15 +277,13 @@ const Products = () => {
                     </div>
                   </td>
                   <td className="text-sm">{p.collection}</td>
-                  <td className="text-sm font-semibold">{formatPKR(p.price)}</td>
+                  <td className="text-sm font-semibold">{formatPKR(minListedPrice(p))}</td>
                   <td className="text-xs text-stone-600">{p.weights.join(", ")}</td>
                   <td>
-                    {p.stock === 0 ? (
-                      <span className="text-rose-600 text-sm font-semibold">Out</span>
-                    ) : p.stock <= 10 ? (
-                      <span className="text-amber-600 text-sm font-semibold">Low ({p.stock})</span>
+                    {p.availabilityStatus === "Out of Stock" ? (
+                      <span className="text-rose-600 text-sm font-semibold">Out of Stock</span>
                     ) : (
-                      <span className="text-emerald-600 text-sm font-semibold">{p.stock} in stock</span>
+                      <span className="text-emerald-600 text-sm font-semibold">In Stock</span>
                     )}
                   </td>
                   <td className="pr-6">
@@ -350,29 +353,30 @@ const Products = () => {
                   className={inputCls}
                 />
               </Field>
-              <Field label="Price (PKR)">
-                <input
-                  type="number"
-                  required
-                  min={0}
-                  value={form.price}
-                  onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
-                  className={inputCls}
-                />
+              <Field label="Status">
+                <div className="relative">
+                  <select
+                    value={form.availabilityStatus}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        availabilityStatus: e.target.value as ProductAvailability,
+                      })
+                    }
+                    className={`${inputCls} appearance-none pr-10`}
+                  >
+                    <option value="In Stock">In Stock</option>
+                    <option value="Out of Stock">Out of Stock</option>
+                  </select>
+                  <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-stone-400">
+                    <Icon name="expand_more" className="text-base" />
+                  </span>
+                </div>
               </Field>
               <Field label="Tagline">
                 <input
                   value={form.tagline}
                   onChange={(e) => setForm({ ...form, tagline: e.target.value })}
-                  className={inputCls}
-                />
-              </Field>
-              <Field label="Stock">
-                <input
-                  type="number"
-                  min={0}
-                  value={form.stock}
-                  onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })}
                   className={inputCls}
                 />
               </Field>
@@ -411,7 +415,8 @@ const Products = () => {
             </div>
 
             <div className="mt-4">
-              <label className="text-xs uppercase tracking-widest text-stone-500 font-bold">Weights</label>
+              <label className="text-xs uppercase tracking-widest text-stone-500 font-bold">Weights & prices (PKR)</label>
+              <p className="text-xs text-stone-500 mt-1 mb-2">Select pack sizes and enter the price for each.</p>
               <div className="flex gap-2 mt-2">
                 {(["3kg", "5kg", "8kg"] as WeightOption[]).map((w) => {
                   const on = form.weights.includes(w);
@@ -428,6 +433,29 @@ const Products = () => {
                     </button>
                   );
                 })}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+                {form.weights.map((w) => (
+                  <Field key={w} label={`${w} — PKR`}>
+                    <input
+                      type="number"
+                      required
+                      min={1}
+                      step={1}
+                      value={form.weightPrices[w] ?? ""}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          weightPrices: {
+                            ...form.weightPrices,
+                            [w]: Number(e.target.value),
+                          },
+                        })
+                      }
+                      className={inputCls}
+                    />
+                  </Field>
+                ))}
               </div>
             </div>
 

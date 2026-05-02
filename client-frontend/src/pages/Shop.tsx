@@ -3,9 +3,10 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { SiteShell } from "@/components/SiteShell";
 import { Icon } from "@/components/Icon";
-import { type Product, type WeightOption } from "@/data/products";
+import { type Product } from "@/data/products";
 import { useCart } from "@/store/cart";
 import { formatPKR } from "@/lib/format";
+import { minListedPrice } from "@/lib/productPricing";
 import { usePageLoading } from "@/hooks/use-page-loading";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProducts } from "@/store/products";
@@ -13,11 +14,9 @@ import { HeroCarousel } from "@/components/HeroCarousel";
 import { ShopCatalogSearch } from "@/components/ShopCatalogSearch";
 
 const varieties = ["All", "Sindhri", "Chaunsa", "Anwar Ratol", "Langra"] as const;
-const weights: (WeightOption | "All")[] = ["All", "3kg", "5kg", "8kg"];
 
 const Shop = () => {
   const [variety, setVariety] = useState<(typeof varieties)[number]>("All");
-  const [weight, setWeight] = useState<(typeof weights)[number]>("All");
   const [search, setSearch] = useState("");
   const addItem = useCart((s) => s.addItem);
   const setOpen = useCart((s) => s.setOpen);
@@ -34,13 +33,8 @@ const Shop = () => {
   }, [loadedOnce]);
 
   const baseFiltered = useMemo(
-    () =>
-      items.filter(
-        (p) =>
-          (variety === "All" || p.variety === variety) &&
-          (weight === "All" || p.weights.includes(weight as WeightOption)),
-      ),
-    [items, variety, weight],
+    () => items.filter((p) => variety === "All" || p.variety === variety),
+    [items, variety],
   );
 
   const filtered = useMemo(() => {
@@ -86,7 +80,6 @@ const Shop = () => {
                     onChange={setSearch}
                     items={items}
                     variety={variety}
-                    weight={weight}
                   />
                 </section>
 
@@ -106,27 +99,6 @@ const Shop = () => {
                         }`}
                       >
                         {v}
-                      </button>
-                    ))}
-                  </div>
-                </section>
-
-                <section>
-                  <label className="block text-xs font-bold text-outline-variant tracking-widest uppercase mb-4">
-                    Weight
-                  </label>
-                  <div className="grid grid-cols-4 gap-2">
-                    {weights.map((w) => (
-                      <button
-                        key={w}
-                        onClick={() => setWeight(w)}
-                        className={`py-2 rounded-lg text-sm font-bold transition-all ${
-                          weight === w
-                            ? "bg-tertiary-container text-on-tertiary-container"
-                            : "border border-outline-variant hover:border-primary hover:text-primary"
-                        }`}
-                      >
-                        {w}
                       </button>
                     ))}
                   </div>
@@ -215,7 +187,7 @@ const Shop = () => {
                       key={p.id}
                       p={p}
                       onAdd={() => {
-                        addItem(p, p.weights[0]);
+                        addItem(p, p.weights[0]!);
                         setOpen(true);
                       }}
                     />
@@ -246,7 +218,7 @@ const Shop = () => {
                       key={p.id}
                       p={p}
                       onAdd={() => {
-                        addItem(p, p.weights[0]);
+                        addItem(p, p.weights[0]!);
                         setOpen(true);
                       }}
                     />
@@ -263,7 +235,9 @@ const Shop = () => {
   );
 };
 
-const FeaturedCard = ({ p, onAdd }: { p: Product; onAdd: () => void }) => (
+const FeaturedCard = ({ p, onAdd }: { p: Product; onAdd: () => void }) => {
+  const out = p.availabilityStatus === "Out of Stock";
+  return (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     whileInView={{ opacity: 1, y: 0 }}
@@ -292,6 +266,11 @@ const FeaturedCard = ({ p, onAdd }: { p: Product; onAdd: () => void }) => (
             </span>
           </div>
         )}
+        {out && (
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+            <span className="text-white font-bold text-sm uppercase tracking-widest">Out of stock</span>
+          </div>
+        )}
       </div>
       <div className="px-8 pb-8">
         <div className="flex justify-between items-start mb-2">
@@ -299,7 +278,10 @@ const FeaturedCard = ({ p, onAdd }: { p: Product; onAdd: () => void }) => (
             <h3 className="text-2xl font-headline font-bold">{p.name}</h3>
             <p className="text-sm text-on-surface-variant mt-1">{p.tagline}</p>
           </div>
-          <span className="text-xl font-bold text-primary">{formatPKR(p.price)}</span>
+          <span className="text-xl font-bold text-primary text-right">
+            <span className="block text-[10px] font-bold text-outline uppercase tracking-tighter">From</span>
+            {formatPKR(minListedPrice(p))}
+          </span>
         </div>
         <div className="flex items-center gap-2 mb-6">
           <span className="text-xs text-outline font-medium">
@@ -310,17 +292,22 @@ const FeaturedCard = ({ p, onAdd }: { p: Product; onAdd: () => void }) => (
     </Link>
     <div className="px-8 pb-8 -mt-6">
       <button
+        type="button"
+        disabled={out}
         onClick={onAdd}
-        className="w-full py-4 bg-secondary-container text-on-secondary-container rounded-full font-bold flex items-center justify-center gap-2 hover:bg-secondary hover:text-on-secondary transition-colors"
+        className="w-full py-4 bg-secondary-container text-on-secondary-container rounded-full font-bold flex items-center justify-center gap-2 hover:bg-secondary hover:text-on-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <Icon name="shopping_basket" className="text-xl" />
-        Quick Add to Box
+        {out ? "Unavailable" : "Quick Add to Box"}
       </button>
     </div>
   </motion.div>
-);
+  );
+};
 
-const SmallCard = ({ p, onAdd }: { p: Product; onAdd: () => void }) => (
+const SmallCard = ({ p, onAdd }: { p: Product; onAdd: () => void }) => {
+  const out = p.availabilityStatus === "Out of Stock";
+  return (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     whileInView={{ opacity: 1, y: 0 }}
@@ -328,27 +315,35 @@ const SmallCard = ({ p, onAdd }: { p: Product; onAdd: () => void }) => (
     className="bg-surface-container-lowest p-4 rounded-lg group hover:bg-white transition-all shadow-sm hover:shadow-xl hover:shadow-primary/5 card-hover shine-on-hover"
   >
     <Link to={`/product/${p.slug}`}>
-      <div className="aspect-square rounded-md overflow-hidden mb-4">
+      <div className="aspect-square rounded-md overflow-hidden mb-4 relative">
         <img
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           src={p.images[0]}
           alt={p.name}
         />
+        {out && (
+          <div className="absolute inset-0 bg-black/35 flex items-center justify-center">
+            <span className="text-[10px] font-bold text-white uppercase tracking-wider">Out</span>
+          </div>
+        )}
       </div>
       <h4 className="font-bold text-lg">{p.name}</h4>
       <p className="text-xs text-on-surface-variant mb-4 line-clamp-2">{p.tagline}</p>
     </Link>
     <div className="flex items-center justify-between">
-      <span className="font-bold text-primary">{formatPKR(p.price)}</span>
+      <span className="font-bold text-primary">{formatPKR(minListedPrice(p))}</span>
       <button
+        type="button"
+        disabled={out}
         onClick={onAdd}
-        className="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-primary hover:bg-primary hover:text-on-primary transition-all"
+        className="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-primary hover:bg-primary hover:text-on-primary transition-all disabled:opacity-40 disabled:pointer-events-none"
         aria-label={`Add ${p.name}`}
       >
         <Icon name="add" />
       </button>
     </div>
   </motion.div>
-);
+  );
+};
 
 export default Shop;

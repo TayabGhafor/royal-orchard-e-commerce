@@ -16,6 +16,19 @@ function slugify(s) {
   return base || `prod-${Date.now()}`;
 }
 
+function coerceWeightPrices(body, weights) {
+  const raw = body.weightPrices && typeof body.weightPrices === "object" ? body.weightPrices : {};
+  const out = {};
+  // eslint-disable-next-line no-restricted-syntax
+  for (const w of weights) {
+    const v = raw[w];
+    const n = Number(v);
+    if (!Number.isFinite(n) || n <= 0) return null;
+    out[w] = n;
+  }
+  return Object.keys(out).length === weights.length ? out : null;
+}
+
 async function uniqueSlugForName(name) {
   const base = slugify(name);
   let slug = base;
@@ -76,15 +89,12 @@ function createProduct() {
       const name = sanitizeText(body.name);
       const variety = sanitizeText(body.variety);
       const collection = sanitizeText(body.collection);
-      const price = Number(body.price);
 
       if (!name) throw Object.assign(new Error("Name is required"), { statusCode: 400, code: "invalid_name" });
       if (!["Sindhri", "Chaunsa", "Anwar Ratol", "Langra", "Mixed", "Other"].includes(variety))
         throw Object.assign(new Error("Invalid variety"), { statusCode: 400, code: "invalid_variety" });
       if (!["Premium Reserve", "Seasonal Specials", "Bulk Harvest"].includes(collection))
         throw Object.assign(new Error("Invalid collection"), { statusCode: 400, code: "invalid_collection" });
-      if (!Number.isFinite(price) || price < 0)
-        throw Object.assign(new Error("Invalid price"), { statusCode: 400, code: "invalid_price" });
 
       const images = Array.isArray(body.images) ? body.images.map((s) => sanitizeText(s)).filter(Boolean) : [];
       if (images.length < 1) throw Object.assign(new Error("At least 1 image required"), { statusCode: 400, code: "invalid_images" });
@@ -94,6 +104,19 @@ function createProduct() {
       const weights = weightsRaw.filter((w) => ["3kg", "5kg", "8kg"].includes(w));
       if (weights.length === 0) throw Object.assign(new Error("Invalid weights"), { statusCode: 400, code: "invalid_weights" });
 
+      const weightPrices = coerceWeightPrices(body, weights);
+      if (!weightPrices) {
+        throw Object.assign(new Error("A valid PKR price is required for each selected weight"), {
+          statusCode: 400,
+          code: "invalid_weight_prices",
+        });
+      }
+
+      const statusRaw = String(body.availabilityStatus || "In Stock");
+      if (!["In Stock", "Out of Stock"].includes(statusRaw)) {
+        throw Object.assign(new Error("Invalid availability status"), { statusCode: 400, code: "invalid_status" });
+      }
+
       const product = await Product.create({
         name,
         slug: await uniqueSlugForName(name),
@@ -101,9 +124,9 @@ function createProduct() {
         description: sanitizeText(body.description),
         variety,
         collection,
-        price,
+        weightPrices,
         weights,
-        stock: Number.isFinite(Number(body.stock)) ? Math.max(0, Number(body.stock)) : 0,
+        availabilityStatus: statusRaw,
         images,
         rating: Number.isFinite(Number(body.rating)) ? Math.max(0, Math.min(5, Number(body.rating))) : 4.5,
         reviews: Number.isFinite(Number(body.reviews)) ? Math.max(0, Number(body.reviews)) : 0,
@@ -132,7 +155,6 @@ function updateProduct() {
       setIf("description", body.description !== undefined ? sanitizeText(body.description) : undefined);
       if (body.variety !== undefined) setIf("variety", sanitizeText(body.variety));
       if (body.collection !== undefined) setIf("collection", sanitizeText(body.collection));
-      if (body.price !== undefined) setIf("price", Number(body.price));
       if (body.weights !== undefined)
         setIf(
           "weights",
@@ -140,7 +162,25 @@ function updateProduct() {
             ? body.weights.map((s) => sanitizeText(s)).filter((w) => ["3kg", "5kg", "8kg"].includes(w))
             : undefined,
         );
-      if (body.stock !== undefined) setIf("stock", Math.max(0, Number(body.stock)));
+      if (body.availabilityStatus !== undefined) {
+        const s = String(body.availabilityStatus);
+        if (!["In Stock", "Out of Stock"].includes(s)) {
+          throw Object.assign(new Error("Invalid availability status"), { statusCode: 400, code: "invalid_status" });
+        }
+        setIf("availabilityStatus", s);
+      }
+      if (body.weightPrices !== undefined) {
+        const nextWeights = patch.weights || (await Product.findById(req.params.id).lean())?.weights;
+        const wArr = Array.isArray(nextWeights) ? nextWeights : [];
+        const wp = coerceWeightPrices({ weightPrices: body.weightPrices }, wArr);
+        if (!wp) {
+          throw Object.assign(new Error("A valid PKR price is required for each selected weight"), {
+            statusCode: 400,
+            code: "invalid_weight_prices",
+          });
+        }
+        setIf("weightPrices", wp);
+      }
       if (body.images !== undefined)
         setIf("images", Array.isArray(body.images) ? body.images.map((s) => sanitizeText(s)).filter(Boolean) : []);
       if (body.rating !== undefined) setIf("rating", Math.max(0, Math.min(5, Number(body.rating))));

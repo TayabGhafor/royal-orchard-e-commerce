@@ -18,6 +18,18 @@ function weightToKg(weight) {
   return null;
 }
 
+function unitPriceForWeightKg(product, weightKg) {
+  const key = `${weightKg}kg`;
+  const wp = product.weightPrices;
+  if (wp && typeof wp === "object" && Number.isFinite(Number(wp[key]))) {
+    return Number(wp[key]);
+  }
+  if (Number.isFinite(Number(product.price))) {
+    return Number(product.price);
+  }
+  return null;
+}
+
 function parsePagination(req) {
   const page = Math.max(1, Number(req.query.page || 1));
   const limit = Math.min(50, Math.max(1, Number(req.query.limit || 20)));
@@ -55,8 +67,8 @@ function createOrder() {
       }
       const paymentStatus = paymentMethod === "COD" ? "Unpaid" : "Paid";
 
-      // Build order items with snapshots; enforce stock with atomic $inc updates.
-      // If anything fails mid-way, roll back applied stock decrements.
+      // Build order items with server-side prices; only "In Stock" products can be purchased.
+      // If anything fails mid-way, roll back applied totalSold increments.
       const applied = [];
       const builtItems = [];
       let subtotal = 0;
@@ -78,18 +90,24 @@ function createOrder() {
           }
 
           const product = await Product.findOneAndUpdate(
-            { _id: productId, isActive: true, stock: { $gte: quantity } },
-            { $inc: { stock: -quantity, totalSold: quantity } },
+            { _id: productId, isActive: true, availabilityStatus: "In Stock" },
+            { $inc: { totalSold: quantity } },
             { returnDocument: "after" },
           ).lean();
 
           if (!product) {
-            throw Object.assign(new Error("Insufficient stock"), { statusCode: 409, code: "out_of_stock" });
+            throw Object.assign(new Error("Product unavailable"), { statusCode: 409, code: "out_of_stock" });
+          }
+          if (!Array.isArray(product.weights) || !product.weights.includes(`${weight}kg`)) {
+            throw Object.assign(new Error("Invalid weight for this product"), { statusCode: 400, code: "invalid_weight" });
           }
 
           applied.push({ productId, quantity });
 
-          const price = product.price * (weight / 1);
+          const price = unitPriceForWeightKg(product, weight);
+          if (price == null || !Number.isFinite(price)) {
+            throw Object.assign(new Error("Missing price for selected weight"), { statusCode: 409, code: "invalid_price" });
+          }
           subtotal += price * quantity;
 
           builtItems.push({
@@ -124,7 +142,7 @@ function createOrder() {
         // eslint-disable-next-line no-restricted-syntax
         for (const a of applied) {
           // eslint-disable-next-line no-await-in-loop
-          await Product.findByIdAndUpdate(a.productId, { $inc: { stock: a.quantity, totalSold: -a.quantity } });
+          await Product.findByIdAndUpdate(a.productId, { $inc: { totalSold: -a.quantity } });
         }
         throw err;
       }
@@ -179,17 +197,23 @@ function createGuestOrder() {
           }
 
           const product = await Product.findOneAndUpdate(
-            { _id: productId, isActive: true, stock: { $gte: quantity } },
-            { $inc: { stock: -quantity, totalSold: quantity } },
+            { _id: productId, isActive: true, availabilityStatus: "In Stock" },
+            { $inc: { totalSold: quantity } },
             { returnDocument: "after" },
           ).lean();
 
           if (!product) {
-            throw Object.assign(new Error("Insufficient stock"), { statusCode: 409, code: "out_of_stock" });
+            throw Object.assign(new Error("Product unavailable"), { statusCode: 409, code: "out_of_stock" });
+          }
+          if (!Array.isArray(product.weights) || !product.weights.includes(`${weightKg}kg`)) {
+            throw Object.assign(new Error("Invalid weight for this product"), { statusCode: 400, code: "invalid_weight" });
           }
 
           applied.push({ productId, quantity });
-          const price = product.price * weightKg;
+          const price = unitPriceForWeightKg(product, weightKg);
+          if (price == null || !Number.isFinite(price)) {
+            throw Object.assign(new Error("Missing price for selected weight"), { statusCode: 409, code: "invalid_price" });
+          }
           subtotal += price * quantity;
 
           builtItems.push({
@@ -224,7 +248,7 @@ function createGuestOrder() {
         // eslint-disable-next-line no-restricted-syntax
         for (const a of applied) {
           // eslint-disable-next-line no-await-in-loop
-          await Product.findByIdAndUpdate(a.productId, { $inc: { stock: a.quantity, totalSold: -a.quantity } });
+          await Product.findByIdAndUpdate(a.productId, { $inc: { totalSold: -a.quantity } });
         }
         throw err;
       }
@@ -289,7 +313,7 @@ function cancelOrder() {
 
       for (const it of order.items) {
         // eslint-disable-next-line no-await-in-loop
-        await Product.findByIdAndUpdate(it.product, { $inc: { stock: it.quantity, totalSold: -it.quantity } });
+        await Product.findByIdAndUpdate(it.product, { $inc: { totalSold: -it.quantity } });
       }
 
       order.orderStatus = "Cancelled";

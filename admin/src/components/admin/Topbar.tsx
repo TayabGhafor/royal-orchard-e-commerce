@@ -4,6 +4,7 @@ import { Icon } from "@/components/Icon";
 import { useAuth } from "@/store/auth";
 import { useAdmin } from "@/store/admin";
 import { formatPKR } from "@/lib/format";
+import { minListedPrice } from "@/lib/productPricing";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,6 +14,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
+/** Persist latest order time so the notification badge stays cleared after the panel is viewed. */
+function syncLastSeenOrderFromStore() {
+  try {
+    const all = useAdmin.getState().orders;
+    if (all.length === 0) return;
+    const latest = [...all].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    )[0]?.createdAt;
+    if (latest) localStorage.setItem("royalorchard-admin:lastSeenOrderAt", latest);
+  } catch {
+    // ignore
+  }
+}
 
 export default function AdminTopbar() {
   const user = useAuth((s) => s.user);
@@ -27,7 +42,6 @@ export default function AdminTopbar() {
   const [notifOpen, setNotifOpen] = useState(false);
   const [newCount, setNewCount] = useState(0);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const storeUrl = (import.meta.env.VITE_STORE_URL as string | undefined) || "/";
 
   const newest = useMemo(() => {
     return [...orders]
@@ -210,7 +224,7 @@ export default function AdminTopbar() {
                           </p>
                         </div>
                         <span className="text-xs font-semibold text-stone-600">
-                          {formatPKR(p.price)}
+                          {formatPKR(minListedPrice(p))}
                         </span>
                       </button>
                     ))}
@@ -247,14 +261,17 @@ export default function AdminTopbar() {
           onOpenChange={(v) => {
             setNotifOpen(v);
             if (v) {
-              loadOrders().catch(() => {});
+              // Clear badge as soon as notifications are opened (viewed), not only after closing.
+              setNewCount(0);
+              syncLastSeenOrderFromStore();
+              loadOrders()
+                .then(() => {
+                  syncLastSeenOrderFromStore();
+                  setNewCount(0);
+                })
+                .catch(() => {});
             } else {
-              try {
-                const newestAt = newest[0]?.createdAt;
-                if (newestAt) localStorage.setItem("royalorchard-admin:lastSeenOrderAt", newestAt);
-              } catch {
-                // ignore
-              }
+              syncLastSeenOrderFromStore();
               setNewCount(0);
             }
           }}
@@ -368,10 +385,6 @@ export default function AdminTopbar() {
             <DropdownMenuItem onClick={() => navigate("/")} className="gap-2 cursor-pointer">
               <Icon name="dashboard" className="text-base text-stone-500" />
               <span>Admin Dashboard</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => window.location.assign(storeUrl)} className="gap-2 cursor-pointer">
-              <Icon name="storefront" className="text-base text-stone-500" />
-              <span>View Storefront</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem

@@ -44,8 +44,17 @@ function summarizeProducts(products) {
   if (!products.length) return "No active products are listed right now. Please check back soon.";
   const lines = products.slice(0, 10).map((p) => {
     const weights = Array.isArray(p.weights) && p.weights.length ? p.weights.join(", ") : "3kg–8kg";
-    const stockNote = p.stock > 0 ? `In stock (${p.stock} units)` : "Low / ask us";
-    return `• ${p.name} (${p.variety}) — ${formatPk(p.price)} · weights: ${weights} · ${stockNote}`;
+    const wp = p.weightPrices && typeof p.weightPrices === "object" ? p.weightPrices : {};
+    const priceHint = (() => {
+      const nums = Object.values(wp)
+        .map((n) => Number(n))
+        .filter((n) => Number.isFinite(n) && n > 0);
+      if (nums.length) return `from ${formatPk(Math.min(...nums))}`;
+      if (Number.isFinite(Number(p.price))) return formatPk(p.price);
+      return "see shop";
+    })();
+    const stockNote = p.availabilityStatus === "Out of Stock" ? "Out of stock" : "In stock";
+    return `• ${p.name} (${p.variety}) — ${priceHint} · weights: ${weights} · ${stockNote}`;
   });
   return `Here's what we have live in the shop:\n${lines.join("\n")}\nBrowse full details at /shop.`;
 }
@@ -58,7 +67,14 @@ function summarizeDeals(products) {
   return (
     `Seasonal spotlight picks:\n${deals
       .slice(0, 6)
-      .map((p) => `• ${p.name} — ${formatPk(p.price)} (${p.variety})`)
+      .map((p) => {
+        const wp = p.weightPrices && typeof p.weightPrices === "object" ? p.weightPrices : {};
+        const nums = Object.values(wp)
+          .map((n) => Number(n))
+          .filter((n) => Number.isFinite(n) && n > 0);
+        const ph = nums.length ? `from ${formatPk(Math.min(...nums))}` : formatPk(p.price);
+        return `• ${p.name} — ${ph} (${p.variety})`;
+      })
       .join("\n")}\nVisit /shop for live pricing and stock.`
   );
 }

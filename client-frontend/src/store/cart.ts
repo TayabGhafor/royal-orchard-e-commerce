@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Product, WeightOption } from "@/data/products";
+import { unitPriceForWeight } from "@/lib/productPricing";
 
 export interface CartItem {
   productId: string;
@@ -47,7 +48,7 @@ export const useCart = create<CartState>()(
                 productId: product.id,
                 name: product.name,
                 image: product.images[0],
-                unitPrice: product.price,
+                unitPrice: unitPriceForWeight(product, weight),
                 weight,
                 quantity,
               },

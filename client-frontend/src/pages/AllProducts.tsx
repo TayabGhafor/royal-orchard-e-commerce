@@ -6,6 +6,7 @@ import { ScrollReveal } from "@/components/ScrollReveal";
 import { Icon } from "@/components/Icon";
 import { useCart } from "@/store/cart";
 import { formatPKR } from "@/lib/format";
+import { minListedPrice } from "@/lib/productPricing";
 import { useProducts } from "@/store/products";
 import { usePageLoading } from "@/hooks/use-page-loading";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -120,7 +121,9 @@ const AllProducts = () => {
           <div className="py-20 text-center text-outline">No products match your search.</div>
         ) : (
           <ScrollReveal variant="fade-up" duration={0.86} delay={0.05} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {filtered.map((p) => (
+            {filtered.map((p) => {
+              const out = p.availabilityStatus === "Out of Stock";
+              return (
               <motion.div
                 key={p.id}
                 initial={{ opacity: 0, y: 16 }}
@@ -129,32 +132,39 @@ const AllProducts = () => {
                 className="bg-surface-container-lowest p-4 rounded-lg group hover:bg-white transition-all shadow-sm hover:shadow-xl hover:shadow-primary/5 card-hover shine-on-hover"
               >
                 <Link to={`/product/${p.slug}`}>
-                  <div className="aspect-square rounded-md overflow-hidden mb-4">
+                  <div className="aspect-square rounded-md overflow-hidden mb-4 relative">
                     <img
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       src={p.images[0]}
                       alt={p.name}
                     />
+                    {out && (
+                      <div className="absolute inset-0 bg-black/35 flex items-center justify-center">
+                        <span className="text-[10px] font-bold text-white uppercase tracking-wider">Out</span>
+                      </div>
+                    )}
                   </div>
                   <h4 className="font-bold text-lg">{p.name}</h4>
                   <p className="text-xs text-on-surface-variant mb-4 line-clamp-2">{p.tagline}</p>
                 </Link>
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-primary">{formatPKR(p.price)}</span>
+                  <span className="font-bold text-primary">{formatPKR(minListedPrice(p))}</span>
                   <button
                     type="button"
+                    disabled={out}
                     onClick={() => {
-                      addItem(p, p.weights[0]);
+                      addItem(p, p.weights[0]!);
                       setOpen(true);
                     }}
-                    className="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-primary hover:bg-primary hover:text-on-primary transition-all"
+                    className="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-primary hover:bg-primary hover:text-on-primary transition-all disabled:opacity-40 disabled:pointer-events-none"
                     aria-label={`Add ${p.name}`}
                   >
                     <Icon name="add" />
                   </button>
                 </div>
               </motion.div>
-            ))}
+              );
+            })}
           </ScrollReveal>
         )}
       </div>

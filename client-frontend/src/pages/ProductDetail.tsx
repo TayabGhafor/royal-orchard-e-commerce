@@ -10,6 +10,8 @@ import { formatPKR } from "@/lib/format";
 import { usePageLoading } from "@/hooks/use-page-loading";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProducts } from "@/store/products";
+import { unitPriceForWeight } from "@/lib/productPricing";
+import type { WeightOption } from "@/data/products";
 
 const ProductDetail = () => {
   const { slug } = useParams();
@@ -21,16 +23,27 @@ const ProductDetail = () => {
 
   const product = slug ? findBySlug(slug) : undefined;
   const [activeImage, setActiveImage] = useState(0);
-  const [selectedWeight, setSelectedWeight] = useState(product?.weights[0] || "5kg");
+  const [selectedWeight, setSelectedWeight] = useState<WeightOption>(product?.weights[0] || "5kg");
   const addItem = useCart((s) => s.addItem);
   const setOpen = useCart((s) => s.setOpen);
   const navigate = useNavigate();
   const { loading, error, retry } = usePageLoading({ delay: 600 });
 
+  useEffect(() => {
+    if (!product) return;
+    const first = (product.weights[0] || "5kg") as WeightOption;
+    setSelectedWeight((prev) => (product.weights.includes(prev) ? prev : first));
+  }, [product?.id, product?.weights]);
+
   if (!product && items.length > 0) return <Navigate to="/shop" replace />;
 
   const handleAdd = (openCart = true) => {
-    addItem(product, selectedWeight as never);
+    if (!product) return;
+    if (product.availabilityStatus === "Out of Stock") {
+      toast.error("This product is currently out of stock.");
+      return;
+    }
+    addItem(product, selectedWeight);
     if (openCart) setOpen(true);
     toast.success(`${product.name} added to your basket`);
   };
@@ -61,7 +74,7 @@ const ProductDetail = () => {
           </div>
         )}
 
-        {loading ? (
+        {loading || !product ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
             <div className="lg:col-span-7">
               <Skeleton className="w-full aspect-square rounded-lg" />
@@ -144,9 +157,12 @@ const ProductDetail = () => {
                   {product.name}
                 </h1>
                 <p className="mt-6 text-xl font-bold text-primary font-headline">
-                  {formatPKR(product.price)}
+                  {formatPKR(unitPriceForWeight(product, selectedWeight))}
                   <span className="text-sm font-normal text-outline"> / {selectedWeight}</span>
                 </p>
+                {product.availabilityStatus === "Out of Stock" && (
+                  <p className="mt-2 text-sm font-semibold text-rose-600">Out of stock</p>
+                )}
               </div>
               <p className="text-on-surface-variant leading-relaxed">{product.description}</p>
 
@@ -180,18 +196,22 @@ const ProductDetail = () => {
 
               <div className="flex flex-col gap-4 pt-4">
                 <button
+                  type="button"
+                  disabled={product.availabilityStatus === "Out of Stock"}
                   onClick={() => handleAdd(true)}
-                  className="w-full py-5 bg-secondary-container text-on-secondary-container rounded-full font-bold text-lg flex items-center justify-center gap-2 hover:opacity-90 transition-all active:scale-95 shadow-sm"
+                  className="w-full py-5 bg-secondary-container text-on-secondary-container rounded-full font-bold text-lg flex items-center justify-center gap-2 hover:opacity-90 transition-all active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Icon name="shopping_cart" />
                   Add to Cart
                 </button>
                 <button
+                  type="button"
+                  disabled={product.availabilityStatus === "Out of Stock"}
                   onClick={() => {
                     handleAdd(false);
                     navigate("/checkout");
                   }}
-                  className="w-full py-5 editorial-gradient text-on-primary rounded-full font-bold text-lg hover:opacity-90 transition-all active:scale-95 shadow-lg shadow-primary/20"
+                  className="w-full py-5 editorial-gradient text-on-primary rounded-full font-bold text-lg hover:opacity-90 transition-all active:scale-95 shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Buy Now
                 </button>

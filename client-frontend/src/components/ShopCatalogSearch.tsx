@@ -2,7 +2,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Icon } from "@/components/Icon";
-import type { Product, WeightOption } from "@/data/products";
+import type { Product } from "@/data/products";
 
 const MAX_SUGGESTIONS = 8;
 const MAX_QUERY = 80;
@@ -14,7 +14,6 @@ type Props = {
   onChange: (value: string) => void;
   items: Product[];
   variety: ShopVariety;
-  weight: WeightOption | "All";
   /** For associating the sidebar label with the input (accessibility). */
   inputId?: string;
 };
@@ -38,15 +37,11 @@ function scoreMatch(p: Product, q: string): number {
   return 0;
 }
 
-function baseFilter(items: Product[], variety: ShopVariety, weight: WeightOption | "All"): Product[] {
-  return items.filter(
-    (p) =>
-      (variety === "All" || p.variety === variety) &&
-      (weight === "All" || p.weights.includes(weight as WeightOption)),
-  );
+function baseFilter(items: Product[], variety: ShopVariety): Product[] {
+  return items.filter((p) => variety === "All" || p.variety === variety);
 }
 
-export function ShopCatalogSearch({ value, onChange, items, variety, weight, inputId: inputIdProp }: Props) {
+export function ShopCatalogSearch({ value, onChange, items, variety, inputId: inputIdProp }: Props) {
   const genId = useId();
   const id = inputIdProp ?? genId;
   const listId = `${id}-listbox`;
@@ -55,7 +50,7 @@ export function ShopCatalogSearch({ value, onChange, items, variety, weight, inp
   const [highlight, setHighlight] = useState(0);
   const [focused, setFocused] = useState(false);
 
-  const pool = useMemo(() => baseFilter(items, variety, weight), [items, variety, weight]);
+  const pool = useMemo(() => baseFilter(items, variety), [items, variety]);
 
   const suggestions = useMemo(() => {
     const q = value.trim();
@@ -71,7 +66,7 @@ export function ShopCatalogSearch({ value, onChange, items, variety, weight, inp
 
   useEffect(() => {
     setHighlight(0);
-  }, [value, variety, weight]);
+  }, [value, variety]);
 
   useEffect(() => {
     if (!showPanel) return;
@@ -231,8 +226,8 @@ export function ShopCatalogSearch({ value, onChange, items, variety, weight, inp
               </ul>
             ) : (
               <div className="px-4 py-6 text-center text-sm text-on-surface-variant">
-                No mangoes match &ldquo;{value.trim()}&rdquo; with current filters. Try another term or widen Variety /
-                Weight.
+                No mangoes match &ldquo;{value.trim()}&rdquo; with current filters. Try another term or choose All
+                varieties.
               </div>
             )}
             {suggestions.length > 0 && (

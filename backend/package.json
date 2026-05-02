@@ -9,7 +9,8 @@
     "start": "node src/server.js",
     "test": "NODE_ENV=test jest --runInBand",
     "test:watch": "NODE_ENV=test jest --watch",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "migrate:products": "node scripts/migrate-products-inventory.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",

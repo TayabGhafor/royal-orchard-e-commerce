@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { type Product, type WeightOption } from "@/data/products";
+import { type Product, type ProductAvailability, type WeightOption } from "@/data/products";
 import { api } from "@/lib/api";
 
 export type OrderStatus =
@@ -36,9 +36,7 @@ export interface AdminCustomer {
   joinedAt: string; // ISO
 }
 
-export interface AdminProduct extends Product {
-  stock: number;
-}
+export type AdminProduct = Product;
 
 const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) || "http://localhost:5000";
 
@@ -56,6 +54,33 @@ function normalizeProductImages<T extends { images?: string[] }>(product: T): T 
   };
 }
 
+function normalizeWeightPrices(product: any): Partial<Record<WeightOption, number>> {
+  const wp = product.weightPrices;
+  const out: Partial<Record<WeightOption, number>> = {};
+  if (wp && typeof wp === "object") {
+    (["3kg", "5kg", "8kg"] as const).forEach((k) => {
+      const v = Number(wp[k]);
+      if (Number.isFinite(v) && v > 0) out[k] = v;
+    });
+  }
+  if (Object.keys(out).length > 0) return out;
+  const legacy = Number(product.price);
+  const weights = Array.isArray(product.weights) ? product.weights : [];
+  if (Number.isFinite(legacy) && legacy > 0) {
+    for (const w of weights) {
+      if (w === "3kg" || w === "5kg" || w === "8kg") out[w] = legacy;
+    }
+  }
+  return out;
+}
+
+function normalizeAvailability(product: any): ProductAvailability {
+  if (product.availabilityStatus === "In Stock" || product.availabilityStatus === "Out of Stock") {
+    return product.availabilityStatus;
+  }
+  return Number(product.stock) > 0 ? "In Stock" : "Out of Stock";
+}
+
 function normalizeProductShape(product: any): AdminProduct {
   const normalizedImages = normalizeProductImages(product);
   return {
@@ -65,11 +90,11 @@ function normalizeProductShape(product: any): AdminProduct {
     name: String(product.name || ""),
     tagline: String(product.tagline || ""),
     description: String(product.description || ""),
-    price: Number(product.price || 0),
+    weightPrices: normalizeWeightPrices(product),
+    availabilityStatus: normalizeAvailability(product),
     variety: product.variety,
     collection: product.collection,
     weights: Array.isArray(product.weights) ? product.weights : ["3kg", "5kg", "8kg"],
-    stock: Number(product.stock || 0),
     rating: Number(product.rating || 0),
     reviews: Number(product.reviews || 0),
     badge: product.badge,
@@ -313,12 +338,12 @@ export type NewProductInput = {
   name: string;
   description: string;
   tagline: string;
-  price: number;
+  weightPrices: Partial<Record<WeightOption, number>>;
   weights: WeightOption[];
   images: string[];
   variety: AdminProduct["variety"];
   collection: AdminProduct["collection"];
-  stock: number;
+  availabilityStatus: ProductAvailability;
   rating: number;
   reviews: number;
 };

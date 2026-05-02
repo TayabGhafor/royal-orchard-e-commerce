@@ -6,6 +6,7 @@ import { ScrollReveal } from "@/components/ScrollReveal";
 import { Icon } from "@/components/Icon";
 import { useCart } from "@/store/cart";
 import { formatPKR } from "@/lib/format";
+import { minListedPrice } from "@/lib/productPricing";
 import { useProducts } from "@/store/products";
 
 const trending = [
@@ -478,16 +479,18 @@ const Home = () => {
               <p className="text-sm text-outline mb-4">{p.tagline}</p>
               <div className="flex items-center justify-between">
                 <p className="text-primary font-black text-xl">
-                  {formatPKR(p.price)}
-                  <span className="text-xs font-normal"> / {p.weights[0]}</span>
+                  {formatPKR(minListedPrice(p))}
+                  <span className="text-xs font-normal"> from {p.weights[0]}</span>
                 </p>
                 <button
                   onClick={(e) => {
                     e.preventDefault();
-                    addItem(p, p.weights[0]);
+                    if (p.availabilityStatus === "Out of Stock") return;
+                    addItem(p, p.weights[0]!);
                     setOpen(true);
                   }}
-                  className="w-10 h-10 bg-secondary text-on-secondary rounded-full flex items-center justify-center hover:bg-primary transition-colors"
+                  disabled={p.availabilityStatus === "Out of Stock"}
+                  className="w-10 h-10 bg-secondary text-on-secondary rounded-full flex items-center justify-center hover:bg-primary transition-colors disabled:opacity-40 disabled:pointer-events-none"
                   aria-label={`Add ${p.name}`}
                 >
                   <Icon name="add" />
