@@ -10,6 +10,17 @@ import { minListedPrice } from "@/lib/productPricing";
 import { usePageLoading } from "@/hooks/use-page-loading";
 import { TableSkeleton } from "@/components/admin/AdminSkeletons";
 import { uploadImages } from "@/lib/api";
+import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const filterTriggerClass =
+  "h-11 gap-2 rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-stone-800 shadow-sm outline-none transition-all hover:border-orange-200 hover:bg-orange-50/50 hover:shadow-sm focus:ring-2 focus:ring-orange-100 focus:ring-offset-0 focus:border-orange-300 data-[state=open]:border-orange-400 data-[state=open]:bg-orange-50/40 data-[state=open]:shadow-md data-[state=open]:ring-2 data-[state=open]:ring-orange-100 [&_[data-radix-select-value]]:min-w-0 [&_[data-radix-select-value]]:truncate";
 
 type FormState = {
   id?: string;
@@ -214,25 +225,76 @@ const Products = () => {
               className="outline-none bg-transparent text-sm"
             />
           </div>
-          <select
-            value={collectionFilter}
-            onChange={(e) => setCollectionFilter(e.target.value)}
-            className="px-4 py-2 bg-white border border-stone-200 rounded-full text-sm outline-none"
-          >
-            <option>All</option>
-            <option>Premium Reserve</option>
-            <option>Seasonal Specials</option>
-            <option>Bulk Harvest</option>
-          </select>
-          <select
+          <Select value={collectionFilter} onValueChange={setCollectionFilter}>
+            <SelectTrigger
+              aria-label="Filter by collection"
+              className={cn(filterTriggerClass, "min-w-[12.5rem] max-w-full sm:min-w-[14rem]")}
+            >
+              <Icon name="category" className="shrink-0 text-lg text-orange-500" />
+              <SelectValue placeholder="Collection" />
+            </SelectTrigger>
+            <SelectContent
+              position="popper"
+              sideOffset={6}
+              className="z-50 rounded-2xl border border-stone-200 bg-white p-1.5 shadow-xl"
+            >
+              <SelectItem value="All" className="rounded-xl py-2.5 pl-9 pr-3 text-sm font-medium focus:bg-orange-50 focus:text-stone-900">
+                All collections
+              </SelectItem>
+              <SelectItem
+                value="Premium Reserve"
+                className="rounded-xl py-2.5 pl-9 pr-3 text-sm font-medium focus:bg-orange-50 focus:text-stone-900"
+              >
+                Premium Reserve
+              </SelectItem>
+              <SelectItem
+                value="Seasonal Specials"
+                className="rounded-xl py-2.5 pl-9 pr-3 text-sm font-medium focus:bg-orange-50 focus:text-stone-900"
+              >
+                Seasonal Specials
+              </SelectItem>
+              <SelectItem
+                value="Bulk Harvest"
+                className="rounded-xl py-2.5 pl-9 pr-3 text-sm font-medium focus:bg-orange-50 focus:text-stone-900"
+              >
+                Bulk Harvest
+              </SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-            className="px-4 py-2 bg-white border border-stone-200 rounded-full text-sm outline-none"
+            onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}
           >
-            <option value="All">Status: All</option>
-            <option value="In Stock">In Stock</option>
-            <option value="Out of Stock">Out of Stock</option>
-          </select>
+            <SelectTrigger
+              aria-label="Filter by stock status"
+              className={cn(filterTriggerClass, "min-w-[11rem] max-w-full")}
+            >
+              <Icon name="inventory_2" className="shrink-0 text-lg text-orange-500" />
+              <SelectValue placeholder="Stock status" />
+            </SelectTrigger>
+            <SelectContent
+              position="popper"
+              sideOffset={6}
+              className="z-50 rounded-2xl border border-stone-200 bg-white p-1.5 shadow-xl"
+            >
+              <SelectItem value="All" className="rounded-xl py-2.5 pl-9 pr-3 text-sm font-medium focus:bg-orange-50 focus:text-stone-900">
+                All statuses
+              </SelectItem>
+              <SelectItem
+                value="In Stock"
+                className="rounded-xl py-2.5 pl-9 pr-3 text-sm font-medium focus:bg-orange-50 focus:text-stone-900"
+              >
+                In Stock
+              </SelectItem>
+              <SelectItem
+                value="Out of Stock"
+                className="rounded-xl py-2.5 pl-9 pr-3 text-sm font-medium focus:bg-orange-50 focus:text-stone-900"
+              >
+                Out of Stock
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Table */}
