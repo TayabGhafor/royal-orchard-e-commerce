@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { SiteShell } from "@/components/SiteShell";
+import { CustomerLoveCarousel } from "@/components/CustomerLoveCarousel";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { Icon } from "@/components/Icon";
 import { useCart } from "@/store/cart";
@@ -262,53 +263,16 @@ const ProductDetail = () => {
         </ScrollReveal>
         )}
 
-        {/* Reviews */}
-        <ScrollReveal as="section" variant="fade-up" duration={0.88} className="mt-32 space-y-12">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div>
-              <h2 className="text-3xl font-headline font-bold text-on-surface">Customer Stories</h2>
-              <p className="text-on-surface-variant mt-2">Hear from our orchard community</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                text: "Literally the best mangoes I've had in years. No fibers at all, just pure melt-in-your-mouth sweetness. Shipping was incredibly fast too.",
-                name: "Sophia Martinez",
-                initial: "S",
-                bg: "bg-primary-fixed text-on-primary-fixed",
-              },
-              {
-                text: "The aroma filled my entire kitchen the moment I opened the box. You can tell these are orchard-fresh. Highly recommend the 5kg box.",
-                name: "James Wilson",
-                initial: "J",
-                bg: "bg-secondary-fixed text-on-secondary-fixed",
-              },
-              {
-                text: "Incredible quality. One mango was a bit bruised during transit, but the customer support team replaced it immediately. Five star service.",
-                name: "Marcus Chen",
-                initial: "M",
-                bg: "bg-tertiary-fixed text-on-tertiary-fixed",
-              },
-            ].map((r) => (
-              <div key={r.name} className="bg-surface-container-lowest p-8 rounded-lg shadow-sm">
-                <div className="flex gap-1 text-tertiary mb-4">
-                  {[0, 1, 2, 3, 4].map((i) => (
-                    <Icon key={i} name="star" filled className="text-sm" />
-                  ))}
-                </div>
-                <p className="italic text-on-surface mb-6 leading-relaxed">"{r.text}"</p>
-                <div className="flex items-center gap-4">
-                  <div className={`w-10 h-10 rounded-full ${r.bg} flex items-center justify-center font-bold`}>
-                    {r.initial}
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold">{r.name}</p>
-                    <p className="text-xs text-outline">Verified Purchase</p>
-                  </div>
-                </div>
-              </div>
-            ))}
+        {/* Reviews — same carousel + motion as Home “Customer Love” */}
+        <ScrollReveal as="section" variant="fade-up" duration={0.88} className="mt-24 lg:mt-32 py-24 px-4 sm:px-6 bg-surface">
+          <div className="max-w-7xl mx-auto">
+            <h2 className="font-headline text-4xl font-extrabold text-center text-on-background mb-3 md:mb-4">
+              Customer Stories
+            </h2>
+            <p className="text-center text-on-surface-variant text-sm sm:text-base mb-10 md:mb-14 max-w-xl mx-auto">
+              Hear from our orchard community
+            </p>
+            <CustomerLoveCarousel />
           </div>
         </ScrollReveal>
       </div>
