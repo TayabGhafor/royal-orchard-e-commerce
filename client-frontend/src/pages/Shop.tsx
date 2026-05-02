@@ -10,6 +10,7 @@ import { usePageLoading } from "@/hooks/use-page-loading";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProducts } from "@/store/products";
 import { HeroCarousel } from "@/components/HeroCarousel";
+import { ShopCatalogSearch } from "@/components/ShopCatalogSearch";
 
 const varieties = ["All", "Sindhri", "Chaunsa", "Anwar Ratol", "Langra"] as const;
 const weights: (WeightOption | "All")[] = ["All", "3kg", "5kg", "8kg"];
@@ -32,22 +33,28 @@ const Shop = () => {
     }
   }, [loadedOnce]);
 
-  const filtered = useMemo(
-    () => {
-      const q = search.trim().toLowerCase();
-      return items.filter(
+  const baseFiltered = useMemo(
+    () =>
+      items.filter(
         (p) =>
           (variety === "All" || p.variety === variety) &&
-          (weight === "All" || p.weights.includes(weight as WeightOption)) &&
-          (!q ||
-            p.name.toLowerCase().includes(q) ||
-            p.variety.toLowerCase().includes(q) ||
-            p.tagline.toLowerCase().includes(q) ||
-            p.collection.toLowerCase().includes(q)),
-      );
-    },
-    [items, variety, weight, search],
+          (weight === "All" || p.weights.includes(weight as WeightOption)),
+      ),
+    [items, variety, weight],
   );
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return baseFiltered;
+    return baseFiltered.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.variety.toLowerCase().includes(q) ||
+        p.tagline.toLowerCase().includes(q) ||
+        p.collection.toLowerCase().includes(q) ||
+        p.description.toLowerCase().includes(q),
+    );
+  }, [baseFiltered, search]);
 
   const featured = filtered.slice(0, 2);
   const rest = filtered.slice(2);
@@ -67,31 +74,20 @@ const Shop = () => {
               <h3 className="font-headline font-bold text-xl mb-6">Refine Selection</h3>
               <div className="space-y-8">
                 <section>
-                  <label className="block text-xs font-bold text-outline-variant tracking-widest uppercase mb-4">
+                  <label
+                    htmlFor="shop-catalog-search"
+                    className="block text-xs font-bold text-outline-variant tracking-widest uppercase mb-4"
+                  >
                     Search
                   </label>
-                  <div className="relative">
-                    <Icon
-                      name="search"
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-base pointer-events-none"
-                    />
-                    <input
-                      type="search"
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      placeholder="Find a mango…"
-                      className="w-full bg-surface-container-low rounded-full pl-10 pr-9 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary text-on-surface placeholder:text-on-surface-variant"
-                    />
-                    {search && (
-                      <button
-                        onClick={() => setSearch("")}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface"
-                        aria-label="Clear search"
-                      >
-                        <Icon name="close" className="text-base" />
-                      </button>
-                    )}
-                  </div>
+                  <ShopCatalogSearch
+                    inputId="shop-catalog-search"
+                    value={search}
+                    onChange={setSearch}
+                    items={items}
+                    variety={variety}
+                    weight={weight}
+                  />
                 </section>
 
                 <section>
@@ -195,7 +191,7 @@ const Shop = () => {
                   <Icon name="error" /> {apiError}
                 </div>
                 <button
-                  onClick={() => load()}
+                  onClick={() => useProducts.getState().load()}
                   className="text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full bg-white border border-rose-200 hover:bg-rose-100"
                 >
                   Retry
