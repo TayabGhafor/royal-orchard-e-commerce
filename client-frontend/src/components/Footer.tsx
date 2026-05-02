@@ -1,6 +1,31 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { Facebook, Instagram } from "lucide-react";
+import { Icon } from "@/components/Icon";
 import { revealContainerVariants, revealItemVariants } from "./ScrollReveal";
+
+function NewsletterForm() {
+  return (
+    <form
+      onSubmit={(e) => e.preventDefault()}
+      className="flex flex-row items-center min-h-[48px] w-full rounded-2xl border border-outline-variant/40 bg-surface overflow-hidden shadow-sm transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20"
+    >
+      <input
+        className="flex-1 min-w-0 min-h-[48px] bg-transparent border-0 text-sm px-4 py-2.5 outline-none text-foreground placeholder:text-muted-foreground/60"
+        placeholder="Enter your email"
+        type="email"
+        autoComplete="email"
+        name="email"
+      />
+      <button
+        type="submit"
+        className="shrink-0 flex items-center justify-center self-stretch min-w-[52px] px-3 sm:min-w-14 sm:px-4 bg-primary text-on-primary hover:bg-primary/90 active:bg-primary/95 transition-colors duration-200 border-l border-white/10"
+        aria-label="Subscribe to newsletter"
+      >
+        <Icon name="send" className="text-[22px]" />
+      </button>
+    </form>
+  );
+}
 
 const FOOTER_SOCIALS = [
   {
@@ -77,19 +102,7 @@ export const Footer = () => {
       <div>
         <h5 className="font-bold mb-6">Newsletter</h5>
         <p className="text-sm text-outline mb-4">Get harvest alerts and early-bird discounts.</p>
-        <form className="flex flex-col gap-2 w-full">
-          <input
-            className="w-full bg-surface border border-outline-variant/40 rounded-lg text-sm px-4 py-3 outline-none text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-            placeholder="Enter your email"
-            type="email"
-          />
-          <button
-            type="submit"
-            className="w-full bg-primary text-on-primary px-5 py-3 text-sm font-semibold rounded-lg hover:bg-primary/90 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 shadow-md hover:shadow-lg"
-          >
-            Subscribe
-          </button>
-        </form>
+        <NewsletterForm />
       </div>
     </div>
   );
@@ -140,19 +153,7 @@ export const Footer = () => {
       <motion.div variants={revealItemVariants}>
         <h5 className="font-bold mb-6">Newsletter</h5>
         <p className="text-sm text-outline mb-4">Get harvest alerts and early-bird discounts.</p>
-        <form className="flex flex-col gap-2 w-full">
-          <input
-            className="w-full bg-surface border border-outline-variant/40 rounded-lg text-sm px-4 py-3 outline-none text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-            placeholder="Enter your email"
-            type="email"
-          />
-          <button
-            type="submit"
-            className="w-full bg-primary text-on-primary px-5 py-3 text-sm font-semibold rounded-lg hover:bg-primary/90 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 shadow-md hover:shadow-lg"
-          >
-            Subscribe
-          </button>
-        </form>
+        <NewsletterForm />
       </motion.div>
     </motion.div>
   );
@@ -161,8 +162,7 @@ export const Footer = () => {
     <div className="max-w-7xl mx-auto px-6 pt-10 border-t border-outline-variant/10 flex flex-col md:flex-row justify-between items-center gap-6">
       <p className="text-xs text-outline">© 2024 RoyalOrchard Pvt Ltd. All rights reserved.</p>
       <div className="flex gap-8 text-xs font-bold text-outline">
-        <a className="hover:text-primary transition-colors" href="/privacy">Privacy</a>
-        <a className="hover:text-primary transition-colors" href="/terms">Terms</a>
+        <a className="hover:text-primary transition-colors" href="/privacy">Privacy Policy</a>
         <a className="hover:text-primary transition-colors" href="/security">Security</a>
       </div>
     </div>
@@ -178,8 +178,7 @@ export const Footer = () => {
     >
       <p className="text-xs text-outline">© 2024 RoyalOrchard Pvt Ltd. All rights reserved.</p>
       <div className="flex gap-8 text-xs font-bold text-outline">
-        <a className="hover:text-primary transition-colors" href="/privacy">Privacy</a>
-        <a className="hover:text-primary transition-colors" href="/terms">Terms</a>
+        <a className="hover:text-primary transition-colors" href="/privacy">Privacy Policy</a>
         <a className="hover:text-primary transition-colors" href="/security">Security</a>
       </div>
     </motion.div>

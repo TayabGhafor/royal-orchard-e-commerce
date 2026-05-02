@@ -199,18 +199,21 @@ const Shop = () => {
             )}
 
             <section>
-              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6 sm:mb-8">
-                <div>
-                  <h2 className="text-2xl sm:text-3xl font-headline font-extrabold tracking-tight">All Varieties</h2>
-                  <p className="text-on-surface-variant text-sm sm:text-base">
+              <div className="flex flex-row items-start justify-between gap-3 sm:gap-6 mb-6 sm:mb-8">
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-2xl sm:text-3xl font-headline font-extrabold tracking-tight">
+                    All Varieties
+                  </h2>
+                  <p className="text-on-surface-variant text-sm sm:text-base mt-1">
                     The full catalog of Royal Orchard excellence.
                   </p>
                 </div>
                 <Link
                   to="/all-products"
-                  className="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-full bg-surface-container-lowest border border-outline-variant/40 text-xs sm:text-sm font-bold hover:border-primary/40 hover:text-primary transition-all shrink-0"
+                  className="inline-flex items-center gap-2 shrink-0 self-center px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-surface-container-lowest border border-outline-variant/40 text-xs sm:text-sm font-bold hover:border-primary/40 hover:text-primary transition-colors whitespace-nowrap"
                 >
-                  View all <Icon name="arrow_forward" className="text-base" />
+                  View all
+                  <Icon name="arrow_forward" className="text-base shrink-0" />
                 </Link>
               </div>
               {rest.length === 0 && filtered.length === 0 ? (
