@@ -215,20 +215,23 @@ const Products = () => {
         </div>
 
         {/* Filters */}
-        <div className="flex gap-3 flex-wrap items-center">
-          <div className="flex items-center gap-2 px-4 py-2 bg-white border border-stone-200 rounded-full">
-            <Icon name="search" className="text-stone-400 text-base" />
+        <div className="flex w-full min-w-0 flex-nowrap items-center gap-3 overflow-x-auto">
+          <div className="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-2">
+            <Icon name="search" className="shrink-0 text-base text-stone-400" />
             <input
               placeholder="Search products…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="outline-none bg-transparent text-sm"
+              className="min-w-0 flex-1 bg-transparent text-sm outline-none"
             />
           </div>
           <Select value={collectionFilter} onValueChange={setCollectionFilter}>
             <SelectTrigger
               aria-label="Filter by collection"
-              className={cn(filterTriggerClass, "min-w-[12.5rem] max-w-full sm:min-w-[14rem]")}
+              className={cn(
+                filterTriggerClass,
+                "min-w-[12.5rem] shrink-0 sm:min-w-[14rem]",
+              )}
             >
               <Icon name="category" className="shrink-0 text-lg text-orange-500" />
               <SelectValue placeholder="Collection" />
@@ -268,7 +271,7 @@ const Products = () => {
           >
             <SelectTrigger
               aria-label="Filter by stock status"
-              className={cn(filterTriggerClass, "min-w-[11rem] max-w-full")}
+              className={cn(filterTriggerClass, "min-w-[11rem] shrink-0")}
             >
               <Icon name="inventory_2" className="shrink-0 text-lg text-orange-500" />
               <SelectValue placeholder="Stock status" />

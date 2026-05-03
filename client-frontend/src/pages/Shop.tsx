@@ -63,63 +63,10 @@ const Shop = () => {
 
         <div
           id="catalog"
-          className="flex flex-col md:flex-row-reverse lg:flex-row gap-6 md:gap-8 lg:gap-12 items-start"
+          className="flex flex-col md:flex-row gap-6 md:gap-8 lg:gap-12 items-start"
         >
-          {/* FILTERS: sticky — top bar on mobile, right column tablet, left sidebar desktop */}
-          <aside className="w-full md:w-[min(100%,280px)] lg:w-72 shrink-0 md:shrink-0 z-30 space-y-6 lg:space-y-10">
-            <div className="sticky top-20 md:top-28 lg:top-32 rounded-2xl border border-outline-variant/15 bg-surface/95 backdrop-blur-md shadow-sm md:border-transparent md:bg-transparent/95 md:backdrop-blur-sm lg:border-0 lg:bg-transparent lg:backdrop-blur-none p-4 sm:p-5 md:p-0">
-              <h3 className="font-headline font-bold text-lg sm:text-xl mb-4 md:mb-6">Refine Selection</h3>
-              <div className="space-y-6 md:space-y-8">
-                <section>
-                  <label
-                    htmlFor="shop-catalog-search"
-                    className="block text-xs font-bold text-outline-variant tracking-widest uppercase mb-3 md:mb-4"
-                  >
-                    Search
-                  </label>
-                  <ShopCatalogSearch
-                    inputId="shop-catalog-search"
-                    value={search}
-                    onChange={setSearch}
-                    items={items}
-                    variety={variety}
-                  />
-                </section>
-
-                <section>
-                  <label className="block text-xs font-bold text-outline-variant tracking-widest uppercase mb-3 md:mb-4">
-                    Variety
-                  </label>
-                  <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                    {varieties.map((v) => (
-                      <button
-                        key={v}
-                        type="button"
-                        onClick={() => setVariety(v)}
-                        className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-colors ${
-                          variety === v
-                            ? "bg-primary text-on-primary"
-                            : "bg-surface-container-low text-on-surface hover:bg-surface-container-high"
-                        }`}
-                      >
-                        {v}
-                      </button>
-                    ))}
-                  </div>
-                </section>
-              </div>
-              <div className="mt-6 md:mt-10 lg:mt-12 p-4 sm:p-6 rounded-xl lg:rounded-lg bg-primary-fixed/30 text-on-primary-fixed-variant">
-                <Icon name="temp_preferences_custom" className="mb-2 text-lg" />
-                <h4 className="font-bold text-sm mb-1">Temperature Controlled</h4>
-                <p className="text-xs opacity-80 leading-relaxed">
-                  Shipped in specialized organic packaging to maintain farm freshness.
-                </p>
-              </div>
-            </div>
-          </aside>
-
-          {/* PRODUCT GRID — scrolls while filters stay sticky on md+ */}
-          <div className="flex-1 min-w-0 space-y-12 sm:space-y-16 lg:space-y-20">
+          {/* PRODUCT GRID — first in DOM for reading order; sits left on md+ */}
+          <div className="flex-1 min-w-0 space-y-12 sm:space-y-16 lg:space-y-20 order-2 md:order-1">
             {error && (
               <div className="flex items-center justify-between gap-4 px-5 py-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700">
                 <div className="flex items-center gap-2 text-sm font-medium">
@@ -236,6 +183,72 @@ const Shop = () => {
               </>
             )}
           </div>
+
+          {/* FILTERS: sticky panel on the right (md+); full width above grid on mobile */}
+          <aside className="w-full md:w-[min(100%,280px)] lg:w-72 shrink-0 z-30 order-1 md:order-2">
+            <div className="sticky top-20 md:top-28 lg:top-32 rounded-2xl border border-outline-variant/20 bg-surface-container-lowest/90 p-5 shadow-sm ring-1 ring-black/[0.04] backdrop-blur-md sm:p-6">
+              <h3 className="font-headline text-lg font-bold tracking-tight text-on-surface sm:text-xl">
+                Refine Selection
+              </h3>
+              <p className="mt-1 text-xs text-on-surface-variant leading-relaxed">
+                Narrow the catalog before you browse.
+              </p>
+
+              <div className="mt-6 space-y-8">
+                <section>
+                  <label
+                    htmlFor="shop-catalog-search"
+                    className="mb-2.5 block text-[11px] font-bold uppercase tracking-[0.14em] text-outline-variant"
+                  >
+                    Search
+                  </label>
+                  <ShopCatalogSearch
+                    inputId="shop-catalog-search"
+                    value={search}
+                    onChange={setSearch}
+                    items={items}
+                    variety={variety}
+                  />
+                </section>
+
+                <section className="border-t border-outline-variant/15 pt-8">
+                  <label className="mb-2.5 block text-[11px] font-bold uppercase tracking-[0.14em] text-outline-variant">
+                    Variety
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {varieties.map((v) => (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => setVariety(v)}
+                        className={`rounded-full px-3 py-2 text-center text-xs font-semibold transition-colors sm:text-sm ${
+                          v === "Anwar Ratol" ? "col-span-2 sm:col-span-1" : ""
+                        } ${
+                          variety === v
+                            ? "bg-primary text-on-primary shadow-sm"
+                            : "bg-surface-container-low text-on-surface hover:bg-surface-container-high"
+                        }`}
+                      >
+                        {v}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              </div>
+
+              <div className="mt-8 flex gap-3 rounded-xl border border-primary-fixed/25 bg-primary-fixed/20 p-4 text-on-primary-fixed-variant sm:p-5">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-fixed/35 text-on-primary-fixed">
+                  <Icon name="temp_preferences_custom" className="text-xl" />
+                </div>
+                <div className="min-w-0">
+                  <h4 className="text-sm font-bold leading-snug">Temperature Controlled</h4>
+                  <p className="mt-1 text-xs leading-relaxed opacity-90">
+                    Shipped in specialized organic packaging to maintain farm freshness.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </aside>
         </div>
       </div>
     </SiteShell>
