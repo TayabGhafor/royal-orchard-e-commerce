@@ -63,10 +63,10 @@ const Shop = () => {
 
         <div
           id="catalog"
-          className="flex flex-col md:flex-row gap-6 md:gap-8 lg:gap-12 items-start"
+          className="flex flex-col md:flex-row md:items-start gap-6 md:gap-8 lg:gap-12"
         >
-          {/* PRODUCT GRID — first in DOM for reading order; sits left on md+ */}
-          <div className="flex-1 min-w-0 space-y-12 sm:space-y-16 lg:space-y-20 order-2 md:order-1">
+          {/* PRODUCT GRID — first in DOM; visually left on md+ (aside order-2 = right) */}
+          <div className="order-2 min-w-0 flex-1 space-y-12 sm:space-y-16 lg:space-y-20 md:order-1">
             {error && (
               <div className="flex items-center justify-between gap-4 px-5 py-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700">
                 <div className="flex items-center gap-2 text-sm font-medium">
@@ -184,9 +184,9 @@ const Shop = () => {
             )}
           </div>
 
-          {/* FILTERS: sticky panel on the right (md+); full width above grid on mobile */}
-          <aside className="w-full md:w-[min(100%,280px)] lg:w-72 shrink-0 z-30 order-1 md:order-2">
-            <div className="sticky top-20 md:top-28 lg:top-32 rounded-2xl border border-outline-variant/20 bg-surface-container-lowest/90 p-5 shadow-sm ring-1 ring-black/[0.04] backdrop-blur-md sm:p-6">
+          {/* FILTERS: right column on md+; sticky under fixed nav, scrolls inside if taller than viewport */}
+          <aside className="order-1 z-30 w-full shrink-0 md:order-2 md:w-[min(100%,280px)] lg:w-72 md:self-start">
+            <div className="sticky top-24 z-30 rounded-2xl border border-outline-variant/20 bg-surface-container-lowest/90 p-5 shadow-sm ring-1 ring-black/[0.04] backdrop-blur-md sm:p-6 md:top-28">
               <h3 className="font-headline text-lg font-bold tracking-tight text-on-surface sm:text-xl">
                 Refine Selection
               </h3>
@@ -234,18 +234,6 @@ const Shop = () => {
                     ))}
                   </div>
                 </section>
-              </div>
-
-              <div className="mt-8 flex gap-3 rounded-xl border border-primary-fixed/25 bg-primary-fixed/20 p-4 text-on-primary-fixed-variant sm:p-5">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-fixed/35 text-on-primary-fixed">
-                  <Icon name="temp_preferences_custom" className="text-xl" />
-                </div>
-                <div className="min-w-0">
-                  <h4 className="text-sm font-bold leading-snug">Temperature Controlled</h4>
-                  <p className="mt-1 text-xs leading-relaxed opacity-90">
-                    Shipped in specialized organic packaging to maintain farm freshness.
-                  </p>
-                </div>
               </div>
             </div>
           </aside>
