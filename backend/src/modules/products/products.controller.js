@@ -1,10 +1,48 @@
+const mongoose = require("mongoose");
 const validator = require("validator");
 const sanitizeHtml = require("sanitize-html");
-const { Product } = require("./product.model");
+const { Product, normalizeProductImagesArray, shapeImagesForApi } = require("./product.model");
 
 function sanitizeText(s) {
   const trimmed = validator.trim(String(s || ""));
   return sanitizeHtml(trimmed, { allowedTags: [], allowedAttributes: {} });
+}
+
+function sanitizeImageUrl(u) {
+  return validator.trim(String(u || ""));
+}
+
+function validateProductImageUrl(u) {
+  const s = sanitizeImageUrl(u);
+  if (!s || s.length > 2048) return false;
+  const lower = s.toLowerCase();
+  if (lower.startsWith("javascript:") || lower.startsWith("data:") || lower.startsWith("vbscript:")) return false;
+  if (lower.startsWith("http://") || lower.startsWith("https://")) return true;
+  if (lower.startsWith("//")) return false;
+  if (s.startsWith("/api/uploads/image/")) {
+    const id = s.slice("/api/uploads/image/".length).split(/[?#]/)[0];
+    return mongoose.isValidObjectId(id);
+  }
+  return s.startsWith("/");
+}
+
+function coerceProductImages(bodyImages) {
+  const images = normalizeProductImagesArray(Array.isArray(bodyImages) ? bodyImages : []).map((im) => ({
+    fileId: validator.trim(String(im.fileId || "")).slice(0, 64),
+    url: sanitizeImageUrl(im.url),
+  }));
+  if (images.length < 1) {
+    throw Object.assign(new Error("At least 1 image required"), { statusCode: 400, code: "invalid_images" });
+  }
+  if (images.length > 5) {
+    throw Object.assign(new Error("Max 5 images allowed"), { statusCode: 400, code: "invalid_images" });
+  }
+  for (const im of images) {
+    if (!validateProductImageUrl(im.url)) {
+      throw Object.assign(new Error("Invalid or unsafe image URL"), { statusCode: 400, code: "invalid_images" });
+    }
+  }
+  return images;
 }
 
 function slugify(s) {
@@ -58,10 +96,12 @@ function listProducts() {
       if (req.query.variety) filter.variety = String(req.query.variety);
       if (req.query.collection) filter.collection = String(req.query.collection);
 
-      const [items, total] = await Promise.all([
+      const [rows, total] = await Promise.all([
         Product.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
         Product.countDocuments(filter),
       ]);
+
+      const items = rows.map((doc) => shapeImagesForApi(doc));
 
       res.json({ page, limit, total, items });
     } catch (err) {
@@ -75,7 +115,7 @@ function getProduct() {
     try {
       const product = await Product.findById(req.params.id).lean();
       if (!product) throw Object.assign(new Error("Product not found"), { statusCode: 404, code: "product_not_found" });
-      res.json({ product });
+      res.json({ product: shapeImagesForApi(product) });
     } catch (err) {
       next(err);
     }
@@ -96,9 +136,7 @@ function createProduct() {
       if (!["Premium Reserve", "Seasonal Specials", "Bulk Harvest"].includes(collection))
         throw Object.assign(new Error("Invalid collection"), { statusCode: 400, code: "invalid_collection" });
 
-      const images = Array.isArray(body.images) ? body.images.map((s) => sanitizeText(s)).filter(Boolean) : [];
-      if (images.length < 1) throw Object.assign(new Error("At least 1 image required"), { statusCode: 400, code: "invalid_images" });
-      if (images.length > 5) throw Object.assign(new Error("Max 5 images allowed"), { statusCode: 400, code: "invalid_images" });
+      const images = coerceProductImages(body.images);
 
       const weightsRaw = Array.isArray(body.weights) ? body.weights.map((s) => sanitizeText(s)).filter(Boolean) : ["3kg", "5kg", "8kg"];
       const weights = weightsRaw.filter((w) => ["3kg", "5kg", "8kg"].includes(w));
@@ -117,7 +155,7 @@ function createProduct() {
         throw Object.assign(new Error("Invalid availability status"), { statusCode: 400, code: "invalid_status" });
       }
 
-      const product = await Product.create({
+      const doc = await Product.create({
         name,
         slug: await uniqueSlugForName(name),
         tagline: sanitizeText(body.tagline),
@@ -133,7 +171,7 @@ function createProduct() {
         isActive: body.isActive !== undefined ? Boolean(body.isActive) : true,
       });
 
-      res.status(201).json({ product });
+      res.status(201).json({ product: shapeImagesForApi(doc.toObject()) });
     } catch (err) {
       next(err);
     }
@@ -181,8 +219,7 @@ function updateProduct() {
         }
         setIf("weightPrices", wp);
       }
-      if (body.images !== undefined)
-        setIf("images", Array.isArray(body.images) ? body.images.map((s) => sanitizeText(s)).filter(Boolean) : []);
+      if (body.images !== undefined) setIf("images", coerceProductImages(body.images));
       if (body.rating !== undefined) setIf("rating", Math.max(0, Math.min(5, Number(body.rating))));
       if (body.reviews !== undefined) setIf("reviews", Math.max(0, Number(body.reviews)));
       if (body.isActive !== undefined) setIf("isActive", Boolean(body.isActive));
@@ -194,7 +231,7 @@ function updateProduct() {
 
       const product = await Product.findByIdAndUpdate(req.params.id, { $set: patch }, { new: true }).lean();
       if (!product) throw Object.assign(new Error("Product not found"), { statusCode: 404, code: "product_not_found" });
-      res.json({ product });
+      res.json({ product: shapeImagesForApi(product) });
     } catch (err) {
       next(err);
     }

@@ -5,8 +5,6 @@ const rateLimit = require("express-rate-limit");
 const compression = require("compression");
 const hpp = require("hpp");
 const cookieParser = require("cookie-parser");
-const path = require("path");
-
 const { errorMiddleware } = require("./middleware/error.middleware");
 
 function stripMongoOperators(value) {
@@ -149,14 +147,11 @@ function createApp(env) {
   );
   app.get("/health", (_req, res) => res.json({ ok: true }));
 
-  // Local uploaded assets (dev/simple prod)
-  app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
-
   // Routes (mounted by modules)
   app.use("/api/auth", require("./modules/auth/auth.routes")(env));
   app.use("/api/users", require("./modules/users/users.routes")(env));
   app.use("/api/products", require("./modules/products/products.routes")(env));
-  app.use("/api/uploads", require("./modules/uploads/uploads.routes")(env));
+  app.use("/api/uploads", require("./modules/uploads/upload.routes")(env));
   app.use("/api/orders", require("./modules/orders/orders.routes")(env));
   app.use("/api/analytics", require("./modules/analytics/analytics.routes")(env));
   app.use("/api/chatbot", require("./modules/chatbot/chatbot.routes")(env));

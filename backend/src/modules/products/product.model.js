@@ -1,5 +1,8 @@
 const mongoose = require("mongoose");
 
+/**
+ * Each entry is `{ fileId, url }`; legacy documents may still hold plain URL strings.
+ */
 const ProductSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true, index: true },
@@ -30,7 +33,7 @@ const ProductSchema = new mongoose.Schema(
       default: "In Stock",
       index: true,
     },
-    images: { type: [String], default: [] },
+    images: { type: [mongoose.Schema.Types.Mixed], default: [] },
     rating: { type: Number, default: 4.5, min: 0, max: 5 },
     reviews: { type: Number, default: 0, min: 0 },
     totalSold: { type: Number, default: 0, min: 0 },
@@ -41,7 +44,29 @@ const ProductSchema = new mongoose.Schema(
 
 ProductSchema.index({ createdAt: -1 });
 
+function normalizeProductImagesArray(images) {
+  if (!Array.isArray(images)) return [];
+  return images
+    .map((entry) => {
+      if (typeof entry === "string") {
+        const u = entry.trim();
+        return u ? { fileId: "", url: u } : null;
+      }
+      if (entry && typeof entry === "object" && typeof entry.url === "string") {
+        const u = entry.url.trim();
+        if (!u) return null;
+        return { fileId: String(entry.fileId || ""), url: u };
+      }
+      return null;
+    })
+    .filter(Boolean);
+}
+
+function shapeImagesForApi(doc) {
+  if (!doc) return doc;
+  return { ...doc, images: normalizeProductImagesArray(doc.images) };
+}
+
 const Product = mongoose.model("Product", ProductSchema);
 
-module.exports = { Product };
-
+module.exports = { Product, normalizeProductImagesArray, shapeImagesForApi };

@@ -37,6 +37,14 @@ function parsePagination(req) {
   return { page, limit, skip };
 }
 
+function primaryProductImage(images) {
+  const first = Array.isArray(images) && images.length ? images[0] : null;
+  if (first == null) return "";
+  if (typeof first === "string") return first;
+  if (first.url) return String(first.url);
+  return "";
+}
+
 function assertStatusFlow(from, to) {
   const flow = ["Placed", "Processing", "Shipped", "Delivered"];
   if (from === to) return true;
@@ -113,7 +121,7 @@ function createOrder() {
           builtItems.push({
             product: product._id,
             title: product.name,
-            image: product.images?.[0] || "",
+            image: primaryProductImage(product.images),
             weight,
             quantity,
             price,
@@ -219,7 +227,7 @@ function createGuestOrder() {
           builtItems.push({
             product: product._id,
             title: product.name,
-            image: product.images?.[0] || "",
+            image: primaryProductImage(product.images),
             weight: weightKg,
             quantity,
             price,

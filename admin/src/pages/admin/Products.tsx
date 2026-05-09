@@ -9,8 +9,14 @@ import type { ProductAvailability, WeightOption } from "@/data/products";
 import { minListedPrice } from "@/lib/productPricing";
 import { usePageLoading } from "@/hooks/use-page-loading";
 import { TableSkeleton } from "@/components/admin/AdminSkeletons";
-import { uploadImages } from "@/lib/api";
+import { uploadProductImage } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import {
+  displayUrlForProductImage,
+  normalizeImagesFromRaw,
+  parseUrlLinesToEntries,
+  type ProductImage,
+} from "@/lib/productImages";
 import {
   Select,
   SelectContent,
@@ -62,19 +68,8 @@ const Products = () => {
   const [form, setForm] = useState<FormState>(empty);
   const [imageMode, setImageMode] = useState<"urls" | "upload">("urls");
   const [uploading, setUploading] = useState(false);
-  const [uploadFiles, setUploadFiles] = useState<File[]>([]);
+  const [imageEntries, setImageEntries] = useState<ProductImage[]>([]);
   const [failedUrlPreviews, setFailedUrlPreviews] = useState<Record<string, boolean>>({});
-
-  const uploadPreviewUrls = useMemo(
-    () => uploadFiles.map((f) => ({ key: `${f.name}-${f.size}-${f.lastModified}`, file: f, url: URL.createObjectURL(f) })),
-    [uploadFiles],
-  );
-
-  useEffect(() => {
-    return () => {
-      uploadPreviewUrls.forEach((p) => URL.revokeObjectURL(p.url));
-    };
-  }, [uploadPreviewUrls]);
 
   useEffect(() => {
     loadProducts().catch((e) => toast.error(e?.message || "Failed to load products"));
@@ -91,13 +86,14 @@ const Products = () => {
 
   const openCreate = () => {
     setForm(empty);
-    setUploadFiles([]);
+    setImageEntries([]);
     setFailedUrlPreviews({});
     setImageMode("urls");
     setOpen(true);
   };
 
   const openEdit = (p: AdminProduct) => {
+    const entries = normalizeImagesFromRaw(p.images);
     setForm({
       id: p.id,
       name: p.name,
@@ -108,9 +104,9 @@ const Products = () => {
       variety: p.variety,
       collection: p.collection,
       weights: p.weights,
-      imagesText: p.images.join("\n"),
+      imagesText: entries.map((e) => e.url).join("\n"),
     });
-    setUploadFiles([]);
+    setImageEntries(entries);
     setFailedUrlPreviews({});
     setImageMode("urls");
     setOpen(true);
@@ -118,13 +114,6 @@ const Products = () => {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const urlImages =
-      imageMode === "urls"
-        ? form.imagesText
-            .split("\n")
-            .map((s) => s.trim())
-            .filter(Boolean)
-        : [];
 
     if (!form.name.trim()) return toast.error("Name is required");
     if (form.weights.length === 0) return toast.error("Select at least one weight option");
@@ -133,26 +122,16 @@ const Products = () => {
       if (!Number.isFinite(n) || n <= 0) return toast.error(`Enter a valid PKR price for ${w}`);
     }
 
-    let images: string[] = [];
-    try {
-      if (imageMode === "urls") {
-        images = urlImages;
-        if (images.length < 1) return toast.error("Add at least 1 image URL");
-        if (images.length > 5) return toast.error("Maximum 5 images allowed");
-      } else {
-        if (uploadFiles.length < 1) return toast.error("Upload at least 1 image");
-        if (uploadFiles.length > 5) return toast.error("Maximum 5 images allowed");
-        setUploading(true);
-        const res = await uploadImages(uploadFiles);
-        images = res.urls;
-      }
-    } catch (err: any) {
-      toast.error(err?.message || "Unable to process images");
-      setUploading(false);
-      return;
-    } finally {
-      setUploading(false);
-    }
+    const resolved: ProductImage[] =
+      imageMode === "urls" ? parseUrlLinesToEntries(form.imagesText) : imageEntries;
+
+    if (resolved.length < 1) return toast.error("Add at least 1 product image");
+    if (resolved.length > 5) return toast.error("Maximum 5 images allowed");
+
+    const images = resolved.map((img) => ({
+      fileId: String(img.fileId || "").trim(),
+      url: String(img.url || "").trim(),
+    }));
 
     const weightPrices = Object.fromEntries(
       form.weights.map((w) => [w, Number(form.weightPrices[w])]),
@@ -180,7 +159,7 @@ const Products = () => {
         toast.success("Product added");
       }
       setOpen(false);
-      setUploadFiles([]);
+      setImageEntries([]);
     } catch (err: any) {
       toast.error(err?.message || "Failed to save product");
     }
@@ -334,7 +313,11 @@ const Products = () => {
                 <tr key={p.id} className="border-b border-stone-50 last:border-0 hover:bg-stone-50/50">
                   <td className="px-6 py-3">
                     <div className="flex items-center gap-3">
-                      <img src={p.images[0]} alt={p.name} className="w-12 h-12 rounded-lg object-cover" />
+                      <img
+                        src={displayUrlForProductImage(p.images[0])}
+                        alt={p.name}
+                        className="w-12 h-12 rounded-lg object-cover"
+                      />
                       <div>
                         <div className="font-semibold text-sm">{p.name}</div>
                         <div className="text-xs text-stone-500">{p.variety}</div>
@@ -540,8 +523,11 @@ const Products = () => {
                   <button
                     type="button"
                     onClick={() => {
+                      setForm((f) => ({
+                        ...f,
+                        imagesText: imageEntries.map((img) => img.url).join("\n"),
+                      }));
                       setImageMode("urls");
-                      setUploadFiles([]);
                     }}
                     className={`px-4 py-1.5 rounded-full text-xs font-bold transition ${
                       imageMode === "urls" ? "bg-white shadow-sm text-stone-900" : "text-stone-500 hover:text-stone-800"
@@ -552,8 +538,8 @@ const Products = () => {
                   <button
                     type="button"
                     onClick={() => {
+                      setImageEntries(parseUrlLinesToEntries(form.imagesText));
                       setImageMode("upload");
-                      setForm((f) => ({ ...f, imagesText: "" }));
                     }}
                     className={`px-4 py-1.5 rounded-full text-xs font-bold transition ${
                       imageMode === "upload" ? "bg-white shadow-sm text-stone-900" : "text-stone-500 hover:text-stone-800"
@@ -574,78 +560,111 @@ const Products = () => {
                     className={`${inputCls} font-mono text-xs`}
                   />
                   <div className="mt-3 grid grid-cols-5 gap-2">
-                    {form.imagesText
-                      .split("\n")
-                      .map((s) => s.trim())
-                      .filter(Boolean)
+                    {parseUrlLinesToEntries(form.imagesText)
                       .slice(0, 5)
-                      .map((src, idx) => (
-                        <div
-                          key={`${src}-${idx}`}
-                          className="aspect-square rounded-lg overflow-hidden bg-stone-50 border border-stone-200"
-                          title={src}
-                        >
-                          {failedUrlPreviews[`${src}-${idx}`] ? (
-                            <div className="w-full h-full flex items-center justify-center text-stone-400 text-xs font-semibold">
-                              Invalid
-                            </div>
-                          ) : (
-                            <img
-                              src={src}
-                              alt=""
-                              className="w-full h-full object-cover"
-                              onError={() =>
-                                setFailedUrlPreviews((prev) => ({ ...prev, [`${src}-${idx}`]: true }))
-                              }
-                            />
-                          )}
-                        </div>
-                      ))}
+                      .map((entry, idx) => {
+                        const src = displayUrlForProductImage(entry);
+                        const key = `${entry.url}-${idx}`;
+                        return (
+                          <div
+                            key={key}
+                            className="aspect-square rounded-lg overflow-hidden bg-stone-50 border border-stone-200"
+                            title={entry.url}
+                          >
+                            {failedUrlPreviews[key] ? (
+                              <div className="w-full h-full flex items-center justify-center text-stone-400 text-xs font-semibold">
+                                Invalid
+                              </div>
+                            ) : (
+                              <img
+                                src={src}
+                                alt=""
+                                className="w-full h-full object-cover"
+                                onError={() =>
+                                  setFailedUrlPreviews((prev) => ({ ...prev, [key]: true }))
+                                }
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
                   </div>
                 </div>
               ) : (
                 <div className="mt-2">
                   <div className="flex items-center justify-between gap-3">
-                    <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-stone-200 bg-stone-50 text-stone-700 text-sm font-semibold cursor-pointer hover:bg-stone-100 hover:border-stone-300 transition-colors">
+                    <label
+                      className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-stone-200 bg-stone-50 text-stone-700 text-sm font-semibold transition-colors ${
+                        uploading || imageEntries.length >= 5
+                          ? "cursor-not-allowed opacity-60"
+                          : "cursor-pointer hover:bg-stone-100 hover:border-stone-300"
+                      }`}
+                    >
                       <Icon name="upload" className="text-base text-stone-500" />
-                      <span>Choose files</span>
+                      <span>{uploading ? "Uploading…" : "Choose files"}</span>
                       <input
                         type="file"
-                        accept="image/*"
+                        accept="image/jpeg,image/png,image/webp,image/svg+xml"
                         multiple
-                        onChange={(e) => {
+                        disabled={uploading || imageEntries.length >= 5}
+                        onChange={async (e) => {
                           const incoming = Array.from(e.target.files || []);
-                          setUploadFiles((prev) => {
-                            const merged = [...prev];
-                            for (const file of incoming) {
-                              const exists = merged.some(
-                                (f) =>
-                                  f.name === file.name &&
-                                  f.size === file.size &&
-                                  f.lastModified === file.lastModified,
-                              );
-                              if (!exists && merged.length < 5) merged.push(file);
-                            }
-                            return merged.slice(0, 5);
-                          });
                           e.currentTarget.value = "";
+                          const room = Math.max(0, 5 - imageEntries.length);
+                          if (room <= 0) {
+                            toast.error("Maximum 5 images allowed");
+                            return;
+                          }
+                          const batch = incoming.slice(0, room);
+                          if (incoming.length > room) {
+                            toast.info(`Only the first ${room} image(s) were queued (limit 5).`);
+                          }
+                          for (const file of batch) {
+                            setUploading(true);
+                            try {
+                              const res = await uploadProductImage(file);
+                              setImageEntries((prev) =>
+                                prev.length >= 5
+                                  ? prev
+                                  : [...prev, { fileId: res.imageId, url: res.imageUrl }],
+                              );
+                            } catch (err: unknown) {
+                              toast.error(err instanceof Error ? err.message : "Upload failed");
+                            } finally {
+                              setUploading(false);
+                            }
+                          }
                         }}
                         className="sr-only"
                       />
                     </label>
                     <span className="text-xs text-stone-500 font-semibold">
-                      {uploadFiles.length}/5 selected
+                      {imageEntries.length}/5 stored
                     </span>
                   </div>
-                  {uploadFiles.length > 0 && (
+                  {imageEntries.length > 0 && (
                     <div className="mt-3 grid grid-cols-5 gap-2">
-                      {uploadPreviewUrls.map((p) => (
+                      {imageEntries.map((entry, idx) => (
                         <div
-                          key={p.key}
-                          className="aspect-square rounded-lg overflow-hidden bg-stone-50 border border-stone-200"
-                          title={p.file.name}
+                          key={`${entry.url}-${idx}`}
+                          className="relative aspect-square rounded-lg overflow-hidden bg-stone-50 border border-stone-200 group"
+                          title={entry.url}
                         >
-                          <img src={p.url} alt="" className="w-full h-full object-cover" />
+                          <img
+                            src={displayUrlForProductImage(entry)}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            aria-label={`Remove image ${idx + 1}`}
+                            onClick={() =>
+                              setImageEntries((prev) => prev.filter((_, i) => i !== idx))
+                            }
+                            className="absolute top-1 right-1 w-7 h-7 rounded-full bg-black/55 text-white text-xs flex items-center justify-center opacity-90 hover:bg-black/75"
+                          >
+                            ×
+                          </button>
                         </div>
                       ))}
                     </div>

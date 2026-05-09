@@ -5,6 +5,7 @@ import { useAuth } from "@/store/auth";
 import { useAdmin } from "@/store/admin";
 import { formatPKR } from "@/lib/format";
 import { minListedPrice } from "@/lib/productPricing";
+import { displayUrlForProductImage } from "@/lib/productImages";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -213,7 +214,7 @@ export default function AdminTopbar() {
                         className="w-full text-left px-4 py-2 hover:bg-stone-50 flex items-center gap-3"
                       >
                         <img
-                          src={p.images[0]}
+                          src={displayUrlForProductImage(p.images[0])}
                           alt={p.name}
                           className="w-8 h-8 rounded object-cover"
                         />

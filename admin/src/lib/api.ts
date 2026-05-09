@@ -43,9 +43,14 @@ export async function api<T>(
   return (await parseJsonSafe(res)) as T;
 }
 
-export async function uploadImages(files: File[]) {
+/** Single GridFS-backed image upload; field name must be `image`. */
+export async function uploadProductImage(file: File) {
   const fd = new FormData();
-  files.forEach((f) => fd.append("images", f));
-  return api<{ urls: string[] }>("/api/uploads", { method: "POST", body: fd, admin: true });
+  fd.append("image", file);
+  return api<{ imageId: string; imageUrl: string }>("/api/uploads/image", {
+    method: "POST",
+    body: fd,
+    admin: true,
+  });
 }
 

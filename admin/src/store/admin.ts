@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { type Product, type ProductAvailability, type WeightOption } from "@/data/products";
 import { api } from "@/lib/api";
+import { normalizeImagesFromRaw, type ProductImage } from "@/lib/productImages";
 
 export type OrderStatus =
   | "Pending"
@@ -53,11 +54,11 @@ function toAbsoluteImageUrl(src: string) {
   return `${API_BASE}/${src}`;
 }
 
-function normalizeProductImages<T extends { images?: string[] }>(product: T): T {
-  return {
-    ...product,
-    images: Array.isArray(product.images) ? product.images.map((s) => toAbsoluteImageUrl(String(s || ""))) : [],
-  };
+function normalizeProductImagesFromApi(raw: unknown): ProductImage[] {
+  return normalizeImagesFromRaw(raw).map((e) => ({
+    fileId: e.fileId,
+    url: toAbsoluteImageUrl(e.url),
+  }));
 }
 
 function normalizeWeightPrices(product: any): Partial<Record<WeightOption, number>> {
@@ -88,9 +89,7 @@ function normalizeAvailability(product: any): ProductAvailability {
 }
 
 function normalizeProductShape(product: any): AdminProduct {
-  const normalizedImages = normalizeProductImages(product);
   return {
-    ...normalizedImages,
     id: String(product.id || product._id || ""),
     slug: String(product.slug || ""),
     name: String(product.name || ""),
@@ -104,6 +103,7 @@ function normalizeProductShape(product: any): AdminProduct {
     rating: Number(product.rating || 0),
     reviews: Number(product.reviews || 0),
     badge: product.badge,
+    images: normalizeProductImagesFromApi(product.images),
   };
 }
 
@@ -346,7 +346,7 @@ export type NewProductInput = {
   tagline: string;
   weightPrices: Partial<Record<WeightOption, number>>;
   weights: WeightOption[];
-  images: string[];
+  images: ProductImage[];
   variety: AdminProduct["variety"];
   collection: AdminProduct["collection"];
   availabilityStatus: ProductAvailability;

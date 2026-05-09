@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { Product, ProductAvailability, WeightOption } from "@/data/products";
 import { api } from "@/lib/api";
+import { normalizeImagesFromRaw } from "@/lib/productImages";
 
 function normalizeWeightPrices(raw: any): Partial<Record<WeightOption, number>> {
   const wp = raw.weightPrices;
@@ -102,7 +103,7 @@ export const useProducts = create<ProductsState>((set, get) => ({
           collection: raw.collection,
           weights: Array.isArray(raw.weights) ? raw.weights : [],
           badge: raw.badge,
-          images: Array.isArray(raw.images) ? raw.images : [],
+          images: normalizeImagesFromRaw(raw.images),
           rating: Number(raw.rating ?? 0),
           reviews: Number(raw.reviews ?? 0),
         }));

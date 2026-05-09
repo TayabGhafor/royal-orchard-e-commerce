@@ -10,6 +10,7 @@ import { minListedPrice } from "@/lib/productPricing";
 import { useProducts } from "@/store/products";
 import { usePageLoading } from "@/hooks/use-page-loading";
 import { Skeleton } from "@/components/ui/skeleton";
+import { displayUrlForProductImage } from "@/lib/productImages";
 
 const AllProducts = () => {
   const addItem = useCart((s) => s.addItem);
@@ -135,7 +136,7 @@ const AllProducts = () => {
                   <div className="aspect-square rounded-md overflow-hidden mb-4 relative">
                     <img
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      src={p.images[0]}
+                      src={displayUrlForProductImage(p.images[0])}
                       alt={p.name}
                     />
                     {out && (

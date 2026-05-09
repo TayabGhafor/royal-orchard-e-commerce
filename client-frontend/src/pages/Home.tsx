@@ -9,6 +9,7 @@ import { useCart } from "@/store/cart";
 import { formatPKR } from "@/lib/format";
 import { minListedPrice } from "@/lib/productPricing";
 import { useProducts } from "@/store/products";
+import { displayUrlForProductImage } from "@/lib/productImages";
 
 const trending = [
   {
@@ -220,7 +221,7 @@ const Home = () => {
               <div className="relative w-full aspect-[4/5] rounded-md overflow-hidden mb-6">
                 <img
                   className="w-full h-full object-cover transition-transform group-hover:scale-110"
-                  src={p.images[0]}
+                  src={displayUrlForProductImage(p.images[0])}
                   alt={p.name}
                 />
                 {i === 0 && (

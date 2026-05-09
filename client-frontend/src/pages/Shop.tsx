@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useProducts } from "@/store/products";
 import { HeroCarousel } from "@/components/HeroCarousel";
 import { ShopCatalogSearch } from "@/components/ShopCatalogSearch";
+import { displayUrlForProductImage } from "@/lib/productImages";
 
 const varieties = ["All", "Sindhri", "Chaunsa", "Anwar Ratol", "Langra"] as const;
 
@@ -256,7 +257,7 @@ const FeaturedCard = ({ p, onAdd }: { p: Product; onAdd: () => void }) => {
       <div className="relative aspect-[4/3] overflow-hidden m-2 sm:m-3 md:m-4 rounded-md">
         <img
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-          src={p.images[0]}
+          src={displayUrlForProductImage(p.images[0])}
           alt={p.name}
         />
         {p.badge && (
@@ -328,7 +329,7 @@ const SmallCard = ({ p, onAdd }: { p: Product; onAdd: () => void }) => {
       <div className="aspect-square rounded-lg sm:rounded-md overflow-hidden mb-2 sm:mb-4 relative bg-surface-container-low">
         <img
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          src={p.images[0]}
+          src={displayUrlForProductImage(p.images[0])}
           alt={p.name}
         />
         {out && (

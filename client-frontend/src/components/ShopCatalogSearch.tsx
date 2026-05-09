@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Icon } from "@/components/Icon";
 import type { Product } from "@/data/products";
+import { displayUrlForProductImage } from "@/lib/productImages";
 
 const MAX_SUGGESTIONS = 8;
 const MAX_QUERY = 80;
@@ -202,7 +203,7 @@ export function ShopCatalogSearch({ value, onChange, items, variety, inputId: in
                           className="flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5 text-left text-on-surface"
                         >
                           <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-surface-container-low">
-                            <img src={p.images[0]} alt="" className="h-full w-full object-cover" />
+                            <img src={displayUrlForProductImage(p.images[0])} alt="" className="h-full w-full object-cover" />
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="truncate font-semibold">{p.name}</p>

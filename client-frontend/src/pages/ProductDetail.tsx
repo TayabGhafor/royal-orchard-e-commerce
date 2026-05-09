@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useProducts } from "@/store/products";
 import { unitPriceForWeight } from "@/lib/productPricing";
 import type { WeightOption } from "@/data/products";
+import { displayUrlForProductImage } from "@/lib/productImages";
 
 const ProductDetail = () => {
   const { slug } = useParams();
@@ -111,7 +112,7 @@ const ProductDetail = () => {
               <div className="overflow-hidden rounded-2xl lg:rounded-lg bg-surface-container-low aspect-[4/3] max-h-[min(52vh,420px)] md:max-h-[min(48vh,380px)] lg:max-h-none lg:aspect-square flex items-center justify-center mx-auto w-full">
                 <img
                   className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-105"
-                  src={product.images[activeImage]}
+                  src={displayUrlForProductImage(product.images[activeImage])}
                   alt={product.name}
                 />
               </div>
@@ -130,7 +131,7 @@ const ProductDetail = () => {
               </div>
             </motion.div>
             <div className="grid grid-cols-3 gap-2 sm:gap-4 mt-4 sm:mt-6 max-w-md lg:max-w-none mx-auto">
-              {product.images.slice(0, 3).map((src, i) => (
+              {product.images.slice(0, 3).map((entry, i) => (
                 <button
                   key={i}
                   type="button"
@@ -139,7 +140,7 @@ const ProductDetail = () => {
                     i === activeImage ? "ring-2 ring-primary ring-offset-2" : "hover:opacity-80"
                   }`}
                 >
-                  <img className="w-full h-full object-cover" src={src} alt="" />
+                  <img className="w-full h-full object-cover" src={displayUrlForProductImage(entry)} alt="" />
                 </button>
               ))}
             </div>

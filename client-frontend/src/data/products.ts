@@ -1,6 +1,11 @@
+import type { ProductImage } from "@/lib/productImages";
+
 export type WeightOption = "3kg" | "5kg" | "8kg";
 
 export type ProductAvailability = "In Stock" | "Out of Stock";
+
+/** Local seed helper — external URLs use empty `fileId`. */
+const ir = (url: string): ProductImage => ({ fileId: "", url });
 
 export interface Product {
   id: string;
@@ -14,7 +19,7 @@ export interface Product {
   collection: "Premium Reserve" | "Seasonal Specials" | "Bulk Harvest";
   weights: WeightOption[];
   badge?: { label: string; tone: "secondary" | "tertiary" | "primary" };
-  images: string[];
+  images: ProductImage[];
   rating: number;
   reviews: number;
 }
@@ -55,7 +60,7 @@ export const products: Product[] = [
     collection: "Premium Reserve",
     weights: ["3kg", "5kg", "8kg"],
     badge: { label: "Just Picked", tone: "secondary" },
-    images: [IMG.sindhriHero, IMG.sindhriBasket, IMG.slicedPlate, IMG.orchardCrate],
+    images: [ir(IMG.sindhriHero), ir(IMG.sindhriBasket), ir(IMG.slicedPlate), ir(IMG.orchardCrate)],
     rating: 4.9,
     reviews: 128,
   },
@@ -72,7 +77,7 @@ export const products: Product[] = [
     collection: "Seasonal Specials",
     weights: ["3kg", "5kg", "8kg"],
     badge: { label: "Limited Harvest", tone: "tertiary" },
-    images: [IMG.anwarRatol, IMG.slicedPlate, IMG.orchardCrate],
+    images: [ir(IMG.anwarRatol), ir(IMG.slicedPlate), ir(IMG.orchardCrate)],
     rating: 4.8,
     reviews: 92,
   },
@@ -88,7 +93,7 @@ export const products: Product[] = [
     variety: "Chaunsa",
     collection: "Premium Reserve",
     weights: ["3kg", "5kg", "8kg"],
-    images: [IMG.chaunsaSquare, IMG.sindhriCrate, IMG.slicedPlate],
+    images: [ir(IMG.chaunsaSquare), ir(IMG.sindhriCrate), ir(IMG.slicedPlate)],
     rating: 4.7,
     reviews: 64,
   },
@@ -104,7 +109,7 @@ export const products: Product[] = [
     variety: "Langra",
     collection: "Seasonal Specials",
     weights: ["3kg", "5kg", "8kg"],
-    images: [IMG.langra, IMG.chaunsaSquare, IMG.orchardCrate],
+    images: [ir(IMG.langra), ir(IMG.chaunsaSquare), ir(IMG.orchardCrate)],
     rating: 4.6,
     reviews: 41,
   },
@@ -120,7 +125,7 @@ export const products: Product[] = [
     variety: "Mixed",
     collection: "Bulk Harvest",
     weights: ["5kg", "8kg"],
-    images: [IMG.smoothie, IMG.slicedPlate],
+    images: [ir(IMG.smoothie), ir(IMG.slicedPlate)],
     rating: 4.5,
     reviews: 33,
   },
@@ -137,7 +142,7 @@ export const products: Product[] = [
     collection: "Bulk Harvest",
     weights: ["8kg"],
     badge: { label: "Bulk", tone: "primary" },
-    images: [IMG.sindhriCrate, IMG.orchardCrate],
+    images: [ir(IMG.sindhriCrate), ir(IMG.orchardCrate)],
     rating: 4.8,
     reviews: 21,
   },
