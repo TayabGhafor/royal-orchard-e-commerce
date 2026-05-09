@@ -31,6 +31,8 @@ function loadEnv(processEnv) {
     LOG_USER_PAYLOADS: toBool(processEnv.LOG_USER_PAYLOADS, nodeEnv !== "production"),
     LOG_MONGO_QUERIES: toBool(processEnv.LOG_MONGO_QUERIES, false),
     OPENAI_API_KEY: String(processEnv.OPENAI_API_KEY || "").trim(),
+    /** Optional absolute base for image URLs (defaults to RENDER_EXTERNAL_URL on Render). */
+    API_PUBLIC_URL: String(processEnv.API_PUBLIC_URL || processEnv.RENDER_EXTERNAL_URL || "").trim(),
   };
 
   return env;

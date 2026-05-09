@@ -33,6 +33,10 @@ const ProductSchema = new mongoose.Schema(
       default: "In Stock",
       index: true,
     },
+    /**
+     * Preferred shape: `{ fileId: string, url: string }[]`.
+     * `Mixed` keeps backward compatibility with legacy plain URL strings in existing documents.
+     */
     images: { type: [mongoose.Schema.Types.Mixed], default: [] },
     rating: { type: Number, default: 4.5, min: 0, max: 5 },
     reviews: { type: Number, default: 0, min: 0 },

@@ -28,4 +28,7 @@ services:
         value: "false"
       - key: LOG_MONGO_QUERIES
         value: "false"
+      # Optional: absolute base for image URLs (defaults to Render’s RENDER_EXTERNAL_URL).
+      # - key: API_PUBLIC_URL
+      #   value: https://royal-orchard-backend.onrender.com
 

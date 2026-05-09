@@ -1,30 +1,47 @@
 type ApiError = Error & { status?: number; code?: string; details?: unknown };
 
 const envApi = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
-/** In dev, default to same-origin so Vite can proxy /api (fixes CORS + localhost vs 127.0.0.1). */
+/** Dev: same-origin `/api` via Vite. Prod: set `VITE_API_URL` or rely on same-host `/api` + rewrites. */
 const API_URL =
   envApi !== undefined && envApi !== ""
     ? envApi
     : import.meta.env.DEV
       ? ""
-      : "http://localhost:5000";
+      : "";
 
 const TOKEN_KEY = "royalorchard-token";
 
-/** Avoid `.../api` + `/api/...` → `/api/api/...` (404 on the backend). */
 export function apiUrl(path: string): string {
   const p = path.startsWith("/") ? path : `/${path}`;
   if (!API_URL) return p;
-  let base = API_URL.replace(/\/+$/, "");
-  if (p.startsWith("/api/") && /\/api$/i.test(base)) {
-    base = base.replace(/\/api$/i, "");
+  const raw = API_URL.trim().replace(/\/+$/, "");
+  try {
+    const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(raw) ? raw : `https://${raw}`;
+    const u = new URL(withScheme);
+    let prefix = (u.pathname || "").replace(/\/+$/, "");
+    if (p.startsWith("/api/") && /\/api$/i.test(prefix)) {
+      prefix = prefix.replace(/\/api$/i, "");
+    }
+    return `${u.origin}${prefix}${p}`;
+  } catch {
+    let base = raw;
+    if (p.startsWith("/api/") && /\/api$/i.test(base)) base = base.replace(/\/api$/i, "");
+    return `${base}${p}`;
   }
-  return `${base}${p}`;
 }
 
 export function resolvedOriginForAssets(): string {
   if (!API_URL) return "";
-  return API_URL.replace(/\/+$/, "").replace(/\/api$/i, "");
+  const raw = API_URL.trim().replace(/\/+$/, "");
+  try {
+    const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(raw) ? raw : `https://${raw}`;
+    const u = new URL(withScheme);
+    let prefix = (u.pathname || "").replace(/\/+$/, "");
+    if (/\/api$/i.test(prefix)) prefix = prefix.replace(/\/api$/i, "");
+    return `${u.origin}${prefix}`;
+  } catch {
+    return raw.replace(/\/api$/i, "");
+  }
 }
 
 export function getAuthToken() {

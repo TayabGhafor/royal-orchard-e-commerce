@@ -83,6 +83,8 @@ function createApp(env) {
         return cb(new Error("CORS origin not allowed"), false);
       },
       credentials: true,
+      /** Required for admin upload preflight (custom `x-admin-key`). */
+      allowedHeaders: ["Content-Type", "Authorization", "x-admin-key", "X-Admin-Key", "Cookie"],
     }),
   );
 
@@ -151,7 +153,10 @@ function createApp(env) {
   app.use("/api/auth", require("./modules/auth/auth.routes")(env));
   app.use("/api/users", require("./modules/users/users.routes")(env));
   app.use("/api/products", require("./modules/products/products.routes")(env));
-  app.use("/api/uploads", require("./modules/uploads/upload.routes")(env));
+  const productImageUploads = require("./modules/uploads/upload.routes")(env);
+  app.use("/api/uploads", productImageUploads);
+  /** Some proxies forward `/api/*` to the Node app with the `/api` prefix stripped; match `/uploads/*` too. */
+  app.use("/uploads", productImageUploads);
   app.use("/api/orders", require("./modules/orders/orders.routes")(env));
   app.use("/api/analytics", require("./modules/analytics/analytics.routes")(env));
   app.use("/api/chatbot", require("./modules/chatbot/chatbot.routes")(env));
