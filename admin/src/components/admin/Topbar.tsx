@@ -125,22 +125,26 @@ export default function AdminTopbar() {
   };
 
   return (
-    <header className="h-16 bg-white border-b border-stone-200 flex items-center justify-between px-8 sticky top-0 z-30">
-      <div ref={wrapperRef} className="relative max-w-md flex-1">
+    <header className="sticky top-0 z-30 border-b border-stone-200/90 bg-white/90 backdrop-blur-md">
+      <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:py-0 sm:h-16 md:px-6 lg:px-8">
+      <div ref={wrapperRef} className="relative w-full min-w-0 sm:max-w-lg md:max-w-xl lg:max-w-2xl sm:flex-1">
         <div
           className={[
-            "group flex items-center gap-3 rounded-full border bg-white px-4 py-2.5",
-            "transition-all duration-200",
-            "border-stone-200 hover:border-stone-300 hover:shadow-sm",
-            "focus-within:border-orange-300 focus-within:ring-4 focus-within:ring-orange-100/70 focus-within:shadow-md",
-            "focus-within:scale-[1.01]",
+            "group flex min-h-[48px] w-full items-center gap-3 rounded-2xl border bg-white px-4 py-2.5",
+            "shadow-sm ring-1 ring-stone-900/5 transition-all duration-200",
+            "border-stone-200/90 hover:border-stone-300 hover:shadow-md",
+            "focus-within:border-orange-300 focus-within:shadow-lg focus-within:ring-2 focus-within:ring-orange-200/80",
           ].join(" ")}
         >
           <Icon
             name="search"
-            className="text-stone-400 transition-colors group-focus-within:text-orange-600"
+            className="size-5 shrink-0 text-stone-400 transition-colors group-focus-within:text-orange-600"
+            aria-hidden
           />
           <input
+            type="search"
+            enterKeyHint="search"
+            autoComplete="off"
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -148,11 +152,7 @@ export default function AdminTopbar() {
             }}
             onFocus={() => setOpen(true)}
             placeholder="Search orders, products, customers…"
-            className={[
-              "bg-transparent outline-none flex-1 text-sm placeholder:text-stone-400",
-              "transition-[width] duration-200",
-              "w-full focus:w-[28rem]",
-            ].join(" ")}
+            className="min-h-[44px] min-w-0 flex-1 bg-transparent text-base text-stone-900 outline-none placeholder:text-stone-400 sm:text-sm"
           />
           {query && (
             <button
@@ -168,7 +168,7 @@ export default function AdminTopbar() {
           )}
         </div>
         {open && query.trim() && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl border border-stone-200 shadow-xl overflow-hidden max-h-[70vh] overflow-y-auto">
+          <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-[60] max-h-[min(70vh,32rem)] overflow-hidden overflow-y-auto rounded-2xl border border-stone-200/90 bg-white shadow-2xl shadow-stone-900/15 ring-1 ring-stone-900/5 sm:left-0 sm:right-auto sm:min-w-[min(100%,28rem)]">
             {totalResults === 0 ? (
               <div className="p-6 text-center text-sm text-stone-400">
                 No matches for "{query}"
@@ -256,7 +256,7 @@ export default function AdminTopbar() {
           </div>
         )}
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex shrink-0 items-center justify-end gap-2 sm:gap-3 lg:gap-4">
         <Popover
           open={notifOpen}
           onOpenChange={(v) => {
@@ -278,7 +278,11 @@ export default function AdminTopbar() {
           }}
         >
           <PopoverTrigger asChild>
-            <button className="relative w-9 h-9 flex items-center justify-center rounded-full hover:bg-stone-100 text-stone-600">
+            <button
+              type="button"
+              className="relative flex size-11 items-center justify-center rounded-full text-stone-600 transition hover:bg-stone-100 active:scale-95"
+              aria-label="Notifications"
+            >
               <Icon name="notifications" />
               {newCount > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 min-w-5 h-5 px-1 bg-orange-500 text-white text-[10px] font-black rounded-full flex items-center justify-center ring-2 ring-white">
@@ -287,7 +291,11 @@ export default function AdminTopbar() {
               )}
             </button>
           </PopoverTrigger>
-          <PopoverContent align="end" sideOffset={10} className="w-80 p-0 overflow-hidden">
+          <PopoverContent
+            align="end"
+            sideOffset={10}
+            className="z-[70] w-[min(20rem,calc(100vw-2rem))] max-w-[20rem] border-stone-200/90 p-0 shadow-2xl shadow-stone-900/15 sm:w-80"
+          >
             <div className="px-4 py-3 border-b border-stone-100 flex items-center justify-between">
               <div>
                 <div className="text-sm font-extrabold text-stone-900">Notifications</div>
@@ -343,7 +351,8 @@ export default function AdminTopbar() {
           <DropdownMenuTrigger asChild>
             <button
               aria-label="Open profile menu"
-              className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full border border-stone-200 hover:border-orange-300 hover:bg-orange-50/50 transition-all group"
+              type="button"
+              className="group flex max-w-[100vw] items-center gap-2 rounded-full border border-stone-200/90 py-1.5 pl-2 pr-3 shadow-sm ring-1 ring-stone-900/5 transition hover:border-orange-300 hover:bg-orange-50/50 hover:shadow-md active:scale-[0.98]"
             >
               <span className="relative">
                 <span className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-amber-600 text-white font-bold flex items-center justify-center text-xs shadow-sm">
@@ -362,7 +371,11 @@ export default function AdminTopbar() {
               <Icon name="expand_more" className="text-stone-400 text-base group-hover:text-stone-600" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-64 p-2">
+          <DropdownMenuContent
+            align="end"
+            sideOffset={8}
+            className="z-[70] w-[min(18rem,calc(100vw-2rem))] border-stone-200/90 p-2 shadow-2xl shadow-stone-900/15 sm:w-64"
+          >
             <DropdownMenuLabel className="px-2 py-2">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-amber-600 text-white font-bold flex items-center justify-center text-sm">
@@ -397,6 +410,7 @@ export default function AdminTopbar() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+      </div>
       </div>
     </header>
   );

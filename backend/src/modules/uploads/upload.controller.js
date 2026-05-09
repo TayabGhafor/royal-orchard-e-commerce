@@ -108,6 +108,9 @@ async function streamProductImage(req, res, next) {
     const mime = String(fileDoc.contentType || "").trim();
     const contentType = mime && mime !== "" ? mime : "application/octet-stream";
     res.setHeader("Content-Type", contentType);
+    /** Embed in admin/storefront `<img>` from another origin (pair with Helmet CORP). */
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    res.setHeader("Cache-Control", "public, max-age=86400");
 
     const readStream = bucket.openDownloadStream(oid);
     readStream.on("error", () => {

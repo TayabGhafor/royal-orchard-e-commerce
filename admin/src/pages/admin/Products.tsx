@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import AdminLayout from "@/components/admin/AdminLayout";
@@ -25,8 +25,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+/** Local blob URL for instant preview after upload (`<img>` from API can be blocked by CORP until redeploy). */
+type ProductImageLocal = ProductImage & { blobPreview?: string };
+
 const filterTriggerClass =
-  "h-11 gap-2 rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-stone-800 shadow-sm outline-none transition-all hover:border-orange-200 hover:bg-orange-50/50 hover:shadow-sm focus:ring-2 focus:ring-orange-100 focus:ring-offset-0 focus:border-orange-300 data-[state=open]:border-orange-400 data-[state=open]:bg-orange-50/40 data-[state=open]:shadow-md data-[state=open]:ring-2 data-[state=open]:ring-orange-100 [&_[data-radix-select-value]]:min-w-0 [&_[data-radix-select-value]]:truncate";
+  "h-12 w-full min-w-0 gap-2 rounded-2xl border border-stone-200/90 bg-white px-4 py-2 text-sm font-semibold text-stone-800 shadow-sm ring-1 ring-stone-900/5 outline-none transition-all hover:border-orange-200/90 hover:bg-orange-50/40 hover:shadow-md focus:ring-2 focus:ring-orange-100 focus:ring-offset-0 focus:border-orange-300 data-[state=open]:border-orange-400 data-[state=open]:bg-orange-50/50 data-[state=open]:shadow-md data-[state=open]:ring-2 data-[state=open]:ring-orange-100 [&_[data-radix-select-value]]:min-w-0 [&_[data-radix-select-value]]:truncate sm:min-w-[12rem] lg:h-12 lg:shrink-0";
 
 type FormState = {
   id?: string;
@@ -68,12 +71,24 @@ const Products = () => {
   const [form, setForm] = useState<FormState>(empty);
   const [imageMode, setImageMode] = useState<"urls" | "upload">("urls");
   const [uploading, setUploading] = useState(false);
-  const [imageEntries, setImageEntries] = useState<ProductImage[]>([]);
+  const [imageEntries, setImageEntries] = useState<ProductImageLocal[]>([]);
   const [failedUrlPreviews, setFailedUrlPreviews] = useState<Record<string, boolean>>({});
+  const blobUrlsRef = useRef<Set<string>>(new Set());
+
+  const revokeAllBlobUrls = useCallback(() => {
+    blobUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
+    blobUrlsRef.current.clear();
+  }, []);
 
   useEffect(() => {
     loadProducts().catch((e) => toast.error(e?.message || "Failed to load products"));
   }, [loadProducts]);
+
+  /** Revoke object URLs when the modal closes so we do not leak; server may still serve GridFS. */
+  useEffect(() => {
+    if (open) return;
+    revokeAllBlobUrls();
+  }, [open, revokeAllBlobUrls]);
 
   const filtered = useMemo(() => {
     return products.filter((p) => {
@@ -85,6 +100,7 @@ const Products = () => {
   }, [products, search, collectionFilter, statusFilter]);
 
   const openCreate = () => {
+    revokeAllBlobUrls();
     setForm(empty);
     setImageEntries([]);
     setFailedUrlPreviews({});
@@ -93,6 +109,7 @@ const Products = () => {
   };
 
   const openEdit = (p: AdminProduct) => {
+    revokeAllBlobUrls();
     const entries = normalizeImagesFromRaw(p.images);
     setForm({
       id: p.id,
@@ -123,7 +140,7 @@ const Products = () => {
     }
 
     const resolved: ProductImage[] =
-      imageMode === "urls" ? parseUrlLinesToEntries(form.imagesText) : imageEntries;
+      imageMode === "urls" ? parseUrlLinesToEntries(form.imagesText) : imageEntries.map(({ fileId, url }) => ({ fileId, url }));
 
     if (resolved.length < 1) return toast.error("Add at least 1 product image");
     if (resolved.length > 5) return toast.error("Maximum 5 images allowed");
@@ -158,6 +175,7 @@ const Products = () => {
         await addProduct(payload);
         toast.success("Product added");
       }
+      revokeAllBlobUrls();
       setOpen(false);
       setImageEntries([]);
     } catch (err: any) {
@@ -177,107 +195,130 @@ const Products = () => {
 
   return (
     <AdminLayout>
-      <div className="p-8 space-y-8">
+      <div className="space-y-8 p-4 sm:p-6 lg:p-8">
         {/* Header */}
-        <div className="flex justify-between items-start gap-4 flex-wrap">
-          <div>
-            <h1 className="text-4xl font-bold tracking-tight">Product Management</h1>
-            <p className="text-stone-500 mt-1">Manage your mango inventory ({products.length} items)</p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Product Management</h1>
+            <p className="mt-1 text-sm text-stone-500 sm:text-base">
+              Manage your mango inventory ({products.length} items)
+            </p>
           </div>
           <button
+            type="button"
             onClick={openCreate}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-full font-semibold flex items-center gap-2 transition-colors"
+            className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-full bg-orange-500 px-6 py-3.5 text-sm font-semibold text-white shadow-md shadow-orange-500/20 transition hover:bg-orange-600 active:scale-[0.98] sm:w-auto"
           >
             <Icon name="add" className="text-xl" />
             New Product
           </button>
         </div>
 
-        {/* Filters */}
-        <div className="flex w-full min-w-0 flex-nowrap items-center gap-3 overflow-x-auto">
-          <div className="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-2">
-            <Icon name="search" className="shrink-0 text-base text-stone-400" />
-            <input
-              placeholder="Search products…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="min-w-0 flex-1 bg-transparent text-sm outline-none"
-            />
-          </div>
-          <Select value={collectionFilter} onValueChange={setCollectionFilter}>
-            <SelectTrigger
-              aria-label="Filter by collection"
-              className={cn(
-                filterTriggerClass,
-                "min-w-[12.5rem] shrink-0 sm:min-w-[14rem]",
-              )}
-            >
-              <Icon name="category" className="shrink-0 text-lg text-orange-500" />
-              <SelectValue placeholder="Collection" />
-            </SelectTrigger>
-            <SelectContent
-              position="popper"
-              sideOffset={6}
-              className="z-50 rounded-2xl border border-stone-200 bg-white p-1.5 shadow-xl"
-            >
-              <SelectItem value="All" className="rounded-xl py-2.5 pl-9 pr-3 text-sm font-medium focus:bg-orange-50 focus:text-stone-900">
-                All collections
-              </SelectItem>
-              <SelectItem
-                value="Premium Reserve"
-                className="rounded-xl py-2.5 pl-9 pr-3 text-sm font-medium focus:bg-orange-50 focus:text-stone-900"
-              >
-                Premium Reserve
-              </SelectItem>
-              <SelectItem
-                value="Seasonal Specials"
-                className="rounded-xl py-2.5 pl-9 pr-3 text-sm font-medium focus:bg-orange-50 focus:text-stone-900"
-              >
-                Seasonal Specials
-              </SelectItem>
-              <SelectItem
-                value="Bulk Harvest"
-                className="rounded-xl py-2.5 pl-9 pr-3 text-sm font-medium focus:bg-orange-50 focus:text-stone-900"
-              >
-                Bulk Harvest
-              </SelectItem>
-            </SelectContent>
-          </Select>
+        {/* Filters — mobile-first: stack so search never collapses; lg: one row */}
+        <section aria-label="Product filters" className="w-full min-w-0">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
+            <label className="relative block w-full min-w-0 lg:min-w-[min(100%,18rem)] lg:flex-1">
+              <span className="sr-only">Search products</span>
+              <div className="flex min-h-[3rem] w-full items-center gap-3 rounded-2xl border border-stone-200/90 bg-white px-4 py-2.5 shadow-sm ring-1 ring-stone-900/5 transition-[box-shadow,border-color] focus-within:border-orange-300 focus-within:shadow-md focus-within:ring-2 focus-within:ring-orange-200/70">
+                <Icon
+                  name="search"
+                  className="pointer-events-none size-5 shrink-0 text-stone-400"
+                  aria-hidden
+                />
+                <input
+                  type="search"
+                  enterKeyHint="search"
+                  autoComplete="off"
+                  placeholder="Search products by name…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="min-h-[44px] min-w-0 flex-1 bg-transparent text-base text-stone-900 placeholder:text-stone-400 outline-none sm:text-sm"
+                />
+              </div>
+            </label>
 
-          <Select
-            value={statusFilter}
-            onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}
-          >
-            <SelectTrigger
-              aria-label="Filter by stock status"
-              className={cn(filterTriggerClass, "min-w-[11rem] shrink-0")}
-            >
-              <Icon name="inventory_2" className="shrink-0 text-lg text-orange-500" />
-              <SelectValue placeholder="Stock status" />
-            </SelectTrigger>
-            <SelectContent
-              position="popper"
-              sideOffset={6}
-              className="z-50 rounded-2xl border border-stone-200 bg-white p-1.5 shadow-xl"
-            >
-              <SelectItem value="All" className="rounded-xl py-2.5 pl-9 pr-3 text-sm font-medium focus:bg-orange-50 focus:text-stone-900">
-                All statuses
-              </SelectItem>
-              <SelectItem
-                value="In Stock"
-                className="rounded-xl py-2.5 pl-9 pr-3 text-sm font-medium focus:bg-orange-50 focus:text-stone-900"
+            <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:flex lg:w-auto lg:shrink-0 lg:grid-cols-none lg:gap-3">
+              <Select value={collectionFilter} onValueChange={setCollectionFilter}>
+                <SelectTrigger
+                  aria-label="Filter by collection"
+                  className={cn(filterTriggerClass, "lg:min-w-[13.5rem] lg:max-w-[16rem]")}
+                >
+                  <Icon name="category" className="shrink-0 text-lg text-orange-500" />
+                  <SelectValue placeholder="Collection" />
+                </SelectTrigger>
+                <SelectContent
+                  position="popper"
+                  sideOffset={6}
+                  align="end"
+                  className="z-[100] max-h-[min(24rem,70vh)] w-[var(--radix-select-trigger-width)] min-w-[var(--radix-select-trigger-width)] rounded-2xl border border-stone-200 bg-white/95 p-1.5 shadow-2xl shadow-stone-900/10 backdrop-blur-sm"
+                >
+                  <SelectItem
+                    value="All"
+                    className="rounded-xl py-3 pl-9 pr-3 text-sm font-medium focus:bg-orange-50 focus:text-stone-900"
+                  >
+                    All collections
+                  </SelectItem>
+                  <SelectItem
+                    value="Premium Reserve"
+                    className="rounded-xl py-3 pl-9 pr-3 text-sm font-medium focus:bg-orange-50 focus:text-stone-900"
+                  >
+                    Premium Reserve
+                  </SelectItem>
+                  <SelectItem
+                    value="Seasonal Specials"
+                    className="rounded-xl py-3 pl-9 pr-3 text-sm font-medium focus:bg-orange-50 focus:text-stone-900"
+                  >
+                    Seasonal Specials
+                  </SelectItem>
+                  <SelectItem
+                    value="Bulk Harvest"
+                    className="rounded-xl py-3 pl-9 pr-3 text-sm font-medium focus:bg-orange-50 focus:text-stone-900"
+                  >
+                    Bulk Harvest
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={statusFilter}
+                onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}
               >
-                In Stock
-              </SelectItem>
-              <SelectItem
-                value="Out of Stock"
-                className="rounded-xl py-2.5 pl-9 pr-3 text-sm font-medium focus:bg-orange-50 focus:text-stone-900"
-              >
-                Out of Stock
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+                <SelectTrigger
+                  aria-label="Filter by stock status"
+                  className={cn(filterTriggerClass, "lg:min-w-[11.5rem] lg:max-w-[14rem]")}
+                >
+                  <Icon name="inventory_2" className="shrink-0 text-lg text-orange-500" />
+                  <SelectValue placeholder="Stock status" />
+                </SelectTrigger>
+                <SelectContent
+                  position="popper"
+                  sideOffset={6}
+                  align="end"
+                  className="z-[100] max-h-[min(20rem,70vh)] w-[var(--radix-select-trigger-width)] min-w-[var(--radix-select-trigger-width)] rounded-2xl border border-stone-200 bg-white/95 p-1.5 shadow-2xl shadow-stone-900/10 backdrop-blur-sm"
+                >
+                  <SelectItem
+                    value="All"
+                    className="rounded-xl py-3 pl-9 pr-3 text-sm font-medium focus:bg-orange-50 focus:text-stone-900"
+                  >
+                    All statuses
+                  </SelectItem>
+                  <SelectItem
+                    value="In Stock"
+                    className="rounded-xl py-3 pl-9 pr-3 text-sm font-medium focus:bg-orange-50 focus:text-stone-900"
+                  >
+                    In Stock
+                  </SelectItem>
+                  <SelectItem
+                    value="Out of Stock"
+                    className="rounded-xl py-3 pl-9 pr-3 text-sm font-medium focus:bg-orange-50 focus:text-stone-900"
+                  >
+                    Out of Stock
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </section>
 
         {/* Table */}
         {error && (
@@ -296,8 +337,8 @@ const Products = () => {
         {loading ? (
           <TableSkeleton rows={6} cols={6} />
         ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-stone-100 overflow-hidden">
-          <table className="w-full">
+        <div className="overflow-x-auto rounded-xl border border-stone-100 bg-white shadow-sm [-webkit-overflow-scrolling:touch]">
+          <table className="w-full min-w-[720px] text-left">
             <thead>
               <tr className="text-stone-400 text-xs uppercase tracking-wider border-b border-stone-100">
                 <th className="text-left px-6 py-4 font-semibold">Product</th>
@@ -623,10 +664,15 @@ const Products = () => {
                             setUploading(true);
                             try {
                               const res = await uploadProductImage(file);
+                              const blobPreview = URL.createObjectURL(file);
+                              blobUrlsRef.current.add(blobPreview);
                               setImageEntries((prev) =>
                                 prev.length >= 5
                                   ? prev
-                                  : [...prev, { fileId: res.imageId, url: res.imageUrl }],
+                                  : [
+                                      ...prev,
+                                      { fileId: res.imageId, url: res.imageUrl, blobPreview },
+                                    ],
                               );
                             } catch (err: unknown) {
                               toast.error(err instanceof Error ? err.message : "Upload failed");
@@ -651,7 +697,7 @@ const Products = () => {
                           title={entry.url}
                         >
                           <img
-                            src={displayUrlForProductImage(entry)}
+                            src={entry.blobPreview || displayUrlForProductImage(entry)}
                             alt=""
                             className="w-full h-full object-cover"
                           />
@@ -659,7 +705,14 @@ const Products = () => {
                             type="button"
                             aria-label={`Remove image ${idx + 1}`}
                             onClick={() =>
-                              setImageEntries((prev) => prev.filter((_, i) => i !== idx))
+                              setImageEntries((prev) => {
+                                const removed = prev[idx];
+                                if (removed?.blobPreview) {
+                                  URL.revokeObjectURL(removed.blobPreview);
+                                  blobUrlsRef.current.delete(removed.blobPreview);
+                                }
+                                return prev.filter((_, i) => i !== idx);
+                              })
                             }
                             className="absolute top-1 right-1 w-7 h-7 rounded-full bg-black/55 text-white text-xs flex items-center justify-center opacity-90 hover:bg-black/75"
                           >

@@ -72,8 +72,24 @@ function createApp(env) {
   app.set("trust proxy", 1);
   app.set("envConfig", env);
 
-  app.use(helmet());
-  app.use(compression());
+  /** Allow `<img src="https://api…/api/uploads/image/:id">` from other origins (admin UI). Default CORP is `same-origin`, which blocks cross-site embedding in many browsers. */
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: "cross-origin" },
+    }),
+  );
+  /**
+   * Do not gzip/brotli-compress GridFS image streams — binary piping + compression can break images in some environments.
+   */
+  app.use(
+    compression({
+      filter: (req, res) => {
+        const p = req.path || "";
+        if (p.includes("/uploads/image/") || p.startsWith("/api/uploads/image/")) return false;
+        return compression.filter(req, res);
+      },
+    }),
+  );
   app.use(hpp());
 
   app.use(
