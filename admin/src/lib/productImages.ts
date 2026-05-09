@@ -1,12 +1,8 @@
+import { resolvedOriginForAssets } from "./api";
+
 export type ProductImage = { fileId: string; url: string };
 
-const envApi = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
-export const IMAGE_API_BASE =
-  envApi !== undefined && envApi !== ""
-    ? envApi
-    : import.meta.env.DEV
-      ? ""
-      : "http://localhost:5000";
+export const IMAGE_API_BASE = resolvedOriginForAssets();
 
 export function normalizeImagesFromRaw(raw: unknown): ProductImage[] {
   if (!Array.isArray(raw)) return [];

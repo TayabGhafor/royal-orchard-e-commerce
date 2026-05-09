@@ -7,7 +7,13 @@ module.exports = function uploadRoutesFactory(env) {
   const router = express.Router();
   const multerUploader = createProductImageUploader();
 
-  router.post("/image", requireAdminKey(env), wrapUpload(multerUploader.single("image")), postProductImage);
+  const uploadHandlers = [
+    requireAdminKey(env),
+    wrapUpload(multerUploader.single("image")),
+    postProductImage,
+  ];
+  router.post("/image", ...uploadHandlers);
+  router.post("/image/", ...uploadHandlers);
 
   router.get("/image/:id", streamProductImage);
 

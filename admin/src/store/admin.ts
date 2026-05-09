@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { type Product, type ProductAvailability, type WeightOption } from "@/data/products";
-import { api } from "@/lib/api";
+import { api, resolvedOriginForAssets } from "@/lib/api";
 import { normalizeImagesFromRaw, type ProductImage } from "@/lib/productImages";
 
 export type OrderStatus =
@@ -39,19 +39,12 @@ export interface AdminCustomer {
 
 export type AdminProduct = Product;
 
-const envApi = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
-const API_BASE =
-  envApi !== undefined && envApi !== ""
-    ? envApi
-    : import.meta.env.DEV
-      ? ""
-      : "http://localhost:5000";
-
 function toAbsoluteImageUrl(src: string) {
+  const base = resolvedOriginForAssets();
   if (!src) return src;
   if (src.startsWith("http://") || src.startsWith("https://")) return src;
-  if (src.startsWith("/")) return `${API_BASE}${src}`;
-  return `${API_BASE}/${src}`;
+  if (src.startsWith("/")) return `${base}${src}`;
+  return `${base}/${src}`;
 }
 
 function normalizeProductImagesFromApi(raw: unknown): ProductImage[] {

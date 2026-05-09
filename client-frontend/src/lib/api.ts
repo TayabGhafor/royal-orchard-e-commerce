@@ -11,6 +11,22 @@ const API_URL =
 
 const TOKEN_KEY = "royalorchard-token";
 
+/** Avoid `.../api` + `/api/...` → `/api/api/...` (404 on the backend). */
+export function apiUrl(path: string): string {
+  const p = path.startsWith("/") ? path : `/${path}`;
+  if (!API_URL) return p;
+  let base = API_URL.replace(/\/+$/, "");
+  if (p.startsWith("/api/") && /\/api$/i.test(base)) {
+    base = base.replace(/\/api$/i, "");
+  }
+  return `${base}${p}`;
+}
+
+export function resolvedOriginForAssets(): string {
+  if (!API_URL) return "";
+  return API_URL.replace(/\/+$/, "").replace(/\/api$/i, "");
+}
+
 export function getAuthToken() {
   try {
     // Prefer persistent login (localStorage), fall back to session-only login.
@@ -49,7 +65,7 @@ async function parseJsonSafe(res: Response) {
 }
 
 export async function api<T>(path: string, opts: RequestInit & { auth?: boolean } = {}): Promise<T> {
-  const url = `${API_URL}${path.startsWith("/") ? "" : "/"}${path}`;
+  const url = apiUrl(path);
   const headers = new Headers(opts.headers || {});
 
   if (!headers.has("content-type") && opts.body && !(opts.body instanceof FormData)) {
