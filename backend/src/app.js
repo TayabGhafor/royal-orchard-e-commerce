@@ -92,6 +92,12 @@ function createApp(env) {
   );
   app.use(hpp());
 
+  app.post(
+    "/api/payments/stripe/webhook",
+    express.raw({ type: "application/json" }),
+    require("./modules/payments/payment.controller").stripeWebhook(env),
+  );
+
   app.use(
     cors({
       origin: (origin, cb) => {
@@ -176,6 +182,7 @@ function createApp(env) {
   app.use("/api/orders", require("./modules/orders/orders.routes")(env));
   app.use("/api/analytics", require("./modules/analytics/analytics.routes")(env));
   app.use("/api/chatbot", require("./modules/chatbot/chatbot.routes")(env));
+  app.use("/api/payments", require("./modules/payments/payment.routes")(env));
 
   app.use((_req, res) => res.status(404).json({ error: { code: "not_found", message: "Route not found" } }));
   app.use(errorMiddleware);

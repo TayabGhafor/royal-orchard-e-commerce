@@ -45,6 +45,19 @@ function primaryProductImage(images) {
   return "";
 }
 
+function paymentDefaults(paymentMethod) {
+  if (paymentMethod === "COD") {
+    return { paymentStatus: "Unpaid", paymentGateway: "COD" };
+  }
+  if (paymentMethod === "Card") {
+    return { paymentStatus: "Pending", paymentGateway: "Stripe" };
+  }
+  if (paymentMethod === "Easypaisa" || paymentMethod === "JazzCash") {
+    return { paymentStatus: "Pending", paymentGateway: "Manual" };
+  }
+  return { paymentStatus: "Pending", paymentGateway: null };
+}
+
 function assertStatusFlow(from, to) {
   const flow = ["Placed", "Processing", "Shipped", "Delivered"];
   if (from === to) return true;
@@ -73,7 +86,7 @@ function createOrder() {
       if (!["COD", "Easypaisa", "JazzCash", "Card"].includes(paymentMethod)) {
         throw Object.assign(new Error("Invalid payment method"), { statusCode: 400, code: "invalid_payment_method" });
       }
-      const paymentStatus = paymentMethod === "COD" ? "Unpaid" : "Paid";
+      const { paymentStatus, paymentGateway } = paymentDefaults(paymentMethod);
 
       // Build order items with server-side prices; only "In Stock" products can be purchased.
       // If anything fails mid-way, roll back applied totalSold increments.
@@ -98,7 +111,12 @@ function createOrder() {
           }
 
           const product = await Product.findOneAndUpdate(
-            { _id: productId, isActive: true, availabilityStatus: "In Stock" },
+            {
+              _id: productId,
+              isActive: true,
+              // Treat missing / legacy `availabilityStatus` as sellable; only explicit "Out of Stock" blocks checkout.
+              availabilityStatus: { $nin: ["Out of Stock"] },
+            },
             { $inc: { totalSold: quantity } },
             { returnDocument: "after" },
           ).lean();
@@ -138,6 +156,7 @@ function createOrder() {
           deliveryDetails,
           paymentMethod,
           paymentStatus,
+          paymentGateway,
           orderStatus: "Placed",
           pricing: { subtotal, shipping, tax, total },
           timeline: [{ status: "Placed", date: new Date() }],
@@ -181,7 +200,7 @@ function createGuestOrder() {
       if (!["COD", "Easypaisa", "JazzCash", "Card"].includes(paymentMethod)) {
         throw Object.assign(new Error("Invalid payment method"), { statusCode: 400, code: "invalid_payment_method" });
       }
-      const paymentStatus = paymentMethod === "COD" ? "Unpaid" : "Paid";
+      const { paymentStatus, paymentGateway } = paymentDefaults(paymentMethod);
 
       const guestEmail = sanitizeText(body.guest?.email || body.email);
       const applied = [];
@@ -205,7 +224,11 @@ function createGuestOrder() {
           }
 
           const product = await Product.findOneAndUpdate(
-            { _id: productId, isActive: true, availabilityStatus: "In Stock" },
+            {
+              _id: productId,
+              isActive: true,
+              availabilityStatus: { $nin: ["Out of Stock"] },
+            },
             { $inc: { totalSold: quantity } },
             { returnDocument: "after" },
           ).lean();
@@ -244,6 +267,7 @@ function createGuestOrder() {
           deliveryDetails,
           paymentMethod,
           paymentStatus,
+          paymentGateway,
           orderStatus: "Placed",
           pricing: { subtotal, shipping, tax, total },
           timeline: [{ status: "Placed", date: new Date() }],

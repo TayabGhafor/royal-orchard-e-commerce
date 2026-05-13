@@ -33,6 +33,9 @@ function loadEnv(processEnv) {
     OPENAI_API_KEY: String(processEnv.OPENAI_API_KEY || "").trim(),
     /** Optional absolute base for image URLs (defaults to RENDER_EXTERNAL_URL on Render). */
     API_PUBLIC_URL: String(processEnv.API_PUBLIC_URL || processEnv.RENDER_EXTERNAL_URL || "").trim(),
+    STRIPE_SECRET_KEY: String(processEnv.STRIPE_SECRET_KEY || "").trim(),
+    STRIPE_PUBLISHABLE_KEY: String(processEnv.STRIPE_PUBLISHABLE_KEY || "").trim(),
+    STRIPE_WEBHOOK_SECRET: String(processEnv.STRIPE_WEBHOOK_SECRET || "").trim(),
   };
 
   return env;

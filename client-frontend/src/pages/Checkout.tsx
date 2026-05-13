@@ -13,6 +13,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { useProducts } from "@/store/products";
+import { EasypaisaTransferModal } from "@/components/checkout/EasypaisaTransferModal";
+import { createStripeCheckoutSession } from "@/lib/stripe-checkout";
 
 const checkoutSchema = z.object({
   name: z.string().trim().min(2, "Please enter your name").max(100),
@@ -37,7 +39,6 @@ const Checkout = () => {
   const upsertCustomerLocal = useOrders((s) => s.upsertCustomerLocal);
   const user = useAuth((s) => s.user);
   const updateProfile = useAuth((s) => s.updateProfile);
-  const products = useProducts((s) => s.items);
   const productsLoadedOnce = useProducts((s) => s.loadedOnce);
   const [form, setForm] = useState({
     name: user?.name ?? "",
@@ -46,6 +47,7 @@ const Checkout = () => {
   });
   const [payment, setPayment] = useState<Payment>("cod");
   const [submitting, setSubmitting] = useState(false);
+  const [easypaisaOpen, setEasypaisaOpen] = useState(false);
   const navigate = useNavigate();
 
   const sub = subtotal();
@@ -64,89 +66,128 @@ const Checkout = () => {
       toast.error(parsed.error.issues[0].message);
       return;
     }
+    if (payment === "card" && !user) {
+      toast.error("Sign in to pay by card.");
+      return;
+    }
+    if (payment === "easypaisa") {
+      setEasypaisaOpen(true);
+      return;
+    }
+    void runCheckout();
+  };
+
+  const runCheckout = async () => {
+    const productSummary =
+      items.length === 1
+        ? `${items[0].name} (${items[0].weight})`
+        : `${items[0].name} (${items[0].weight}) +${items.length - 1} more`;
+    const totalQty = items.reduce((n, it) => n + it.quantity, 0);
+    const email = user?.email ?? `${form.name.toLowerCase().replace(/\s+/g, ".")}@guest.local`;
     setSubmitting(true);
-    (async () => {
-      const productSummary =
-        items.length === 1
-          ? `${items[0].name} (${items[0].weight})`
-          : `${items[0].name} (${items[0].weight}) +${items.length - 1} more`;
-      const totalQty = items.reduce((n, it) => n + it.quantity, 0);
-      const email = user?.email ?? `${form.name.toLowerCase().replace(/\s+/g, ".")}@guest.local`;
-      try {
-        // Ensure persisted carts from older builds (non-ObjectId product ids) can still checkout.
-        // Best effort: resolve by product name to the currently loaded product list (which uses Mongo _id).
-        if (!productsLoadedOnce) {
-          await useProducts.getState().load();
-        }
-        const resolveProductId = (productId: string, name: string) => {
-          if (isObjectId(productId)) return productId;
-          const match = products.find((p) => p.name.trim().toLowerCase() === name.trim().toLowerCase());
-          return match?.id || "";
-        };
-
-        const normalizedItems = items.map((it) => {
-          const resolvedId = resolveProductId(it.productId, it.name);
-          const weightNum = weightToNumber(it.weight);
-          return {
-            product: resolvedId,
-            weight: weightNum,
-            quantity: it.quantity,
-            name: it.name,
-          };
-        });
-
-        const bad = normalizedItems.find((it) => !isObjectId(it.product) || !it.weight);
-        if (bad) {
-          throw new Error(`Some cart items are out of date. Please remove and re-add "${bad.name}" to continue.`);
-        }
-
-        const path = user ? "/api/orders" : "/api/orders/guest";
-        const res = await api<{ order: any }>(path, {
-          method: "POST",
-          auth: Boolean(user),
-          body: JSON.stringify({
-            ...(user ? {} : { guest: { email } }),
-            deliveryDetails: { name: form.name, phone: form.phone, address: form.address },
-            paymentMethod:
-              payment === "cod"
-                ? "COD"
-                : payment === "easypaisa"
-                ? "Easypaisa"
-                : payment === "jazzcash"
-                ? "JazzCash"
-                : "Card",
-            pricing: { shipping: 0, tax, total },
-            items: normalizedItems.map((it) => ({
-              product: it.product,
-              weight: it.weight,
-              quantity: it.quantity,
-            })),
-          }),
-        });
-
-        // Optionally mirror into local store for optimistic UI.
-        addOrderLocal({
-          customer: form.name,
-          email,
-          product: productSummary,
-          quantity: totalQty,
-          total,
-          address: form.address,
-          paid: payment !== "cod",
-          paymentMethod: payment,
-          status: "Pending",
-        });
-        upsertCustomerLocal({ name: form.name, email, spent: total });
-        if (user) updateProfile({ address: form.address, phone: form.phone, name: form.name });
-        clear();
-        toast.success("Order placed! We'll be in touch shortly.");
-        navigate("/orders");
-      } catch (err: any) {
-        toast.error(err?.message || "Unable to place order right now");
-      } finally {
-        setSubmitting(false);
+    try {
+      if (!productsLoadedOnce) {
+        await useProducts.getState().load();
       }
-    })();
+      /** Always read catalog from the store after `load()` — hook `products` would be stale (pre-await closure). */
+      const catalog = useProducts.getState().items;
+      const resolveProductId = (productId: string, name: string) => {
+        if (isObjectId(productId)) return productId;
+        const n = name.trim().toLowerCase();
+        const match =
+          catalog.find((p) => p.name.trim().toLowerCase() === n) ||
+          catalog.find((p) => p.slug === productId.trim());
+        return match?.id || "";
+      };
+
+      const normalizedItems = items.map((it) => {
+        const resolvedId = resolveProductId(it.productId, it.name);
+        const weightNum = weightToNumber(it.weight);
+        return {
+          product: resolvedId,
+          weight: weightNum,
+          quantity: it.quantity,
+          name: it.name,
+          image: it.image,
+          unitPrice: it.unitPrice,
+        };
+      });
+
+      const bad = normalizedItems.find((it) => !isObjectId(it.product) || !it.weight);
+      if (bad) {
+        throw new Error(`Some cart items are out of date. Please remove and re-add "${bad.name}" to continue.`);
+      }
+
+      const path = user ? "/api/orders" : "/api/orders/guest";
+      const res = await api<{ order: any }>(path, {
+        method: "POST",
+        auth: Boolean(user),
+        body: JSON.stringify({
+          ...(user ? {} : { guest: { email } }),
+          deliveryDetails: { name: form.name, phone: form.phone, address: form.address },
+          paymentMethod:
+            payment === "cod"
+              ? "COD"
+              : payment === "easypaisa"
+              ? "Easypaisa"
+              : payment === "jazzcash"
+              ? "JazzCash"
+              : "Card",
+          pricing: { shipping: 0, tax, total },
+          items: normalizedItems.map((it) => ({
+            product: it.product,
+            weight: it.weight,
+            quantity: it.quantity,
+          })),
+        }),
+      });
+
+      if (payment === "card") {
+        const orderId = String(res.order?._id || res.order?.id || "");
+        const session = await createStripeCheckoutSession({
+          orderId,
+          customerEmail: email,
+          items: normalizedItems.map((it) => ({
+            title: `${it.name} (${it.weight}kg)`,
+            image: it.image,
+            quantity: it.quantity,
+            unitPrice: it.unitPrice,
+          })),
+        });
+        if (!session.checkoutUrl) {
+          throw new Error("Stripe checkout could not be started.");
+        }
+        clear();
+        window.location.assign(session.checkoutUrl);
+        return;
+      }
+
+      addOrderLocal({
+        customer: form.name,
+        email,
+        product: productSummary,
+        quantity: totalQty,
+        total,
+        address: form.address,
+        paid: payment !== "cod",
+        paymentMethod: payment,
+        status: "Pending",
+      });
+      upsertCustomerLocal({ name: form.name, email, spent: total });
+      if (user) updateProfile({ address: form.address, phone: form.phone, name: form.name });
+      clear();
+      setEasypaisaOpen(false);
+      toast.success(
+        payment === "easypaisa"
+          ? "Order placed. We will confirm your Easypaisa transfer shortly."
+          : "Order placed! We'll be in touch shortly.",
+      );
+      navigate("/orders");
+    } catch (err: any) {
+      toast.error(err?.message || "Unable to place order right now");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const paymentOptions: { id: Payment; label: string; sub: string; icon: string }[] = [
@@ -363,7 +404,11 @@ const Checkout = () => {
                 disabled={submitting}
                 className="w-full mt-10 py-5 editorial-gradient text-on-primary rounded-full font-bold text-lg tracking-tight shadow-lg shadow-primary/10 hover:opacity-90 transition-all flex items-center justify-center gap-3 disabled:opacity-60"
               >
-                {submitting ? "Placing order..." : "Confirm & Place Order"}
+                {submitting
+                  ? payment === "card"
+                    ? "Opening secure checkout..."
+                    : "Placing order..."
+                  : "Confirm & Place Order"}
                 {!submitting && <Icon name="arrow_forward" />}
               </button>
               <p className="text-center mt-6 text-xs text-on-surface-variant flex items-center justify-center gap-2">
@@ -378,6 +423,15 @@ const Checkout = () => {
         </form>
         )}
       </div>
+      <EasypaisaTransferModal
+        open={easypaisaOpen}
+        total={total}
+        submitting={submitting}
+        onOpenChange={setEasypaisaOpen}
+        onConfirm={() => {
+          void runCheckout();
+        }}
+      />
     </SiteShell>
   );
 };

@@ -32,6 +32,8 @@ const Security = lazy(() => import("./pages/Security"));
 const Wholesale = lazy(() => import("./pages/Wholesale"));
 const Account = lazy(() => import("./pages/Account"));
 const Orders = lazy(() => import("./pages/Orders"));
+const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
+const PaymentCancel = lazy(() => import("./pages/PaymentCancel"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -97,6 +99,8 @@ const App = () => (
               <Route path="/wholesale" element={<Wholesale />} />
               <Route path="/account" element={<Account />} />
               <Route path="/orders" element={<Orders />} />
+              <Route path="/payment/success" element={<PaymentSuccess />} />
+              <Route path="/payment/cancel" element={<PaymentCancel />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>

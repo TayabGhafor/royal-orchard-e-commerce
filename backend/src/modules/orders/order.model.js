@@ -35,6 +35,9 @@ const OrderSchema = new mongoose.Schema(
     },
     paymentMethod: { type: String, enum: ["COD", "Easypaisa", "JazzCash", "Card"], required: true },
     paymentStatus: { type: String, enum: ["Pending", "Paid", "Unpaid"], default: "Pending" },
+    paymentGateway: { type: String, enum: ["Stripe", "Manual", "COD"] },
+    stripeSessionId: { type: String, trim: true, default: null },
+    transactionId: { type: String, trim: true, default: null },
     orderStatus: {
       type: String,
       enum: ["Placed", "Processing", "Shipped", "Delivered", "Cancelled", "Returned"],
