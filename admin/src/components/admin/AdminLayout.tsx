@@ -6,11 +6,15 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
-    <div className="flex bg-stone-50 min-h-screen text-stone-900 font-body">
+    <div className="flex min-h-screen bg-stone-50 font-body text-stone-900">
       <AdminSidebar collapsed={sidebarCollapsed} onCollapsedChange={setSidebarCollapsed} />
-      <div className={`${sidebarCollapsed ? "ml-20" : "ml-64"} w-full flex flex-col min-h-screen`}>
+      <div
+        className={`flex min-h-screen min-w-0 flex-1 flex-col transition-[padding] duration-200 ${
+          sidebarCollapsed ? "pl-20" : "pl-64"
+        }`}
+      >
         <AdminTopbar />
-        <main className="flex-1">{children}</main>
+        <main className="min-w-0 flex-1 overflow-x-hidden">{children}</main>
       </div>
     </div>
   );

@@ -29,7 +29,7 @@ import {
 type ProductImageLocal = ProductImage & { blobPreview?: string };
 
 const filterTriggerClass =
-  "h-12 w-full min-w-0 gap-2 rounded-2xl border border-stone-200/90 bg-white px-4 py-2 text-sm font-semibold text-stone-800 shadow-sm ring-1 ring-stone-900/5 outline-none transition-all hover:border-orange-200/90 hover:bg-orange-50/40 hover:shadow-md focus:ring-2 focus:ring-orange-100 focus:ring-offset-0 focus:border-orange-300 data-[state=open]:border-orange-400 data-[state=open]:bg-orange-50/50 data-[state=open]:shadow-md data-[state=open]:ring-2 data-[state=open]:ring-orange-100 [&_[data-radix-select-value]]:min-w-0 [&_[data-radix-select-value]]:truncate sm:min-w-[12rem] lg:h-12 lg:shrink-0";
+  "h-11 w-full min-w-0 gap-2 rounded-xl border border-stone-200/90 bg-white px-3.5 text-sm font-semibold text-stone-800 shadow-sm ring-1 ring-stone-900/5 outline-none transition-all hover:border-orange-200/90 hover:bg-orange-50/40 hover:shadow-md focus:ring-2 focus:ring-orange-100 focus:ring-offset-0 focus:border-orange-300 data-[state=open]:border-orange-400 data-[state=open]:bg-orange-50/50 data-[state=open]:shadow-md data-[state=open]:ring-2 data-[state=open]:ring-orange-100 [&_[data-radix-select-value]]:min-w-0 [&_[data-radix-select-value]]:truncate";
 
 type FormState = {
   id?: string;
@@ -195,7 +195,7 @@ const Products = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-8 p-4 sm:p-6 lg:p-8">
+      <motion.div className="mx-auto w-full min-w-0 max-w-full space-y-6 p-4 sm:space-y-8 sm:p-6 lg:p-8">
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
@@ -215,15 +215,14 @@ const Products = () => {
         </div>
 
         {/* Filters — mobile-first: stack so search never collapses; lg: one row */}
-        <section aria-label="Product filters" className="w-full min-w-0">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
-            <label className="relative block w-full min-w-0 lg:min-w-[min(100%,18rem)] lg:flex-1">
+        <section aria-label="Product filters" className="w-full min-w-0 max-w-full">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(11rem,13.5rem)_minmax(10rem,12rem)] xl:items-center xl:gap-4">
+            <label className="relative block min-w-0 sm:col-span-2 xl:col-span-1">
               <span className="sr-only">Search products</span>
-              <div className="flex min-h-[3rem] w-full items-center gap-3 rounded-2xl border border-stone-200/90 bg-white px-4 py-2.5 shadow-sm ring-1 ring-stone-900/5 transition-[box-shadow,border-color] focus-within:border-orange-300 focus-within:shadow-md focus-within:ring-2 focus-within:ring-orange-200/70">
+              <div className="flex h-11 w-full items-center gap-2.5 rounded-xl border border-stone-200/90 bg-white px-3.5 shadow-sm ring-1 ring-stone-900/5 transition-[box-shadow,border-color] focus-within:border-orange-300 focus-within:shadow-md focus-within:ring-2 focus-within:ring-orange-200/70">
                 <Icon
                   name="search"
-                  className="pointer-events-none size-5 shrink-0 text-stone-400"
-                  aria-hidden
+                  className="pointer-events-none shrink-0 text-[22px] leading-none text-stone-400"
                 />
                 <input
                   type="search"
@@ -232,17 +231,13 @@ const Products = () => {
                   placeholder="Search products by name…"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="min-h-[44px] min-w-0 flex-1 bg-transparent text-base text-stone-900 placeholder:text-stone-400 outline-none sm:text-sm"
+                  className="h-full min-w-0 flex-1 border-0 bg-transparent py-0 text-sm text-stone-900 outline-none ring-0 placeholder:text-stone-400 focus:outline-none focus:ring-0"
                 />
               </div>
             </label>
 
-            <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:flex lg:w-auto lg:shrink-0 lg:grid-cols-none lg:gap-3">
-              <Select value={collectionFilter} onValueChange={setCollectionFilter}>
-                <SelectTrigger
-                  aria-label="Filter by collection"
-                  className={cn(filterTriggerClass, "lg:min-w-[13.5rem] lg:max-w-[16rem]")}
-                >
+            <Select value={collectionFilter} onValueChange={setCollectionFilter}>
+                <SelectTrigger aria-label="Filter by collection" className={filterTriggerClass}>
                   <Icon name="category" className="shrink-0 text-lg text-orange-500" />
                   <SelectValue placeholder="Collection" />
                 </SelectTrigger>
@@ -283,10 +278,7 @@ const Products = () => {
                 value={statusFilter}
                 onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}
               >
-                <SelectTrigger
-                  aria-label="Filter by stock status"
-                  className={cn(filterTriggerClass, "lg:min-w-[11.5rem] lg:max-w-[14rem]")}
-                >
+                <SelectTrigger aria-label="Filter by stock status" className={filterTriggerClass}>
                   <Icon name="inventory_2" className="shrink-0 text-lg text-orange-500" />
                   <SelectValue placeholder="Stock status" />
                 </SelectTrigger>
@@ -316,7 +308,6 @@ const Products = () => {
                   </SelectItem>
                 </SelectContent>
               </Select>
-            </div>
           </div>
         </section>
 
@@ -412,7 +403,7 @@ const Products = () => {
           </table>
         </div>
         )}
-      </div>
+      </motion.div>
 
       {/* Modal */}
       {open && (

@@ -126,8 +126,8 @@ export default function AdminTopbar() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-stone-200/90 bg-white/90 backdrop-blur-md supports-[backdrop-filter]:bg-white/80">
-      <div className="flex min-h-16 w-full items-center gap-3 px-4 md:px-6 lg:px-8">
-      <div ref={wrapperRef} className="relative min-w-0 flex-1 sm:max-w-lg md:max-w-xl lg:max-w-2xl">
+      <div className="flex min-h-16 w-full items-center justify-between gap-4 px-4 md:px-6 lg:px-8">
+      <div ref={wrapperRef} className="relative min-w-0 w-full max-w-md sm:max-w-lg lg:max-w-xl">
         <label className="block w-full">
           <span className="sr-only">Search orders, products, and customers</span>
           <div
@@ -269,7 +269,7 @@ export default function AdminTopbar() {
           </div>
         ) : null}
       </div>
-      <div className="flex shrink-0 items-center justify-end gap-2 sm:gap-3 lg:gap-4">
+      <div className="ml-auto flex shrink-0 items-center justify-end gap-2 sm:gap-3 lg:gap-4">
         <Popover
           open={notifOpen}
           onOpenChange={(v) => {
