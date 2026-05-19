@@ -162,11 +162,17 @@ const Analytics = () => {
     },
     staleTime: 25_000,
     refetchInterval: 60_000,
+    retry: 1,
   });
 
   const loading = bi.isLoading;
+  const refreshing = bi.isFetching && !bi.isLoading;
   const err = bi.error as Error | null;
   const d = bi.data;
+
+  const refreshAnalytics = () => {
+    void bi.refetch();
+  };
 
   const salesCards = useMemo(() => {
     if (!d?.sales) return [];
