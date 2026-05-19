@@ -125,21 +125,22 @@ export default function AdminTopbar() {
   };
 
   return (
-    <header className="sticky top-0 z-30 border-b border-stone-200/90 bg-white/90 backdrop-blur-md">
-      <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:py-0 sm:h-16 md:px-6 lg:px-8">
-      <div ref={wrapperRef} className="relative w-full min-w-0 sm:max-w-lg md:max-w-xl lg:max-w-2xl sm:flex-1">
-        <div
-          className={[
-            "group flex min-h-[48px] w-full items-center gap-3 rounded-2xl border bg-white px-4 py-2.5",
-            "shadow-sm ring-1 ring-stone-900/5 transition-all duration-200",
-            "border-stone-200/90 hover:border-stone-300 hover:shadow-md",
-            "focus-within:border-orange-300 focus-within:shadow-lg focus-within:ring-2 focus-within:ring-orange-200/80",
+    <header className="sticky top-0 z-30 border-b border-stone-200/90 bg-white/90 backdrop-blur-md supports-[backdrop-filter]:bg-white/80">
+      <div className="flex min-h-16 w-full items-center gap-3 px-4 md:px-6 lg:px-8">
+      <div ref={wrapperRef} className="relative min-w-0 flex-1 sm:max-w-lg md:max-w-xl lg:max-w-2xl">
+        <label className="block w-full">
+          <span className="sr-only">Search orders, products, and customers</span>
+          <div
+            className={[
+            "group flex h-11 w-full items-center gap-2.5 rounded-xl border border-stone-200/90 bg-white px-3.5",
+            "shadow-sm ring-1 ring-stone-900/5 transition-[box-shadow,border-color] duration-200",
+            "hover:border-stone-300 hover:shadow-md",
+            "focus-within:border-orange-300 focus-within:shadow-md focus-within:ring-2 focus-within:ring-orange-200/70",
           ].join(" ")}
         >
           <Icon
             name="search"
-            className="size-5 shrink-0 text-stone-400 transition-colors group-focus-within:text-orange-600"
-            aria-hidden
+            className="pointer-events-none shrink-0 text-[22px] leading-none text-stone-400 transition-colors group-focus-within:text-orange-600"
           />
           <input
             type="search"
@@ -151,24 +152,36 @@ export default function AdminTopbar() {
               setOpen(true);
             }}
             onFocus={() => setOpen(true)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                setOpen(false);
+                (e.target as HTMLInputElement).blur();
+              }
+            }}
             placeholder="Search orders, products, customers…"
-            className="min-h-[44px] min-w-0 flex-1 bg-transparent text-base text-stone-900 outline-none placeholder:text-stone-400 sm:text-sm"
+            className="h-full min-w-0 flex-1 border-0 bg-transparent py-0 text-sm text-stone-900 outline-none ring-0 placeholder:text-stone-400 focus:outline-none focus:ring-0"
           />
-          {query && (
+          {query ? (
             <button
+              type="button"
               onClick={() => {
                 setQuery("");
                 setOpen(false);
               }}
-              className="w-8 h-8 rounded-full flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition"
-              aria-label="Clear"
+              className="flex size-8 shrink-0 items-center justify-center rounded-full text-stone-400 transition hover:bg-stone-100 hover:text-stone-700"
+              aria-label="Clear search"
             >
-              <Icon name="close" className="text-base" />
+              <Icon name="close" className="text-lg leading-none" />
             </button>
-          )}
-        </div>
-        {open && query.trim() && (
-          <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-[60] max-h-[min(70vh,32rem)] overflow-hidden overflow-y-auto rounded-2xl border border-stone-200/90 bg-white shadow-2xl shadow-stone-900/15 ring-1 ring-stone-900/5 sm:left-0 sm:right-auto sm:min-w-[min(100%,28rem)]">
+          ) : null}
+          </div>
+        </label>
+        {open && query.trim() ? (
+          <div
+            role="listbox"
+            aria-label="Search results"
+            className="absolute left-0 right-0 top-full z-[60] mt-2 max-h-[min(70vh,32rem)] overflow-y-auto rounded-xl border border-stone-200/90 bg-white shadow-2xl shadow-stone-900/15 ring-1 ring-stone-900/5 sm:min-w-[min(100%,28rem)]"
+          >
             {totalResults === 0 ? (
               <div className="p-6 text-center text-sm text-stone-400">
                 No matches for "{query}"
@@ -254,7 +267,7 @@ export default function AdminTopbar() {
               </div>
             )}
           </div>
-        )}
+        ) : null}
       </div>
       <div className="flex shrink-0 items-center justify-end gap-2 sm:gap-3 lg:gap-4">
         <Popover

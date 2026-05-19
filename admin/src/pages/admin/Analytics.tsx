@@ -18,13 +18,14 @@ import {
 } from "@/lib/adminAnalyticsApi";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   ResponsiveContainer,
   LineChart,
   Line,
   XAxis,
   YAxis,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   CartesianGrid,
   BarChart,
   Bar,
@@ -203,13 +204,25 @@ const Analytics = () => {
               <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
               Live data
             </span>
-            <button
-              type="button"
-              onClick={() => bi.refetch()}
-              className="rounded-full border border-stone-200 bg-white px-4 py-2 text-xs font-bold text-stone-700 shadow-sm transition hover:border-orange-200 hover:text-orange-700"
-            >
-              Refresh
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={refreshAnalytics}
+                  disabled={bi.isFetching}
+                  aria-label="Refresh analytics"
+                  className="flex size-11 items-center justify-center rounded-full border border-stone-200/90 bg-white text-stone-600 shadow-sm ring-1 ring-stone-900/5 transition hover:border-orange-300 hover:bg-orange-50/50 hover:text-orange-700 active:scale-95 disabled:pointer-events-none disabled:opacity-60"
+                >
+                  <Icon
+                    name="refresh"
+                    className={`text-[22px] leading-none ${refreshing ? "animate-spin" : ""}`}
+                  />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs font-semibold">
+                Refresh analytics
+              </TooltipContent>
+            </Tooltip>
           </div>
         </motion.div>
 
@@ -256,7 +269,7 @@ const Analytics = () => {
                         <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
                         <XAxis dataKey="day" tick={{ fontSize: 10 }} stroke="#78716c" />
                         <YAxis tick={{ fontSize: 10 }} stroke="#78716c" />
-                        <Tooltip formatter={(v: number) => formatPKR(Number(v))} />
+                        <RechartsTooltip formatter={(v: number) => formatPKR(Number(v))} />
                         <Line type="monotone" dataKey="amount" stroke="#ea580c" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
                       </LineChart>
                     </ResponsiveContainer>
@@ -282,7 +295,7 @@ const Analytics = () => {
                           <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip />
+                      <RechartsTooltip />
                       <Legend />
                     </PieChart>
                   </ResponsiveContainer>
@@ -299,7 +312,7 @@ const Analytics = () => {
                         <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
                         <XAxis dataKey="month" tick={{ fontSize: 10 }} stroke="#78716c" />
                         <YAxis tick={{ fontSize: 10 }} stroke="#78716c" />
-                        <Tooltip formatter={(v: number) => formatPKR(Number(v))} />
+                        <RechartsTooltip formatter={(v: number) => formatPKR(Number(v))} />
                         <Bar dataKey="amount" fill="#f59e0b" radius={[6, 6, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
@@ -322,7 +335,7 @@ const Analytics = () => {
                       <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" horizontal={false} />
                       <XAxis type="number" hide />
                       <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 10 }} stroke="#57534e" />
-                      <Tooltip />
+                      <RechartsTooltip />
                       <Bar dataKey="trendingScore" fill="#ea580c" radius={[0, 6, 6, 0]} barSize={14} />
                     </BarChart>
                   </ResponsiveContainer>
@@ -451,7 +464,7 @@ const Analytics = () => {
                           <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
                           <XAxis dataKey="name" tick={{ fontSize: 10 }} />
                           <YAxis tick={{ fontSize: 10 }} />
-                          <Tooltip />
+                          <RechartsTooltip />
                           <Bar dataKey="qty" fill="#dc2626" radius={[6, 6, 0, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
@@ -506,7 +519,7 @@ const Analytics = () => {
                   <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
                   <XAxis dataKey="season" />
                   <YAxis />
-                  <Tooltip formatter={(v: number, name) => (name === "sales" ? formatPKR(v) : v)} />
+                  <RechartsTooltip formatter={(v: number, name) => (name === "sales" ? formatPKR(v) : v)} />
                   <Legend />
                   <Bar dataKey="sales" name="Sales (30d)" fill="#ea580c" radius={[6, 6, 0, 0]} />
                   <Bar dataKey="stock" name="Stock units" fill="#84cc16" radius={[6, 6, 0, 0]} />
@@ -597,7 +610,7 @@ const Analytics = () => {
                       <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
                       <XAxis dataKey="name" tick={{ fontSize: 10 }} />
                       <YAxis tick={{ fontSize: 10 }} />
-                      <Tooltip />
+                      <RechartsTooltip />
                       <Bar dataKey="hits" fill="#0d9488" radius={[6, 6, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
