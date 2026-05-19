@@ -1,413 +1,624 @@
-import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { motion, animate } from "framer-motion";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { useAdmin } from "@/store/admin";
-import { formatPKR } from "@/lib/format";
 import { Icon } from "@/components/Icon";
-import { usePageLoading } from "@/hooks/use-page-loading";
-import { useRealtimeTick, formatRelative } from "@/hooks/use-realtime-tick";
+import { formatPKR } from "@/lib/format";
+import { resolvedOriginForAssets } from "@/lib/api";
 import {
-  StatCardSkeleton,
-  ChartSkeleton,
-} from "@/components/admin/AdminSkeletons";
+  fetchAdminHits,
+  fetchAdminInsights,
+  fetchAdminInventory,
+  fetchAdminRecommendations,
+  fetchAdminReturns,
+  fetchAdminSales,
+  fetchAdminSeasonal,
+  fetchAdminTrending,
+  fetchAdminUpcoming,
+} from "@/lib/adminAnalyticsApi";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useEffect, useState } from "react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import type { DateRange } from "react-day-picker";
+import { Progress } from "@/components/ui/progress";
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+} from "recharts";
+
+const PIE_COLORS = ["#ea580c", "#f59e0b", "#78716c", "#dc2626"];
+
+function imgSrc(src: string) {
+  if (!src) return "";
+  if (src.startsWith("http")) return src;
+  const base = resolvedOriginForAssets();
+  return src.startsWith("/") ? `${base}${src}` : `${base}/${src}`;
+}
+
+function AnimatedPKR({ value }: { value: number }) {
+  const [display, setDisplay] = useState(0);
+  useEffect(() => {
+    const c = animate(display, value, {
+      duration: 0.55,
+      ease: [0.22, 1, 0.36, 1],
+      onUpdate: (v) => setDisplay(v),
+    });
+    return () => c.stop();
+  }, [value]); // eslint-disable-line react-hooks/exhaustive-deps -- animate from previous display to new value
+  return <span className="tabular-nums">{formatPKR(Math.round(display))}</span>;
+}
+
+function StatCard({
+  label,
+  value,
+  sub,
+  icon,
+  accent,
+  delay = 0,
+}: {
+  label: string;
+  value: ReactNode;
+  sub?: string;
+  icon: string;
+  accent: string;
+  delay?: number;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, delay, ease: [0.22, 1, 0.36, 1] }}
+      whileHover={{ y: -3, transition: { duration: 0.2 } }}
+      className={`relative overflow-hidden rounded-2xl border border-stone-100 bg-gradient-to-br from-white to-stone-50/80 p-5 shadow-sm ${accent}`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">{label}</p>
+          <div className="mt-1 text-2xl font-extrabold tracking-tight text-stone-900 font-headline">{value}</div>
+          {sub && <p className="mt-1 text-xs font-medium text-stone-500">{sub}</p>}
+        </div>
+        <div className="rounded-xl bg-orange-50 p-2 text-orange-700">
+          <Icon name={icon} />
+        </div>
+      </div>
+      <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-orange-500/5 blur-2xl" />
+    </motion.div>
+  );
+}
+
+function Section({
+  title,
+  subtitle,
+  children,
+  delay = 0,
+}: {
+  title: string;
+  subtitle?: string;
+  children: ReactNode;
+  delay?: number;
+}) {
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-40px" }}
+      transition={{ duration: 0.5, delay, ease: [0.22, 1, 0.36, 1] }}
+      className="rounded-2xl border border-stone-100 bg-white p-6 shadow-sm md:p-8"
+    >
+      <div className="mb-6 flex flex-col gap-1 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-stone-900 font-headline">{title}</h2>
+          {subtitle && <p className="text-sm text-stone-500">{subtitle}</p>}
+        </div>
+      </div>
+      {children}
+    </motion.section>
+  );
+}
+
+function ChartFallback({ height = 260 }: { height?: number }) {
+  return (
+    <div className="flex items-center justify-center text-sm text-stone-400" style={{ height }}>
+      Not enough data for this chart yet.
+    </div>
+  );
+}
 
 const Analytics = () => {
-  const orders = useAdmin((s) => s.orders);
-  const products = useAdmin((s) => s.products);
-  const customers = useAdmin((s) => s.customers);
-  const { loading, error, retry } = usePageLoading({ delay: 800 });
-  const { lastUpdated } = useRealtimeTick(30000);
-  const [calendarOpen, setCalendarOpen] = useState(false);
-
-  const today = useMemo(() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d;
-  }, []);
-
-  const [range, setRange] = useState<DateRange>(() => ({
-    from: today,
-    to: today,
-  }));
-  // Tick a 1s render so "Xs ago" stays fresh.
-  const [, setNow] = useState(Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  const filteredOrders = useMemo(() => {
-    const from = range.from ? new Date(range.from) : null;
-    const to = range.to ? new Date(range.to) : null;
-    if (from) from.setHours(0, 0, 0, 0);
-    if (to) to.setHours(23, 59, 59, 999);
-
-    return orders.filter((o) => {
-      const dt = new Date(o.createdAt);
-      if (Number.isNaN(dt.getTime())) return false;
-      if (from && dt < from) return false;
-      if (to && dt > to) return false;
-      return true;
-    });
-  }, [orders, range.from, range.to]);
-
-  const { revenue, avg, profit } = useMemo(() => {
-    const revenue = filteredOrders.reduce((s, o) => s + o.total, 0);
-    const avg = filteredOrders.length ? Math.round(revenue / filteredOrders.length) : 0;
-    const profit = Math.round(revenue * 0.32);
-    return { revenue, avg, profit };
-  }, [filteredOrders]);
-
-  const kpis = [
-    {
-      label: "Total Revenue",
-      value: formatPKR(revenue),
-      change: "+12%",
-      trend: "up",
-      icon: "payments",
-      iconBg: "bg-amber-50",
-      iconColor: "text-amber-700",
-      accent: "border-amber-500",
+  const bi = useQuery({
+    queryKey: ["admin-bi-suite"],
+    queryFn: async () => {
+      const [
+        sales,
+        trending,
+        upcoming,
+        returns,
+        inventory,
+        seasonal,
+        recommendations,
+        hits,
+        insights,
+      ] = await Promise.all([
+        fetchAdminSales(),
+        fetchAdminTrending(),
+        fetchAdminUpcoming(),
+        fetchAdminReturns(),
+        fetchAdminInventory(),
+        fetchAdminSeasonal(),
+        fetchAdminRecommendations(),
+        fetchAdminHits(),
+        fetchAdminInsights(),
+      ]);
+      return { sales, trending, upcoming, returns, inventory, seasonal, recommendations, hits, insights };
     },
-    {
-      label: "Average Order Value",
-      value: formatPKR(avg),
-      icon: "shopping_basket",
-      iconBg: "bg-emerald-50",
-      iconColor: "text-emerald-700",
-      accent: "",
-    },
-    {
-      label: "Conversion Rate",
-      value: "3.4%",
-      icon: "ads_click",
-      iconBg: "bg-blue-50",
-      iconColor: "text-blue-700",
-      accent: "",
-    },
-    {
-      label: "Net Profit",
-      value: formatPKR(profit),
-      icon: "account_balance_wallet",
-      iconBg: "bg-orange-100",
-      iconColor: "text-orange-700",
-      accent: "",
-    },
-  ];
+    staleTime: 25_000,
+    refetchInterval: 60_000,
+  });
 
-  // Weekly revenue trend (mock heights)
-  const trend = [40, 65, 45, 85, 60, 95, 50];
-  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  const peakIdx = trend.indexOf(Math.max(...trend));
+  const loading = bi.isLoading;
+  const err = bi.error as Error | null;
+  const d = bi.data;
 
-  // Top selling varieties — derive from product list
-  const topVarieties = useMemo(() => {
-    const palette = ["bg-orange-500", "bg-amber-500", "bg-emerald-500"];
-    const shares = [42, 28, 15];
-    return products.slice(0, 3).map((p, i) => ({
-      name: p.name,
-      share: shares[i],
-      color: palette[i],
-    }));
-  }, [products]);
-
-  const newCustomers = customers.filter((c) => c.status === "Active").length;
-  const dateRangeLabel = useMemo(() => {
-    const fmt = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-    if (range.from && range.to) {
-      return `${fmt(range.from)} - ${fmt(range.to)}, ${range.to.getFullYear()}`;
-    }
-    if (range.from) {
-      return `${fmt(range.from)}, ${range.from.getFullYear()}`;
-    }
-    return "Select dates";
-  }, [range.from, range.to]);
+  const salesCards = useMemo(() => {
+    if (!d?.sales) return [];
+    const s = d.sales;
+    return [
+      { label: "Total Sales", value: <AnimatedPKR value={s.totalSales} />, icon: "payments", accent: "border-b-4 border-orange-500" },
+      { label: "Today's Sales", value: <AnimatedPKR value={s.todaySales} />, icon: "today", accent: "" },
+      { label: "Weekly Sales", value: <AnimatedPKR value={s.weeklySales} />, icon: "date_range", accent: "" },
+      { label: "Monthly Sales", value: <AnimatedPKR value={s.monthlySales} />, icon: "calendar_month", accent: "" },
+      { label: "Total Revenue", value: <AnimatedPKR value={s.revenue} />, sub: "Delivered orders", icon: "account_balance_wallet", accent: "" },
+      { label: "Total Orders", value: s.orders.toLocaleString(), icon: "receipt_long", accent: "" },
+      { label: "Returned Orders", value: s.returnedOrders.toLocaleString(), icon: "assignment_return", accent: "" },
+      { label: "Pending Orders", value: s.pendingOrders.toLocaleString(), icon: "hourglass_top", accent: "" },
+    ];
+  }, [d?.sales]);
 
   return (
     <AdminLayout>
-      <div className="p-8 max-w-7xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div className="mx-auto max-w-[1600px] space-y-10 p-4 pb-16 sm:p-6 lg:p-8">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"
+        >
           <div>
-            <h1 className="text-4xl font-extrabold tracking-tight text-stone-900 mb-2 font-headline">
-              Orchard Analytics
+            <h1 className="mb-2 font-headline text-3xl font-extrabold tracking-tight text-stone-900 sm:text-4xl">
+              Business Intelligence
             </h1>
-            <p className="text-stone-500 font-medium">
-              Detailed performance insights for your premium harvest
+            <p className="max-w-2xl text-sm font-medium text-stone-500 sm:text-base">
+              Live sales, inventory intelligence, trending velocity, and decision-ready recommendations — sourced from MongoDB.
             </p>
           </div>
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-1.5 text-xs bg-emerald-50 text-emerald-700 px-3 py-2 rounded-full font-semibold">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              Live · updated {formatRelative(lastUpdated)}
-            </div>
-            <div className="flex items-center gap-2 bg-white p-1 rounded-full shadow-sm border border-stone-100">
-              <button
-                type="button"
-                onClick={() => {
-                  const end = new Date(today);
-                  const start = new Date(today);
-                  start.setDate(end.getDate() - 6);
-                  setRange({ from: start, to: end });
-                }}
-                className="px-4 py-2 text-sm font-bold text-stone-700 hover:bg-stone-50 rounded-full transition-all"
-              >
-                7 Days
-              </button>
-              <button
-                type="button"
-                onClick={() => setCalendarOpen(true)}
-                className="px-6 py-2 text-sm font-bold bg-orange-500 text-white rounded-full shadow-md shadow-orange-500/20 hover:opacity-95 transition"
-              >
-                {dateRangeLabel}
-              </button>
-
-              <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    className="p-2 text-stone-400 hover:text-orange-600 transition-colors"
-                    aria-label="Pick date range"
-                  >
-                    <Icon name="calendar_today" />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent align="end" sideOffset={10} className="w-auto p-0">
-                  <div className="p-4 border-b border-stone-100 flex items-center justify-between gap-3">
-                    <div className="text-sm font-bold text-stone-900">Select date range</div>
-                    <button
-                      type="button"
-                      onClick={() => setRange({ from: today, to: today })}
-                      className="text-xs font-bold text-orange-600 hover:underline"
-                    >
-                      Today
-                    </button>
-                  </div>
-                  <Calendar
-                    mode="range"
-                    selected={range}
-                    defaultMonth={range.from || today}
-                    onSelect={(next) => {
-                      setRange(next || { from: today, to: today });
-                      if (next?.from && next?.to) setCalendarOpen(false);
-                    }}
-                    numberOfMonths={2}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+              Live data
+            </span>
+            <button
+              type="button"
+              onClick={() => bi.refetch()}
+              className="rounded-full border border-stone-200 bg-white px-4 py-2 text-xs font-bold text-stone-700 shadow-sm transition hover:border-orange-200 hover:text-orange-700"
+            >
+              Refresh
+            </button>
           </div>
-        </div>
+        </motion.div>
 
-        {error && (
-          <div className="flex items-center justify-between gap-4 px-5 py-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700">
+        {err && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-rose-800">
             <div className="flex items-center gap-2 text-sm font-medium">
-              <Icon name="error" /> {error}
+              <Icon name="error" /> {err.message || "Failed to load analytics"}
             </div>
             <button
-              onClick={retry}
-              className="text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full bg-white border border-rose-200 hover:bg-rose-100"
+              type="button"
+              onClick={() => bi.refetch()}
+              className="rounded-full bg-white px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-rose-700 ring-1 ring-rose-200"
             >
               Retry
             </button>
           </div>
         )}
 
-        {/* KPI Bento */}
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)}
-          </div>
-        ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {kpis.map((k) => (
-            <div
-              key={k.label}
-              className={`bg-white p-6 rounded-2xl shadow-sm border border-stone-100 flex flex-col justify-between ${
-                k.accent ? `border-b-4 ${k.accent}` : ""
-              }`}
-            >
-              <div className="flex justify-between items-start mb-4">
-                <div className={`p-2 rounded-lg ${k.iconBg} ${k.iconColor}`}>
-                  <Icon name={k.icon} />
+        {/* Sales KPI grid */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {loading
+            ? Array.from({ length: 8 }).map((_, i) => (
+                <Skeleton key={i} className="h-[120px] rounded-2xl" />
+              ))
+            : salesCards.map((c, i) => (
+                <StatCard key={c.label} {...c} delay={i * 0.04} />
+              ))}
+        </div>
+
+        {/* Sales charts */}
+        <Section title="Sales analytics" subtitle="Daily trend, monthly revenue, and order status mix" delay={0.05}>
+          {loading ? (
+            <Skeleton className="h-[300px] w-full rounded-xl" />
+          ) : d?.sales ? (
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+              <div className="lg:col-span-2">
+                <h3 className="mb-3 text-sm font-bold text-stone-700">Daily sales trend</h3>
+                <div className="h-[280px] w-full">
+                  {d.sales.dailySalesTrend.length === 0 ? (
+                    <ChartFallback />
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={d.sales.dailySalesTrend}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
+                        <XAxis dataKey="day" tick={{ fontSize: 10 }} stroke="#78716c" />
+                        <YAxis tick={{ fontSize: 10 }} stroke="#78716c" />
+                        <Tooltip formatter={(v: number) => formatPKR(Number(v))} />
+                        <Line type="monotone" dataKey="amount" stroke="#ea580c" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  )}
                 </div>
-                {k.change && (
-                  <span className="flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
-                    {k.change}
-                    <Icon name="trending_up" className="text-[14px]" />
-                  </span>
-                )}
               </div>
               <div>
-                <p className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-1">
-                  {k.label}
-                </p>
-                <h3 className="text-3xl font-extrabold text-stone-900 font-headline">{k.value}</h3>
-              </div>
-            </div>
-          ))}
-        </div>
-        )}
-
-        {/* Revenue Trends */}
-        {loading ? <ChartSkeleton /> : (
-        <section className="bg-white rounded-2xl p-8 shadow-sm border border-stone-100">
-          <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
-            <div>
-              <h2 className="text-xl font-bold text-stone-900 font-headline">Revenue Trends</h2>
-              <p className="text-sm text-stone-500">
-                Comparing performance across orchard sectors
-              </p>
-            </div>
-            <div className="flex gap-4">
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-orange-500" />
-                <span className="text-xs font-bold text-stone-600">Export</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-amber-400" />
-                <span className="text-xs font-bold text-stone-600">Local Market</span>
-              </div>
-            </div>
-          </div>
-          <div className="h-64 flex items-end gap-3 w-full border-b border-stone-100">
-            {trend.map((h, i) => (
-              <div
-                key={i}
-                style={{ height: `${h}%` }}
-                className={`flex-1 rounded-t-lg relative group transition-all ${
-                  i === peakIdx
-                    ? "bg-orange-500"
-                    : "bg-orange-200/60 hover:bg-orange-400/70"
-                }`}
-              >
-                {i === peakIdx && (
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 text-[10px] font-bold bg-orange-500 text-white shadow p-1 rounded">
-                    Peak
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-between mt-4 text-[10px] font-bold text-stone-400 uppercase tracking-tighter">
-            {days.map((d) => (
-              <span key={d}>{d}</span>
-            ))}
-          </div>
-        </section>
-        )}
-
-        {/* Bottom Two Columns */}
-        {loading ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white rounded-2xl p-8 shadow-sm border border-stone-100 space-y-4">
-              <Skeleton className="h-6 w-40" />
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-4">
-                  <Skeleton className="h-12 w-12 rounded-lg" />
-                  <Skeleton className="h-3 flex-1 rounded-full" />
+                <h3 className="mb-3 text-sm font-bold text-stone-700">Order status</h3>
+                <div className="h-[260px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={d.sales.orderStatusDistribution}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={52}
+                        outerRadius={84}
+                        paddingAngle={2}
+                      >
+                        {d.sales.orderStatusDistribution.map((_, i) => (
+                          <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
-              ))}
-            </div>
-            <div className="bg-white rounded-2xl p-8 shadow-sm border border-stone-100 space-y-4">
-              <Skeleton className="h-6 w-48" />
-              <Skeleton className="h-24 w-full rounded-xl" />
-              <div className="grid grid-cols-2 gap-4">
-                <Skeleton className="h-20 rounded-xl" />
-                <Skeleton className="h-20 rounded-xl" />
+              </div>
+              <div className="lg:col-span-3">
+                <h3 className="mb-3 text-sm font-bold text-stone-700">Monthly revenue trend</h3>
+                <div className="h-[260px] w-full">
+                  {d.sales.monthlyRevenueTrend.length === 0 ? (
+                    <ChartFallback height={220} />
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={d.sales.monthlyRevenueTrend}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
+                        <XAxis dataKey="month" tick={{ fontSize: 10 }} stroke="#78716c" />
+                        <YAxis tick={{ fontSize: 10 }} stroke="#78716c" />
+                        <Tooltip formatter={(v: number) => formatPKR(Number(v))} />
+                        <Bar dataKey="amount" fill="#f59e0b" radius={[6, 6, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Top Selling Varieties */}
-          <div className="bg-white rounded-2xl p-8 shadow-sm border border-stone-100">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-stone-900 font-headline">
-                Top Selling Varieties
-              </h2>
-              <button className="text-orange-600 text-sm font-bold hover:underline">
-                View All
-              </button>
-            </div>
-            <div className="space-y-6">
-              {topVarieties.map((v) => (
-                <div key={v.name} className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-orange-100 text-orange-700 flex-shrink-0 flex items-center justify-center">
-                    <Icon name="nutrition" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="font-bold text-stone-900">{v.name}</span>
-                      <span className="text-xs font-bold text-stone-500">{v.share}% Share</span>
-                    </div>
-                    <div className="w-full bg-stone-100 h-2 rounded-full overflow-hidden">
-                      <div
-                        className={`${v.color} h-full`}
-                        style={{ width: `${v.share}%` }}
+          ) : null}
+        </Section>
+
+        <div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
+          <Section title="Trending products" subtitle="Score = views×0.3 + sales×0.5 + cart adds×0.2" delay={0.08}>
+            {loading ? (
+              <Skeleton className="h-[320px] w-full rounded-xl" />
+            ) : d?.trending?.items?.length ? (
+              <>
+                <div className="mb-6 h-[220px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart layout="vertical" data={[...d.trending.items].reverse()} margin={{ left: 8, right: 16 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" horizontal={false} />
+                      <XAxis type="number" hide />
+                      <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 10 }} stroke="#57534e" />
+                      <Tooltip />
+                      <Bar dataKey="trendingScore" fill="#ea580c" radius={[0, 6, 6, 0]} barSize={14} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="space-y-4">
+                  {d.trending.items.map((p, idx) => (
+                    <motion.div
+                      key={p.productId}
+                      initial={{ opacity: 0, x: -8 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: idx * 0.04 }}
+                      className="flex items-center gap-4 rounded-xl border border-stone-100 bg-stone-50/50 p-3"
+                    >
+                      <img
+                        src={imgSrc(p.image)}
+                        alt=""
+                        className="h-14 w-14 rounded-lg object-cover ring-2 ring-white shadow-sm"
                       />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="truncate font-bold text-stone-900">{p.name}</p>
+                          <span className="shrink-0 text-xs font-bold text-orange-600">{p.trendingScore}</span>
+                        </div>
+                        <p className="text-xs text-stone-500">
+                          Sales {p.salesCount} · Views {p.viewsCount}
+                        </p>
+                        <Progress value={p.progress} className="mt-2 h-1.5" />
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p className="py-8 text-center text-sm text-stone-500">No products yet.</p>
+            )}
+          </Section>
+
+          <Section title="Upcoming trending" subtitle="Velocity from daily views & cart adds" delay={0.1}>
+            {loading ? (
+              <Skeleton className="h-[320px] w-full rounded-xl" />
+            ) : d?.upcoming?.items?.length ? (
+              <div className="grid gap-4">
+                {d.upcoming.items.map((p, idx) => (
+                  <motion.div
+                    key={p.productId}
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: idx * 0.05 }}
+                    className="flex gap-4 rounded-2xl border border-violet-100 bg-gradient-to-r from-violet-50/80 to-white p-4 shadow-sm"
+                  >
+                    <img src={imgSrc(p.image)} alt="" className="h-16 w-16 rounded-xl object-cover" />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-full bg-violet-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                          {p.label}
+                        </span>
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                            p.badge === "High"
+                              ? "bg-rose-100 text-rose-800"
+                              : p.badge === "Medium"
+                                ? "bg-amber-100 text-amber-900"
+                                : "bg-stone-100 text-stone-700"
+                          }`}
+                        >
+                          {p.badge}
+                        </span>
+                      </div>
+                      <p className="mt-1 font-bold text-stone-900">{p.name}</p>
+                      <p className="text-xs text-stone-600">
+                        Views +{p.growthPercent}% vs prior week · Cart momentum {p.cartMomentum > 0 ? "+" : ""}
+                        {p.cartMomentum}%
+                      </p>
+                      <p className="mt-1 text-xs font-semibold text-violet-800">Expected demand: {p.expectedDemand}</p>
                     </div>
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              <p className="py-8 text-center text-sm text-stone-500">
+                Not enough daily history yet. Open product pages and add items to cart to build velocity signals.
+              </p>
+            )}
+          </Section>
+        </div>
+
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+          <Section title="Returns analytics" subtitle="Return volume, rate, reasons, and most returned SKUs" delay={0.1}>
+            {loading ? (
+              <Skeleton className="h-[280px] w-full rounded-xl" />
+            ) : d?.returns ? (
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-xl border border-stone-100 bg-stone-50 p-4">
+                    <p className="text-xs font-bold uppercase text-stone-400">Total returns</p>
+                    <p className="mt-1 text-3xl font-extrabold text-stone-900">{d.returns.totalReturns}</p>
+                  </div>
+                  <div className="rounded-xl border border-stone-100 bg-stone-50 p-4">
+                    <p className="text-xs font-bold uppercase text-stone-400">Return rate</p>
+                    <p className="mt-1 text-3xl font-extrabold text-stone-900">{d.returns.returnRate}%</p>
                   </div>
                 </div>
-              ))}
-              {topVarieties.length === 0 && (
-                <p className="text-sm text-stone-400 text-center py-6">No products yet.</p>
-              )}
-            </div>
-          </div>
-
-          {/* Customer Acquisition */}
-          <div className="bg-white rounded-2xl p-8 shadow-sm border border-stone-100">
-            <h2 className="text-xl font-bold text-stone-900 mb-6 font-headline">
-              Customer Acquisition
-            </h2>
-            <div className="bg-stone-50 rounded-xl p-6 mb-6 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-1">
-                  Weekly Signups
-                </p>
-                <h4 className="text-2xl font-extrabold text-stone-900 font-headline">
-                  {customers.length.toLocaleString()}
-                </h4>
-              </div>
-              <div className="w-16 h-16 rounded-full border-4 border-orange-500 border-t-stone-200 flex items-center justify-center">
-                <span className="text-xs font-black text-orange-600">+8%</span>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 border border-stone-100 rounded-xl">
-                <Icon name="person_add" className="text-emerald-600 mb-2" />
-                <p className="text-xs font-bold text-stone-400">New Customers</p>
-                <p className="text-lg font-extrabold">{newCustomers}</p>
-              </div>
-              <div className="p-4 border border-stone-100 rounded-xl">
-                <Icon name="replay" className="text-amber-600 mb-2" />
-                <p className="text-xs font-bold text-stone-400">Repeat Rate</p>
-                <p className="text-lg font-extrabold">64%</p>
-              </div>
-            </div>
-            <div className="mt-8 space-y-4">
-              <h4 className="text-sm font-bold text-stone-900">Acquisition Channels</h4>
-              {[
-                { label: "Organic Search", pct: 45, dot: "bg-emerald-500" },
-                { label: "Social Referrals", pct: 30, dot: "bg-amber-500" },
-                { label: "Direct", pct: 25, dot: "bg-stone-300" },
-              ].map((c) => (
-                <div key={c.label} className="flex items-center gap-3">
-                  <div className={`w-2 h-2 rounded-full ${c.dot}`} />
-                  <span className="text-sm text-stone-600 flex-1">{c.label}</span>
-                  <span className="text-sm font-bold">{c.pct}%</span>
+                <div>
+                  <h3 className="mb-2 text-sm font-bold text-stone-700">Reasons</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(d.returns.reasons).map(([k, v]) => (
+                      <span
+                        key={k}
+                        className="rounded-full border border-stone-200 bg-white px-3 py-1 text-xs font-semibold text-stone-700"
+                      >
+                        {k.replace("_", " ")}: {v}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
+                <div>
+                  <h3 className="mb-3 text-sm font-bold text-stone-700">Most returned products</h3>
+                  <div className="h-[200px] w-full">
+                    {d.returns.mostReturned.length === 0 ? (
+                      <ChartFallback height={180} />
+                    ) : (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={d.returns.mostReturned.map((r) => ({ name: r.name.slice(0, 14), qty: r.quantityReturned }))}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
+                          <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                          <YAxis tick={{ fontSize: 10 }} />
+                          <Tooltip />
+                          <Bar dataKey="qty" fill="#dc2626" radius={[6, 6, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+          </Section>
+
+          <Section title="Inventory intelligence" subtitle="Out of stock, low, critical, and runway estimates" delay={0.12}>
+            {loading ? (
+              <Skeleton className="h-[280px] w-full rounded-xl" />
+            ) : d?.inventory ? (
+              <div className="space-y-6">
+                {[
+                  { title: "Out of stock", tone: "border-red-200 bg-red-50/60", items: d.inventory.outOfStock },
+                  { title: "Critical (< 5 units)", tone: "border-orange-200 bg-orange-50/50", items: d.inventory.criticalStock },
+                  { title: "Low stock (< 10 units)", tone: "border-amber-200 bg-amber-50/40", items: d.inventory.lowStock },
+                ].map((block) => (
+                  <div key={block.title} className={`rounded-xl border p-4 ${block.tone}`}>
+                    <h3 className="text-sm font-bold text-stone-900">{block.title}</h3>
+                    <div className="mt-3 space-y-2">
+                      {block.items.length === 0 ? (
+                        <p className="text-xs text-stone-600">None</p>
+                      ) : (
+                        block.items.slice(0, 6).map((it) => (
+                          <div key={it.productId} className="flex items-center justify-between gap-2 text-sm">
+                            <span className="truncate font-medium text-stone-800">{it.name}</span>
+                            <span className="shrink-0 text-xs font-bold text-stone-700">
+                              Qty {it.quantity}
+                              {it.daysRemainingEstimate != null ? ` · ~${it.daysRemainingEstimate}d` : ""}
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </Section>
         </div>
-        )}
+
+        <Section title="Seasonal inventory analytics" subtitle="Season tags on products vs trailing 30-day sales" delay={0.12}>
+          {loading ? (
+            <Skeleton className="h-[280px] w-full rounded-xl" />
+          ) : d?.seasonal ? (
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={d.seasonal.seasonVsSales}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
+                  <XAxis dataKey="season" />
+                  <YAxis />
+                  <Tooltip formatter={(v: number, name) => (name === "sales" ? formatPKR(v) : v)} />
+                  <Legend />
+                  <Bar dataKey="sales" name="Sales (30d)" fill="#ea580c" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="stock" name="Stock units" fill="#84cc16" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : null}
+        </Section>
+
+        <div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
+          <Section title="Stock recommendations" subtitle="Rule-based signals from velocity, season, and runway" delay={0.14}>
+            {loading ? (
+              <Skeleton className="h-[260px] w-full rounded-xl" />
+            ) : (
+              <div className="grid gap-4">
+                {(d?.recommendations?.items || []).map((r, idx) => (
+                  <motion.div
+                    key={`${r.productId}-${idx}`}
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    className="rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-50 to-white p-4 shadow-sm"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-bold text-sky-950">{r.title}</p>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                          r.priority === "High"
+                            ? "bg-rose-100 text-rose-800"
+                            : r.priority === "Medium"
+                              ? "bg-amber-100 text-amber-900"
+                              : "bg-stone-100 text-stone-700"
+                        }`}
+                      >
+                        {r.priority}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm leading-relaxed text-stone-700">{r.detail}</p>
+                  </motion.div>
+                ))}
+                {!d?.recommendations?.items?.length && (
+                  <p className="text-sm text-stone-500">Recommendations will appear as sales and inventory diverge.</p>
+                )}
+              </div>
+            )}
+          </Section>
+
+          <Section title="Business insights" subtitle="Auto-generated highlights" delay={0.15}>
+            {loading ? (
+              <Skeleton className="h-[260px] w-full rounded-xl" />
+            ) : (
+              <div className="grid gap-3">
+                {(d?.insights?.items || []).map((ins, idx) => (
+                  <motion.div
+                    key={ins.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: idx * 0.05 }}
+                    className={`rounded-xl border p-4 ${
+                      ins.tone === "positive"
+                        ? "border-emerald-100 bg-emerald-50/50"
+                        : ins.tone === "warning"
+                          ? "border-amber-200 bg-amber-50/60"
+                          : "border-stone-100 bg-white"
+                    }`}
+                  >
+                    <p className="text-sm font-bold text-stone-900">{ins.title}</p>
+                    <p className="mt-1 text-sm text-stone-600">{ins.detail}</p>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </Section>
+        </div>
+
+        <Section title="Most visited products" subtitle="Views, sales, conversion, and hit chart" delay={0.16}>
+          {loading ? (
+            <Skeleton className="h-[300px] w-full rounded-xl" />
+          ) : d?.hits ? (
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+              <div className="h-[280px] w-full">
+                {d.hits.chart.length === 0 ? (
+                  <ChartFallback />
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={d.hits.chart}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
+                      <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                      <YAxis tick={{ fontSize: 10 }} />
+                      <Tooltip />
+                      <Bar dataKey="hits" fill="#0d9488" radius={[6, 6, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+              <div className="space-y-3">
+                {d.hits.items.slice(0, 8).map((h) => (
+                  <div key={h.productId} className="flex items-center gap-3 rounded-xl border border-stone-100 p-3">
+                    <img src={imgSrc(h.image)} alt="" className="h-12 w-12 rounded-lg object-cover" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-bold text-stone-900">{h.name}</p>
+                      <p className="text-xs text-stone-500">
+                        {h.views.toLocaleString()} views · {h.sales} sales · {h.conversionPercent}% conv.
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </Section>
       </div>
     </AdminLayout>
   );

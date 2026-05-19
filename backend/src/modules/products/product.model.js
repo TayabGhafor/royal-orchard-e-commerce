@@ -25,8 +25,20 @@ const ProductSchema = new mongoose.Schema(
     price: { type: Number, min: 0 },
     weightPrices: { type: mongoose.Schema.Types.Mixed, default: {} },
     weights: { type: [String], default: ["3kg", "5kg", "8kg"], enum: ["3kg", "5kg", "8kg"] },
-    /** @deprecated Replaced by `availabilityStatus` — may exist on old documents. */
+    /** @deprecated Prefer `inventoryStock` for quantity-based analytics. */
     stock: { type: Number, min: 0 },
+    /** Units on hand for BI / low-stock alerts (independent of `availabilityStatus` for legacy data). */
+    inventoryStock: { type: Number, min: 0, default: 100 },
+    viewsCount: { type: Number, default: 0, min: 0 },
+    cartCount: { type: Number, default: 0, min: 0 },
+    season: {
+      type: String,
+      enum: ["Summer", "Winter", "Spring", "Autumn"],
+      default: "Summer",
+      index: true,
+    },
+    /** Cached trending score; recomputed in analytics aggregations. */
+    trendScore: { type: Number, default: 0, min: 0 },
     availabilityStatus: {
       type: String,
       enum: ["In Stock", "Out of Stock"],

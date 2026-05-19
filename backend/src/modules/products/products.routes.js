@@ -6,12 +6,16 @@ const {
   createProduct,
   updateProduct,
   deleteProduct,
+  recordProductView,
+  recordProductCartAdd,
 } = require("./products.controller");
 
 module.exports = (env) => {
   const router = express.Router();
 
   router.get("/", listProducts());
+  router.post("/:id/view", recordProductView());
+  router.post("/:id/cart", recordProductCartAdd());
   router.get("/:id", getProduct());
 
   router.post("/", requireAdminKey(env), createProduct());

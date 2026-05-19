@@ -19,6 +19,11 @@ const DEFAULT_PRODUCTS = [
     rating: 4.9,
     reviews: 128,
     totalSold: 512,
+    inventoryStock: 140,
+    season: "Summer",
+    viewsCount: 0,
+    cartCount: 0,
+    trendScore: 0,
     isActive: true,
   },
   {
@@ -39,6 +44,11 @@ const DEFAULT_PRODUCTS = [
     rating: 4.8,
     reviews: 92,
     totalSold: 330,
+    inventoryStock: 85,
+    season: "Summer",
+    viewsCount: 0,
+    cartCount: 0,
+    trendScore: 0,
     isActive: true,
   },
   {
@@ -59,6 +69,11 @@ const DEFAULT_PRODUCTS = [
     rating: 4.7,
     reviews: 64,
     totalSold: 278,
+    inventoryStock: 200,
+    season: "Summer",
+    viewsCount: 0,
+    cartCount: 0,
+    trendScore: 0,
     isActive: true,
   },
   {
@@ -79,6 +94,11 @@ const DEFAULT_PRODUCTS = [
     rating: 4.6,
     reviews: 41,
     totalSold: 197,
+    inventoryStock: 12,
+    season: "Spring",
+    viewsCount: 0,
+    cartCount: 0,
+    trendScore: 0,
     isActive: true,
   },
   {
@@ -99,6 +119,11 @@ const DEFAULT_PRODUCTS = [
     rating: 4.5,
     reviews: 33,
     totalSold: 142,
+    inventoryStock: 4,
+    season: "Autumn",
+    viewsCount: 0,
+    cartCount: 0,
+    trendScore: 0,
     isActive: true,
   },
   {
@@ -119,6 +144,11 @@ const DEFAULT_PRODUCTS = [
     rating: 4.8,
     reviews: 21,
     totalSold: 88,
+    inventoryStock: 0,
+    season: "Summer",
+    viewsCount: 0,
+    cartCount: 0,
+    trendScore: 0,
     isActive: true,
   },
 ];
@@ -128,6 +158,19 @@ async function seedDefaultProducts() {
     // eslint-disable-next-line no-await-in-loop
     await Product.findOneAndUpdate({ slug: product.slug }, { $setOnInsert: product }, { upsert: true, new: true });
   }
+  // Backfill BI fields on legacy documents (no-op when already present).
+  await Product.updateMany(
+    { $or: [{ inventoryStock: { $exists: false } }, { viewsCount: { $exists: false } }] },
+    {
+      $set: {
+        inventoryStock: 100,
+        viewsCount: 0,
+        cartCount: 0,
+        season: "Summer",
+        trendScore: 0,
+      },
+    },
+  );
 }
 
 module.exports = { seedDefaultProducts };

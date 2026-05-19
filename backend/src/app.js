@@ -181,6 +181,7 @@ function createApp(env) {
   app.use("/uploads", productImageUploads);
   app.use("/api/orders", require("./modules/orders/orders.routes")(env));
   app.use("/api/analytics", require("./modules/analytics/analytics.routes")(env));
+  app.use("/api/admin/analytics", require("./modules/admin-analytics/admin-analytics.routes")(env));
   app.use("/api/chatbot", require("./modules/chatbot/chatbot.routes")(env));
   app.use("/api/payments", require("./modules/payments/payment.routes")(env));
 

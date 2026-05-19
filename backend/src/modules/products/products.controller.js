@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const validator = require("validator");
 const sanitizeHtml = require("sanitize-html");
 const { Product, normalizeProductImagesArray, shapeImagesForApi } = require("./product.model");
+const { ProductDailyStat } = require("../analytics/product-daily-stat.model");
 
 function sanitizeText(s) {
   const trimmed = validator.trim(String(s || ""));
@@ -136,6 +137,11 @@ function createProduct() {
       if (!["Premium Reserve", "Seasonal Specials", "Bulk Harvest"].includes(collection))
         throw Object.assign(new Error("Invalid collection"), { statusCode: 400, code: "invalid_collection" });
 
+      const seasonRaw = String(body.season || "Summer");
+      if (!["Summer", "Winter", "Spring", "Autumn"].includes(seasonRaw)) {
+        throw Object.assign(new Error("Invalid season"), { statusCode: 400, code: "invalid_season" });
+      }
+
       const images = coerceProductImages(body.images);
 
       const weightsRaw = Array.isArray(body.weights) ? body.weights.map((s) => sanitizeText(s)).filter(Boolean) : ["3kg", "5kg", "8kg"];
@@ -155,6 +161,9 @@ function createProduct() {
         throw Object.assign(new Error("Invalid availability status"), { statusCode: 400, code: "invalid_status" });
       }
 
+      const inv = Number(body.inventoryStock);
+      const inventoryStock = Number.isFinite(inv) && inv >= 0 ? Math.floor(inv) : 100;
+
       const doc = await Product.create({
         name,
         slug: await uniqueSlugForName(name),
@@ -166,6 +175,8 @@ function createProduct() {
         weights,
         availabilityStatus: statusRaw,
         images,
+        season: seasonRaw,
+        inventoryStock,
         rating: Number.isFinite(Number(body.rating)) ? Math.max(0, Math.min(5, Number(body.rating))) : 4.5,
         reviews: Number.isFinite(Number(body.reviews)) ? Math.max(0, Number(body.reviews)) : 0,
         isActive: body.isActive !== undefined ? Boolean(body.isActive) : true,
@@ -223,6 +234,20 @@ function updateProduct() {
       if (body.rating !== undefined) setIf("rating", Math.max(0, Math.min(5, Number(body.rating))));
       if (body.reviews !== undefined) setIf("reviews", Math.max(0, Number(body.reviews)));
       if (body.isActive !== undefined) setIf("isActive", Boolean(body.isActive));
+      if (body.season !== undefined) {
+        const s = String(body.season);
+        if (!["Summer", "Winter", "Spring", "Autumn"].includes(s)) {
+          throw Object.assign(new Error("Invalid season"), { statusCode: 400, code: "invalid_season" });
+        }
+        setIf("season", s);
+      }
+      if (body.inventoryStock !== undefined) {
+        const inv = Number(body.inventoryStock);
+        if (!Number.isFinite(inv) || inv < 0) {
+          throw Object.assign(new Error("Invalid inventory stock"), { statusCode: 400, code: "invalid_inventory" });
+        }
+        setIf("inventoryStock", Math.floor(inv));
+      }
 
       // If name changed and slug not provided, regenerate slug.
       if (patch.name && !patch.slug) {
@@ -250,5 +275,66 @@ function deleteProduct() {
   };
 }
 
-module.exports = { listProducts, getProduct, createProduct, updateProduct, deleteProduct };
+function utcDayStart(d = new Date()) {
+  const x = new Date(d);
+  x.setUTCHours(0, 0, 0, 0);
+  return x;
+}
+
+function recordProductView() {
+  return async (req, res, next) => {
+    try {
+      if (!mongoose.isValidObjectId(req.params.id)) {
+        throw Object.assign(new Error("Invalid product id"), { statusCode: 400, code: "invalid_product_id" });
+      }
+      const day = utcDayStart();
+      const [product] = await Promise.all([
+        Product.findByIdAndUpdate(req.params.id, { $inc: { viewsCount: 1 } }, { new: false }).lean(),
+        ProductDailyStat.findOneAndUpdate(
+          { product: req.params.id, day },
+          { $inc: { views: 1 } },
+          { upsert: true, new: true },
+        ),
+      ]);
+      if (!product) throw Object.assign(new Error("Product not found"), { statusCode: 404, code: "product_not_found" });
+      res.json({ ok: true });
+    } catch (err) {
+      next(err);
+    }
+  };
+}
+
+function recordProductCartAdd() {
+  return async (req, res, next) => {
+    try {
+      if (!mongoose.isValidObjectId(req.params.id)) {
+        throw Object.assign(new Error("Invalid product id"), { statusCode: 400, code: "invalid_product_id" });
+      }
+      const n = Math.min(50, Math.max(1, Math.floor(Number(req.body?.quantity || req.body?.delta || 1))));
+      const day = utcDayStart();
+      const [product] = await Promise.all([
+        Product.findByIdAndUpdate(req.params.id, { $inc: { cartCount: n } }, { new: false }).lean(),
+        ProductDailyStat.findOneAndUpdate(
+          { product: req.params.id, day },
+          { $inc: { cartAdds: n } },
+          { upsert: true, new: true },
+        ),
+      ]);
+      if (!product) throw Object.assign(new Error("Product not found"), { statusCode: 404, code: "product_not_found" });
+      res.json({ ok: true });
+    } catch (err) {
+      next(err);
+    }
+  };
+}
+
+module.exports = {
+  listProducts,
+  getProduct,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  recordProductView,
+  recordProductCartAdd,
+};
 

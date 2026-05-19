@@ -55,6 +55,10 @@ const OrderSchema = new mongoose.Schema(
       status: { type: String, enum: ["None", "Requested", "Approved", "Rejected"], default: "None" },
       reason: { type: String, trim: true },
     },
+    /** Set when an order is marked returned (admin or automated flow). */
+    returned: { type: Boolean, default: false, index: true },
+    returnReason: { type: String, enum: ["damaged", "wrong_item", "quality_issue", "other"] },
+    deliveredDate: { type: Date, default: null },
   },
   { timestamps: true },
 );

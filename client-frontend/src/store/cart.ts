@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 import type { Product, WeightOption } from "@/data/products";
 import { unitPriceForWeight } from "@/lib/productPricing";
 import { displayUrlForProductImage } from "@/lib/productImages";
+import { trackProductCartAdd } from "@/lib/product-analytics";
 
 export interface CartItem {
   productId: string;
@@ -36,12 +37,14 @@ export const useCart = create<CartState>()(
             (i) => i.productId === product.id && i.weight === weight,
           );
           if (existing) {
+            trackProductCartAdd(product.id, quantity);
             return {
               items: state.items.map((i) =>
                 i === existing ? { ...i, quantity: i.quantity + quantity } : i,
               ),
             };
           }
+          trackProductCartAdd(product.id, quantity);
           return {
             items: [
               ...state.items,

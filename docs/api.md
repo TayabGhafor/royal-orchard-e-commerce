@@ -60,6 +60,8 @@ This document now tracks the **`backend/`** service as the production backend fo
 - `GET /api/products/:id` **(implemented)**
   - Product detail by id
   - **Returns**: `{ product }`
+- `POST /api/products/:id/view` **(implemented)** — analytics: increment product views + daily bucket.
+- `POST /api/products/:id/cart` **(implemented)** — analytics: increment cart counter (body `{ quantity?: number }`).
 
 ### Client/Users
 - `GET /api/users/profile` **(implemented)**
@@ -127,7 +129,8 @@ This document now tracks the **`backend/`** service as the production backend fo
 - `GET /api/orders` **(implemented)** (admin only)
   - filter by `status`, pagination via `page`/`limit`
 - `PUT /api/orders/:id/status` **(implemented)** (admin only)
-  - Valid transitions enforced: Placed → Processing → Shipped → Delivered
+  - Valid forward transitions: Placed → Processing → Shipped → Delivered (sets `deliveredDate` on Delivered).
+  - From **Delivered** → **Returned** is allowed with body `{ "status": "Returned", "returnReason": "damaged" | "wrong_item" | "quality_issue" | "other" }` (rolls back `totalSold` on line items).
 - `GET /admin/orders/:orderId/payments`
 - `POST /admin/orders/:orderId/refund` (optional)
 
@@ -137,8 +140,18 @@ This document now tracks the **`backend/`** service as the production backend fo
 - `GET /admin/customers/:customerId/orders`
 
 ### Admin/Analytics
-- `GET /api/analytics/dashboard` **(implemented)**
-  - Returns: total orders, total revenue, active users, top selling products, weekly revenue trends.
+- **Auth**: same as other admin tools — `x-admin-key: <ADMIN_API_KEY>` (see `backend` env `ADMIN_API_KEY` / admin `VITE_ADMIN_API_KEY`).
+- `GET /api/analytics/dashboard` **(implemented, JWT admin)** — legacy summary.
+- `GET /api/admin/analytics/dashboard` **(implemented)** — full BI bundle (sales, trending, upcoming, returns, inventory, seasonal, recommendations, hits, insights).
+- `GET /api/admin/analytics/sales` — sales KPIs + daily line series + monthly bar series + order-status pie.
+- `GET /api/admin/analytics/trending` — top 10 trending products (score from views, `totalSold`, cart adds).
+- `GET /api/admin/analytics/upcoming-trending` — “potential trending” from `ProductDailyStat` week-over-week velocity.
+- `GET /api/admin/analytics/returns` — return counts, rate, reasons, most-returned SKUs.
+- `GET /api/admin/analytics/inventory` — out / critical / low stock buckets + runway estimates.
+- `GET /api/admin/analytics/seasonal` — per-season stock vs trailing 30d sales.
+- `GET /api/admin/analytics/recommendations` — rule-based stock / demand suggestion cards.
+- `GET /api/admin/analytics/hits` — most viewed products + chart payload.
+- `GET /api/admin/analytics/insights` — auto-generated business insight strings.
 
 ---
 

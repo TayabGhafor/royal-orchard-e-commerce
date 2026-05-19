@@ -14,6 +14,7 @@ import { useProducts } from "@/store/products";
 import { unitPriceForWeight } from "@/lib/productPricing";
 import type { WeightOption } from "@/data/products";
 import { displayUrlForProductImage } from "@/lib/productImages";
+import { trackProductView } from "@/lib/product-analytics";
 
 const ProductDetail = () => {
   const { slug } = useParams();
@@ -36,6 +37,11 @@ const ProductDetail = () => {
     const first = (product.weights[0] || "5kg") as WeightOption;
     setSelectedWeight((prev) => (product.weights.includes(prev) ? prev : first));
   }, [product?.id, product?.weights]);
+
+  useEffect(() => {
+    if (!product?.id) return;
+    trackProductView(product.id);
+  }, [product?.id]);
 
   if (!product && items.length > 0) return <Navigate to="/shop" replace />;
 

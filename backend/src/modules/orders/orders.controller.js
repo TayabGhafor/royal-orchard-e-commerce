@@ -419,8 +419,31 @@ function adminUpdateStatus() {
       const order = await Order.findById(req.params.id);
       if (!order) throw Object.assign(new Error("Order not found"), { statusCode: 404, code: "order_not_found" });
 
-      if (nextStatus === "Cancelled" || nextStatus === "Returned") {
+      if (nextStatus === "Cancelled") {
         throw Object.assign(new Error("Use cancel/return flows"), { statusCode: 409, code: "invalid_transition" });
+      }
+
+      if (nextStatus === "Returned") {
+        if (order.orderStatus !== "Delivered") {
+          throw Object.assign(new Error("Return allowed only after Delivered"), { statusCode: 409, code: "invalid_transition" });
+        }
+        const rawReason = String(req.body?.returnReason || "other").toLowerCase();
+        const allowed = ["damaged", "wrong_item", "quality_issue", "other"];
+        const returnReason = allowed.includes(rawReason) ? rawReason : "other";
+
+        // Roll back sold counts (same spirit as cancel).
+        // eslint-disable-next-line no-restricted-syntax
+        for (const it of order.items) {
+          // eslint-disable-next-line no-await-in-loop
+          await Product.findByIdAndUpdate(it.product, { $inc: { totalSold: -it.quantity } });
+        }
+
+        order.orderStatus = "Returned";
+        order.returned = true;
+        order.returnReason = returnReason;
+        order.timeline.push({ status: "Returned", date: new Date() });
+        await order.save();
+        return res.json({ order: order.toObject() });
       }
 
       if (!assertStatusFlow(order.orderStatus, nextStatus)) {
@@ -429,6 +452,9 @@ function adminUpdateStatus() {
 
       order.orderStatus = nextStatus;
       order.timeline.push({ status: nextStatus, date: new Date() });
+      if (nextStatus === "Delivered") {
+        order.deliveredDate = new Date();
+      }
       await order.save();
       res.json({ order: order.toObject() });
     } catch (err) {
