@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { type Product, type ProductAvailability, type WeightOption } from "@/data/products";
 import { api, resolvedOriginForAssets } from "@/lib/api";
+import { invalidateAdminAnalytics } from "@/lib/analyticsSync";
 import { normalizeImagesFromRaw, type ProductImage } from "@/lib/productImages";
 
 export type OrderStatus =
@@ -111,7 +112,7 @@ interface AdminState {
   deleteProduct: (id: string) => Promise<void>;
   // Orders
   loadOrders: () => Promise<void>;
-  setOrderStatus: (id: string, status: OrderStatus) => Promise<void>;
+  setOrderStatus: (id: string, status: OrderStatus, options?: { returnReason?: string }) => Promise<void>;
   upsertCustomer: (c: { name: string; email: string; spent: number }) => void;
 }
 
@@ -232,6 +233,7 @@ export const useAdmin = create<AdminState>()(
         });
         const next = normalizeProductShape(res.product);
         set((state) => ({ products: [next, ...state.products] }));
+        invalidateAdminAnalytics();
         return next;
       },
       updateProduct: async (id, patch) => {
@@ -244,11 +246,13 @@ export const useAdmin = create<AdminState>()(
         set((state) => ({
           products: state.products.map((p) => (p.id === id ? next : p)),
         }));
+        invalidateAdminAnalytics();
         return next;
       },
       deleteProduct: async (id) => {
         await api<{ ok: true }>(`/api/products/${id}`, { method: "DELETE", admin: true });
         set((state) => ({ products: state.products.filter((p) => p.id !== id) }));
+        invalidateAdminAnalytics();
       },
       loadOrders: async () => {
         const now = Date.now();
@@ -281,6 +285,7 @@ export const useAdmin = create<AdminState>()(
             });
             set({ orders: mapped });
             lastOrdersFetchAt = Date.now();
+            invalidateAdminAnalytics();
           } finally {
             ordersInFlight = null;
           }
@@ -288,16 +293,21 @@ export const useAdmin = create<AdminState>()(
 
         return ordersInFlight;
       },
-      setOrderStatus: async (id, status) => {
+      setOrderStatus: async (id, status, options) => {
         const backendStatus = mapUiStatusToBackend(status);
+        const payload: { status: string; returnReason?: string } = { status: backendStatus };
+        if (backendStatus === "Returned") {
+          payload.returnReason = options?.returnReason || "other";
+        }
         await api<{ order: any }>(`/api/orders/${id}/status`, {
           method: "PUT",
           admin: true,
-          body: JSON.stringify({ status: backendStatus }),
+          body: JSON.stringify(payload),
         });
         set((state) => ({
           orders: state.orders.map((o) => (o.id === id ? { ...o, status } : o)),
         }));
+        invalidateAdminAnalytics();
       },
       upsertCustomer: ({ name, email, spent }) =>
         set((state) => {

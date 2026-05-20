@@ -15,6 +15,7 @@ import { unitPriceForWeight } from "@/lib/productPricing";
 import type { WeightOption } from "@/data/products";
 import { displayUrlForProductImage } from "@/lib/productImages";
 import { trackProductView } from "@/lib/product-analytics";
+import { ProductRecommendations } from "@/components/ProductRecommendations";
 
 const ProductDetail = () => {
   const { slug } = useParams();
@@ -268,6 +269,14 @@ const ProductDetail = () => {
             </div>
           </div>
         </ScrollReveal>
+        )}
+
+        {product && (
+          <>
+            <ProductRecommendations section="similar" productId={product.id} className="mt-16" />
+            <ProductRecommendations section="alsoBought" productId={product.id} className="py-8" />
+            <ProductRecommendations section="recent" className="py-8" />
+          </>
         )}
 
         {/* Reviews — same carousel + motion as Home “Customer Love” */}

@@ -17,13 +17,21 @@ export interface CartItem {
 interface CartState {
   items: CartItem[];
   isOpen: boolean;
+  couponCode: string | null;
+  discountPercent: number;
+  lastCartActivityAt: number;
   addItem: (product: Product, weight: WeightOption, quantity?: number) => void;
   removeItem: (productId: string, weight: WeightOption) => void;
   updateQuantity: (productId: string, weight: WeightOption, quantity: number) => void;
+  applyCoupon: (code: string, percent: number) => void;
+  clearCoupon: () => void;
+  touchCart: () => void;
   clear: () => void;
   setOpen: (open: boolean) => void;
   totalItems: () => number;
   subtotal: () => number;
+  discountAmount: () => number;
+  totalAfterDiscount: () => number;
 }
 
 export const useCart = create<CartState>()(
@@ -31,6 +39,13 @@ export const useCart = create<CartState>()(
     (set, get) => ({
       items: [],
       isOpen: false,
+      couponCode: null,
+      discountPercent: 0,
+      lastCartActivityAt: Date.now(),
+      touchCart: () => set({ lastCartActivityAt: Date.now() }),
+      applyCoupon: (code, percent) =>
+        set({ couponCode: code, discountPercent: Math.max(0, Math.min(50, percent)), lastCartActivityAt: Date.now() }),
+      clearCoupon: () => set({ couponCode: null, discountPercent: 0 }),
       addItem: (product, weight, quantity = 1) =>
         set((state) => {
           const existing = state.items.find(
@@ -42,6 +57,7 @@ export const useCart = create<CartState>()(
               items: state.items.map((i) =>
                 i === existing ? { ...i, quantity: i.quantity + quantity } : i,
               ),
+              lastCartActivityAt: Date.now(),
             };
           }
           trackProductCartAdd(product.id, quantity);
@@ -57,6 +73,7 @@ export const useCart = create<CartState>()(
                 quantity,
               },
             ],
+            lastCartActivityAt: Date.now(),
           };
         }),
       removeItem: (productId, weight) =>
@@ -64,6 +81,7 @@ export const useCart = create<CartState>()(
           items: state.items.filter(
             (i) => !(i.productId === productId && i.weight === weight),
           ),
+          lastCartActivityAt: Date.now(),
         })),
       updateQuantity: (productId, weight, quantity) =>
         set((state) => ({
@@ -74,11 +92,18 @@ export const useCart = create<CartState>()(
                 : i,
             )
             .filter((i) => i.quantity > 0),
+          lastCartActivityAt: Date.now(),
         })),
-      clear: () => set({ items: [] }),
+      clear: () => set({ items: [], couponCode: null, discountPercent: 0 }),
       setOpen: (open) => set({ isOpen: open }),
       totalItems: () => get().items.reduce((s, i) => s + i.quantity, 0),
       subtotal: () => get().items.reduce((s, i) => s + i.unitPrice * i.quantity, 0),
+      discountAmount: () => {
+        const sub = get().subtotal();
+        const pct = get().discountPercent;
+        return pct > 0 ? Math.round(sub * (pct / 100)) : 0;
+      },
+      totalAfterDiscount: () => Math.max(0, get().subtotal() - get().discountAmount()),
     }),
     { name: "royalorchard-cart" },
   ),

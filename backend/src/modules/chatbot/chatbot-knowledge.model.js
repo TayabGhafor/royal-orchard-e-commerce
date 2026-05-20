@@ -7,6 +7,8 @@ const ChatbotKnowledgeSchema = new mongoose.Schema(
     type: { type: String, enum: ["text", "pdf", "json"], required: true, default: "text", index: true },
     /** Original filename for PDF uploads */
     sourceFile: { type: String, trim: true, maxlength: 260 },
+    /** Admin can disable without deleting */
+    enabled: { type: Boolean, default: true, index: true },
   },
   { timestamps: true },
 );

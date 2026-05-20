@@ -80,6 +80,12 @@ const Orders = () => {
       .catch((e: any) => toast.error(e?.message || "Failed to update order"));
   };
 
+  const markReturned = (id: string) => {
+    setOrderStatus(id, "Returned", { returnReason: "quality_issue" })
+      .then(() => toast.success(`Order #${id} marked as returned`))
+      .catch((e: any) => toast.error(e?.message || "Failed to mark returned"));
+  };
+
   return (
     <AdminLayout>
       <div className="p-8 space-y-8">
@@ -202,6 +208,15 @@ const Orders = () => {
                       >
                         Mark {next[o.status]}
                         <Icon name="arrow_forward" className="text-sm" />
+                      </button>
+                    ) : o.status === "Delivered" ? (
+                      <button
+                        type="button"
+                        onClick={() => markReturned(o.id)}
+                        className="text-xs font-bold uppercase tracking-widest text-rose-600 hover:text-rose-700 inline-flex items-center gap-1"
+                      >
+                        Mark returned
+                        <Icon name="assignment_return" className="text-sm" />
                       </button>
                     ) : (
                       <Icon name="check_circle" className="text-emerald-500" />

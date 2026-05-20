@@ -1,21 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
 import { motion, animate } from "framer-motion";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Icon } from "@/components/Icon";
 import { formatPKR } from "@/lib/format";
 import { resolvedOriginForAssets } from "@/lib/api";
-import {
-  fetchAdminHits,
-  fetchAdminInsights,
-  fetchAdminInventory,
-  fetchAdminRecommendations,
-  fetchAdminReturns,
-  fetchAdminSales,
-  fetchAdminSeasonal,
-  fetchAdminTrending,
-  fetchAdminUpcoming,
-} from "@/lib/adminAnalyticsApi";
+import { useAdminAnalytics } from "@/hooks/use-admin-analytics";
+import { formatRelative } from "@/hooks/use-realtime-tick";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -35,13 +25,76 @@ import {
   Legend,
 } from "recharts";
 
-const PIE_COLORS = ["#ea580c", "#f59e0b", "#78716c", "#dc2626"];
+const PIE_COLORS = ["#10b981", "#f59e0b", "#78716c", "#f43f5e"];
+
+type StatVariant = "orange" | "amber" | "emerald" | "sky" | "violet" | "rose" | "stone";
+
+const STAT_THEMES: Record<
+  StatVariant,
+  { ring: string; icon: string; glow: string; gradient: string }
+> = {
+  orange: {
+    ring: "border-orange-200/80",
+    icon: "bg-orange-500 text-white shadow-orange-500/30",
+    glow: "bg-orange-400/20",
+    gradient: "from-orange-50/90 via-white to-white",
+  },
+  amber: {
+    ring: "border-amber-200/80",
+    icon: "bg-amber-500 text-white shadow-amber-500/30",
+    glow: "bg-amber-400/20",
+    gradient: "from-amber-50/90 via-white to-white",
+  },
+  emerald: {
+    ring: "border-emerald-200/80",
+    icon: "bg-emerald-500 text-white shadow-emerald-500/30",
+    glow: "bg-emerald-400/20",
+    gradient: "from-emerald-50/90 via-white to-white",
+  },
+  sky: {
+    ring: "border-sky-200/80",
+    icon: "bg-sky-500 text-white shadow-sky-500/30",
+    glow: "bg-sky-400/20",
+    gradient: "from-sky-50/90 via-white to-white",
+  },
+  violet: {
+    ring: "border-violet-200/80",
+    icon: "bg-violet-500 text-white shadow-violet-500/30",
+    glow: "bg-violet-400/20",
+    gradient: "from-violet-50/90 via-white to-white",
+  },
+  rose: {
+    ring: "border-rose-200/80",
+    icon: "bg-rose-500 text-white shadow-rose-500/30",
+    glow: "bg-rose-400/20",
+    gradient: "from-rose-50/90 via-white to-white",
+  },
+  stone: {
+    ring: "border-stone-200/80",
+    icon: "bg-stone-600 text-white shadow-stone-500/30",
+    glow: "bg-stone-400/15",
+    gradient: "from-stone-50/90 via-white to-white",
+  },
+};
 
 function imgSrc(src: string) {
   if (!src) return "";
   if (src.startsWith("http")) return src;
   const base = resolvedOriginForAssets();
   return src.startsWith("/") ? `${base}${src}` : `${base}/${src}`;
+}
+
+function AnimatedNumber({ value }: { value: number }) {
+  const [display, setDisplay] = useState(0);
+  useEffect(() => {
+    const c = animate(display, value, {
+      duration: 0.5,
+      ease: [0.22, 1, 0.36, 1],
+      onUpdate: (v) => setDisplay(v),
+    });
+    return () => c.stop();
+  }, [value]); // eslint-disable-line react-hooks/exhaustive-deps
+  return <span className="tabular-nums">{Math.round(display).toLocaleString()}</span>;
 }
 
 function AnimatedPKR({ value }: { value: number }) {
@@ -62,35 +115,40 @@ function StatCard({
   value,
   sub,
   icon,
-  accent,
+  variant = "orange",
   delay = 0,
+  pulse = false,
 }: {
   label: string;
   value: ReactNode;
   sub?: string;
   icon: string;
-  accent: string;
+  variant?: StatVariant;
   delay?: number;
+  pulse?: boolean;
 }) {
+  const theme = STAT_THEMES[variant];
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay, ease: [0.22, 1, 0.36, 1] }}
-      whileHover={{ y: -3, transition: { duration: 0.2 } }}
-      className={`relative overflow-hidden rounded-2xl border border-stone-100 bg-gradient-to-br from-white to-stone-50/80 p-5 shadow-sm ${accent}`}
+      whileHover={{ y: -4, transition: { duration: 0.2 } }}
+      className={`relative overflow-hidden rounded-2xl border bg-gradient-to-br p-5 shadow-sm ring-1 ring-stone-900/[0.04] transition-shadow hover:shadow-lg ${theme.ring} ${theme.gradient} ${pulse ? "animate-pulse" : ""}`}
     >
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">{label}</p>
-          <div className="mt-1 text-2xl font-extrabold tracking-tight text-stone-900 font-headline">{value}</div>
+        <div className="min-w-0">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-stone-500">{label}</p>
+          <div className="mt-1.5 text-2xl font-extrabold tracking-tight text-stone-900 font-headline sm:text-[1.65rem]">
+            {value}
+          </div>
           {sub && <p className="mt-1 text-xs font-medium text-stone-500">{sub}</p>}
         </div>
-        <div className="rounded-xl bg-orange-50 p-2 text-orange-700">
-          <Icon name={icon} />
+        <div className={`flex size-11 shrink-0 items-center justify-center rounded-xl shadow-md ${theme.icon}`}>
+          <Icon name={icon} className="text-[22px]" />
         </div>
       </div>
-      <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-orange-500/5 blur-2xl" />
+      <div className={`pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full blur-2xl ${theme.glow}`} />
     </motion.div>
   );
 }
@@ -112,8 +170,9 @@ function Section({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.5, delay, ease: [0.22, 1, 0.36, 1] }}
-      className="rounded-2xl border border-stone-100 bg-white p-6 shadow-sm md:p-8"
+      className="relative overflow-hidden rounded-2xl border border-stone-200/60 bg-white/90 p-6 shadow-sm shadow-stone-900/[0.03] backdrop-blur-sm md:p-8"
     >
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-orange-400 via-amber-400 to-emerald-400 opacity-80" />
       <div className="mb-6 flex flex-col gap-1 md:flex-row md:items-end md:justify-between">
         <div>
           <h2 className="text-xl font-bold text-stone-900 font-headline">{title}</h2>
@@ -134,41 +193,13 @@ function ChartFallback({ height = 260 }: { height?: number }) {
 }
 
 const Analytics = () => {
-  const bi = useQuery({
-    queryKey: ["admin-bi-suite"],
-    queryFn: async () => {
-      const [
-        sales,
-        trending,
-        upcoming,
-        returns,
-        inventory,
-        seasonal,
-        recommendations,
-        hits,
-        insights,
-      ] = await Promise.all([
-        fetchAdminSales(),
-        fetchAdminTrending(),
-        fetchAdminUpcoming(),
-        fetchAdminReturns(),
-        fetchAdminInventory(),
-        fetchAdminSeasonal(),
-        fetchAdminRecommendations(),
-        fetchAdminHits(),
-        fetchAdminInsights(),
-      ]);
-      return { sales, trending, upcoming, returns, inventory, seasonal, recommendations, hits, insights };
-    },
-    staleTime: 25_000,
-    refetchInterval: 60_000,
-    retry: 1,
-  });
+  const bi = useAdminAnalytics();
 
   const loading = bi.isLoading;
   const refreshing = bi.isFetching && !bi.isLoading;
   const err = bi.error as Error | null;
   const d = bi.data;
+  const lastSync = bi.dataUpdatedAt ? new Date(bi.dataUpdatedAt) : null;
 
   const refreshAnalytics = () => {
     void bi.refetch();
@@ -178,59 +209,76 @@ const Analytics = () => {
     if (!d?.sales) return [];
     const s = d.sales;
     return [
-      { label: "Total Sales", value: <AnimatedPKR value={s.totalSales} />, icon: "payments", accent: "border-b-4 border-orange-500" },
-      { label: "Today's Sales", value: <AnimatedPKR value={s.todaySales} />, icon: "today", accent: "" },
-      { label: "Weekly Sales", value: <AnimatedPKR value={s.weeklySales} />, icon: "date_range", accent: "" },
-      { label: "Monthly Sales", value: <AnimatedPKR value={s.monthlySales} />, icon: "calendar_month", accent: "" },
-      { label: "Total Revenue", value: <AnimatedPKR value={s.revenue} />, sub: "Delivered orders", icon: "account_balance_wallet", accent: "" },
-      { label: "Total Orders", value: s.orders.toLocaleString(), icon: "receipt_long", accent: "" },
-      { label: "Returned Orders", value: s.returnedOrders.toLocaleString(), icon: "assignment_return", accent: "" },
-      { label: "Pending Orders", value: s.pendingOrders.toLocaleString(), icon: "hourglass_top", accent: "" },
+      { label: "Total Sales", value: <AnimatedPKR value={s.totalSales} />, icon: "payments", variant: "orange" as const },
+      { label: "Today's Sales", value: <AnimatedPKR value={s.todaySales} />, icon: "today", variant: "emerald" as const },
+      { label: "Weekly Sales", value: <AnimatedPKR value={s.weeklySales} />, icon: "date_range", variant: "sky" as const },
+      { label: "Monthly Sales", value: <AnimatedPKR value={s.monthlySales} />, icon: "calendar_month", variant: "violet" as const },
+      { label: "Total Revenue", value: <AnimatedPKR value={s.revenue} />, sub: "Delivered orders", icon: "account_balance_wallet", variant: "amber" as const },
+      { label: "Total Orders", value: <AnimatedNumber value={s.orders} />, icon: "receipt_long", variant: "stone" as const },
+      { label: "Returned Orders", value: <AnimatedNumber value={s.returnedOrders} />, icon: "assignment_return", variant: "rose" as const },
+      { label: "Pending Orders", value: <AnimatedNumber value={s.pendingOrders} />, icon: "hourglass_top", variant: "amber" as const },
     ];
   }, [d?.sales]);
 
   return (
     <AdminLayout>
-      <div className="mx-auto max-w-[1600px] space-y-10 p-4 pb-16 sm:p-6 lg:p-8">
+      <div className="relative mx-auto max-w-[1600px] space-y-10 p-4 pb-16 sm:p-6 lg:p-8">
+        {/* Hero */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"
+          className="relative overflow-hidden rounded-3xl border border-orange-100/80 bg-gradient-to-br from-orange-50 via-white to-amber-50/40 p-6 shadow-sm sm:p-8"
         >
-          <div>
-            <h1 className="mb-2 font-headline text-3xl font-extrabold tracking-tight text-stone-900 sm:text-4xl">
-              Business Intelligence
-            </h1>
-            <p className="max-w-2xl text-sm font-medium text-stone-500 sm:text-base">
-              Live sales, inventory intelligence, trending velocity, and decision-ready recommendations — sourced from MongoDB.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
-              Live data
-            </span>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={refreshAnalytics}
-                  disabled={bi.isFetching}
-                  aria-label="Refresh analytics"
-                  className="flex size-11 items-center justify-center rounded-full border border-stone-200/90 bg-white text-stone-600 shadow-sm ring-1 ring-stone-900/5 transition hover:border-orange-300 hover:bg-orange-50/50 hover:text-orange-700 active:scale-95 disabled:pointer-events-none disabled:opacity-60"
-                >
-                  <Icon
-                    name="refresh"
-                    className={`text-[22px] leading-none ${refreshing ? "animate-spin" : ""}`}
-                  />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="text-xs font-semibold">
-                Refresh analytics
-              </TooltipContent>
-            </Tooltip>
+          <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-orange-300/20 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 -left-10 h-48 w-48 rounded-full bg-emerald-300/15 blur-3xl" />
+          <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="mb-2 inline-flex items-center gap-2 rounded-full border border-orange-200/60 bg-white/70 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-orange-700">
+                <Icon name="analytics" className="text-sm" />
+                Business intelligence
+              </p>
+              <h1 className="mb-2 font-headline text-3xl font-extrabold tracking-tight text-stone-900 sm:text-4xl">
+                Orchard Analytics
+              </h1>
+              <p className="max-w-2xl text-sm font-medium text-stone-600 sm:text-base">
+                Live order pipeline, returns, inventory signals, and trending products — synced from MongoDB every 15 seconds and on every admin change.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200/80 bg-white/80 px-3 py-1.5 text-xs font-bold text-emerald-800 shadow-sm backdrop-blur-sm">
+                <span className={`h-2 w-2 rounded-full bg-emerald-500 ${refreshing ? "animate-ping" : "animate-pulse"}`} />
+                {refreshing ? "Syncing…" : "Live"}
+                {lastSync ? ` · ${formatRelative(lastSync)}` : ""}
+              </span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={refreshAnalytics}
+                    disabled={bi.isFetching}
+                    aria-label="Refresh analytics"
+                    className="flex size-11 items-center justify-center rounded-full border border-stone-200/90 bg-white/90 text-stone-600 shadow-sm ring-1 ring-stone-900/5 backdrop-blur-sm transition hover:border-orange-300 hover:bg-orange-50/80 hover:text-orange-700 active:scale-95 disabled:opacity-60"
+                  >
+                    <Icon
+                      name="refresh"
+                      className={`text-[22px] leading-none ${refreshing ? "animate-spin" : ""}`}
+                    />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="text-xs font-semibold">
+                  Refresh analytics now
+                </TooltipContent>
+              </Tooltip>
+            </div>
           </div>
         </motion.div>
+
+        {refreshing && !loading && (
+          <div className="flex items-center gap-2 rounded-xl border border-orange-100 bg-orange-50/60 px-4 py-2 text-xs font-semibold text-orange-800">
+            <Icon name="sync" className="animate-spin text-base" />
+            Updating charts with latest orders & inventory…
+          </div>
+        )}
 
         {err && (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-rose-800">
@@ -248,13 +296,13 @@ const Analytics = () => {
         )}
 
         {/* Sales KPI grid */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className={`grid grid-cols-1 gap-4 transition-opacity sm:grid-cols-2 xl:grid-cols-4 ${refreshing && !loading ? "opacity-95" : ""}`}>
           {loading
             ? Array.from({ length: 8 }).map((_, i) => (
-                <Skeleton key={i} className="h-[120px] rounded-2xl" />
+                <Skeleton key={i} className="h-[130px] rounded-2xl" />
               ))
             : salesCards.map((c, i) => (
-                <StatCard key={c.label} {...c} delay={i * 0.04} />
+                <StatCard key={c.label} {...c} delay={i * 0.04} pulse={refreshing && (c.label === "Pending Orders" || c.label === "Returned Orders")} />
               ))}
         </div>
 
@@ -284,7 +332,25 @@ const Analytics = () => {
               </div>
               <div>
                 <h3 className="mb-3 text-sm font-bold text-stone-700">Order status</h3>
-                <div className="h-[260px] w-full">
+                <div className="mb-4 flex flex-wrap gap-2">
+                  {d.sales.orderStatusDistribution.map((row) => (
+                    <span
+                      key={row.name}
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold ${
+                        row.name === "Delivered"
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                          : row.name === "Pending"
+                            ? "border-amber-200 bg-amber-50 text-amber-900"
+                            : row.name === "Returned"
+                              ? "border-rose-200 bg-rose-50 text-rose-800"
+                              : "border-stone-200 bg-stone-50 text-stone-700"
+                      }`}
+                    >
+                      {row.name}: {row.value}
+                    </span>
+                  ))}
+                </div>
+                <div className="h-[220px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
@@ -293,8 +359,8 @@ const Analytics = () => {
                         nameKey="name"
                         cx="50%"
                         cy="50%"
-                        innerRadius={52}
-                        outerRadius={84}
+                        innerRadius={48}
+                        outerRadius={76}
                         paddingAngle={2}
                       >
                         {d.sales.orderStatusDistribution.map((_, i) => (

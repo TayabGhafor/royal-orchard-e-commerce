@@ -1,8 +1,15 @@
 import { startTransition, useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Icon } from "@/components/Icon";
-import { postChatbotQuery } from "@/lib/chatbot-api";
+import { postChatbotQuery, type ChatProduct, type ChatQueryResponse } from "@/lib/chatbot-api";
+import { ChatOrderTimeline } from "@/components/support/ChatOrderTimeline";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { useCart } from "@/store/cart";
+import { useProducts } from "@/store/products";
+import type { WeightOption } from "@/data/products";
+import { formatPKR } from "@/lib/format";
+import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useSoftTypingSound } from "@/hooks/use-soft-typing-sound";
@@ -13,6 +20,8 @@ export type ChatMessage = {
   text: string;
   /** When true, assistant text reveals with a premium progressive animation */
   revealContent?: boolean;
+  order?: ChatQueryResponse["order"];
+  products?: ChatProduct[];
 };
 
 const introMessage: ChatMessage = {
@@ -120,18 +129,63 @@ function RevealAssistantText({
   );
 }
 
+function applyCartAction(
+  action: NonNullable<ChatQueryResponse["cartAction"]>,
+  findProduct: (id: string) => ReturnType<typeof useProducts.getState>["items"][0] | undefined,
+  cart: ReturnType<typeof useCart.getState>,
+) {
+  if (action.action === "applyCoupon" && action.couponCode && action.discountPercent) {
+    cart.applyCoupon(action.couponCode, action.discountPercent);
+    return;
+  }
+  if (!action.productId) return;
+  const product = findProduct(action.productId);
+  const weight = (action.weight || "5kg") as WeightOption;
+  if (action.action === "add" && product) {
+    cart.addItem(product, weight, action.quantity || 1);
+    cart.setOpen(true);
+  } else if (action.action === "remove") {
+    cart.removeItem(action.productId, weight);
+  } else if (action.action === "updateQuantity") {
+    cart.updateQuantity(action.productId, weight, action.quantity || 1);
+  }
+}
+
 type ChatbotPopupProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Proactive reminder injected by abandoned-cart hook */
+  pendingReminder?: string | null;
+  onReminderConsumed?: () => void;
 };
 
-export function ChatbotPopup({ open, onOpenChange }: ChatbotPopupProps) {
+export function ChatbotPopup({ open, onOpenChange, pendingReminder, onReminderConsumed }: ChatbotPopupProps) {
   const reduced = useReducedMotion();
   const [messages, setMessages] = useState<ChatMessage[]>([introMessage]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const productItems = useProducts((s) => s.items);
+  const addItem = useCart((s) => s.addItem);
+  const removeItem = useCart((s) => s.removeItem);
+  const updateQuantity = useCart((s) => s.updateQuantity);
+  const applyCoupon = useCart((s) => s.applyCoupon);
+  const setCartOpen = useCart((s) => s.setOpen);
+
+  useEffect(() => {
+    if (!open || !pendingReminder) return;
+    setMessages((m) => [
+      ...m,
+      {
+        id: `reminder-${Date.now()}`,
+        role: "assistant",
+        text: pendingReminder,
+        revealContent: true,
+      },
+    ]);
+    onReminderConsumed?.();
+  }, [open, pendingReminder, onReminderConsumed]);
   /** Latest input for send() — avoids stale closure when `send` is memoized with `[sending]` only. */
   const inputLatestRef = useRef(input);
   inputLatestRef.current = input;
@@ -164,15 +218,29 @@ export function ChatbotPopup({ open, onOpenChange }: ChatbotPopupProps) {
     const started = Date.now();
 
     try {
-      const [replyText] = await Promise.all([postChatbotQuery(text), sleep(MIN_TYPING_MS)]);
+      const [payload] = await Promise.all([postChatbotQuery(text), sleep(MIN_TYPING_MS)]);
+      if (payload.cartAction) {
+        applyCartAction(payload.cartAction, (id) => productItems.find((p) => p.id === id), {
+          addItem,
+          removeItem,
+          updateQuantity,
+          applyCoupon,
+          setOpen: setCartOpen,
+        } as ReturnType<typeof useCart.getState>);
+        if (payload.cartAction.action === "applyCoupon") {
+          toast.success(payload.cartAction.reply);
+        }
+      }
       startTransition(() => {
         setMessages((m) => [
           ...m,
           {
             id: `a-${Date.now()}`,
             role: "assistant",
-            text: replyText,
+            text: payload.reply,
             revealContent: true,
+            order: payload.order,
+            products: payload.products,
           },
         ]);
       });
@@ -193,7 +261,15 @@ export function ChatbotPopup({ open, onOpenChange }: ChatbotPopupProps) {
     } finally {
       setSending(false);
     }
-  }, [sending]);
+  }, [
+    sending,
+    productItems,
+    addItem,
+    removeItem,
+    updateQuantity,
+    applyCoupon,
+    setCartOpen,
+  ]);
 
   return (
     <AnimatePresence>
@@ -261,6 +337,32 @@ export function ChatbotPopup({ open, onOpenChange }: ChatbotPopupProps) {
                         <RevealAssistantText text={msg.text} scrollIntoView={scrollToEnd} />
                       ) : (
                         <p className="whitespace-pre-wrap break-words">{msg.text}</p>
+                      )}
+                      {msg.order?.timeline && (
+                        <ChatOrderTimeline
+                          timeline={msg.order.timeline}
+                          orderStatus={msg.order.orderStatus}
+                          expectedDelivery={msg.order.expectedDelivery}
+                        />
+                      )}
+                      {msg.products && msg.products.length > 0 && (
+                        <ul className="mt-2 space-y-1 border-t border-outline-variant/10 pt-2">
+                          {msg.products.slice(0, 5).map((p) => {
+                            const slug =
+                              productItems.find((i) => i.id === p.id)?.slug || p.slug;
+                            return (
+                              <li key={p.id}>
+                                <Link
+                                  to={`/product/${slug}`}
+                                  className="text-xs font-semibold text-primary hover:underline"
+                                  onClick={() => onOpenChange(false)}
+                                >
+                                  {p.name} — {formatPKR(p.minPrice)}
+                                </Link>
+                              </li>
+                            );
+                          })}
+                        </ul>
                       )}
                     </div>
                   </motion.div>

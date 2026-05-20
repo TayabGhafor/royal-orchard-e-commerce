@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { SiteShell } from "@/components/SiteShell";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { CustomerLoveCarousel } from "@/components/CustomerLoveCarousel";
+import { ProductRecommendations } from "@/components/ProductRecommendations";
 import { Icon } from "@/components/Icon";
 import { useCart } from "@/store/cart";
 import { formatPKR } from "@/lib/format";
@@ -350,6 +351,9 @@ const Home = () => {
           </div>
         </div>
       </ScrollReveal>
+
+      <ProductRecommendations section="trending" className="py-16 bg-surface-container-lowest" />
+      <ProductRecommendations section="forYou" className="py-8 bg-surface" />
 
       {/* REVIEWS */}
       <ScrollReveal as="section" variant="fade-up" duration={0.88} className="py-24 px-6 bg-surface">

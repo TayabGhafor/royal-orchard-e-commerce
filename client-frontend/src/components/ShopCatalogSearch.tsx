@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Icon } from "@/components/Icon";
 import type { Product } from "@/data/products";
 import { displayUrlForProductImage } from "@/lib/productImages";
+import { fetchChatSuggestions } from "@/lib/chat-api";
 
 const MAX_SUGGESTIONS = 8;
 const MAX_QUERY = 80;
@@ -50,8 +51,29 @@ export function ShopCatalogSearch({ value, onChange, items, variety, inputId: in
   const inputRef = useRef<HTMLInputElement>(null);
   const [highlight, setHighlight] = useState(0);
   const [focused, setFocused] = useState(false);
+  const [apiPhrases, setApiPhrases] = useState<string[]>([]);
 
   const pool = useMemo(() => baseFilter(items, variety), [items, variety]);
+
+  useEffect(() => {
+    const q = value.trim();
+    if (q.length < 2) {
+      setApiPhrases([]);
+      return;
+    }
+    const t = window.setTimeout(() => {
+      void fetchChatSuggestions(q)
+        .then((res) => {
+          const phrases = (res.suggestions || [])
+            .filter((s) => s.kind === "phrase" || s.kind === "search" || s.kind === "variety")
+            .map((s) => s.text)
+            .slice(0, 4);
+          setApiPhrases(phrases);
+        })
+        .catch(() => setApiPhrases([]));
+    }, 180);
+    return () => clearTimeout(t);
+  }, [value]);
 
   const suggestions = useMemo(() => {
     const q = value.trim();
@@ -60,8 +82,24 @@ export function ShopCatalogSearch({ value, onChange, items, variety, inputId: in
       .map((p) => ({ p, s: scoreMatch(p, q) }))
       .filter((x) => x.s > 0)
       .sort((a, b) => b.s - a.s || a.p.name.localeCompare(b.p.name));
-    return scored.slice(0, MAX_SUGGESTIONS).map((x) => x.p);
-  }, [pool, value]);
+    const fromPool = scored.slice(0, MAX_SUGGESTIONS).map((x) => x.p);
+    if (fromPool.length >= MAX_SUGGESTIONS) return fromPool;
+    const ids = new Set(fromPool.map((p) => p.id));
+    for (const hint of apiPhrases) {
+      const match = pool.find(
+        (p) =>
+          !ids.has(p.id) &&
+          (p.name.toLowerCase().includes(hint.toLowerCase()) ||
+            p.variety.toLowerCase().includes(hint.toLowerCase())),
+      );
+      if (match) {
+        fromPool.push(match);
+        ids.add(match.id);
+      }
+      if (fromPool.length >= MAX_SUGGESTIONS) break;
+    }
+    return fromPool;
+  }, [pool, value, apiPhrases]);
 
   const showPanel = focused && value.trim().length > 0;
 
@@ -114,7 +152,7 @@ export function ShopCatalogSearch({ value, onChange, items, variety, inputId: in
   };
 
   const hasQuery = value.trim().length > 0;
-  const showEmpty = showPanel && hasQuery && suggestions.length === 0;
+  const showEmpty = showPanel && hasQuery && suggestions.length === 0 && apiPhrases.length === 0;
 
   return (
     <div ref={wrapperRef} className="relative z-20">
@@ -180,8 +218,21 @@ export function ShopCatalogSearch({ value, onChange, items, variety, inputId: in
             transition={{ type: "spring", stiffness: 420, damping: 32 }}
             className="absolute left-0 right-0 top-full z-30 mt-2 overflow-hidden rounded-2xl border border-outline-variant/50 bg-surface-container-lowest shadow-xl shadow-primary/5"
           >
-            {suggestions.length > 0 ? (
+            {suggestions.length > 0 || apiPhrases.length > 0 ? (
               <ul className="max-h-72 overflow-y-auto py-1.5">
+                {apiPhrases.map((phrase) => (
+                  <li key={`phrase-${phrase}`} role="presentation">
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => onChange(phrase)}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-primary hover:bg-surface-container-high"
+                    >
+                      <Icon name="auto_awesome" className="text-base shrink-0" />
+                      <span className="truncate">{phrase}</span>
+                    </button>
+                  </li>
+                ))}
                 {suggestions.map((p, i) => {
                   const active = i === highlight;
                   return (

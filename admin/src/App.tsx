@@ -1,6 +1,7 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { queryClient } from "@/lib/queryClient";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,16 +15,6 @@ import ChatbotKnowledge from "@/pages/admin/ChatbotKnowledge";
 import Profile from "@/pages/admin/Profile";
 import Login from "@/pages/Login";
 import NotFound from "@/pages/NotFound";
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 30_000,
-      refetchOnWindowFocus: false,
-      retry: 1,
-    },
-  },
-});
 
 const AdminRoute = ({ children }: { children: ReactNode }) => (
   <RequireAdmin>{children}</RequireAdmin>

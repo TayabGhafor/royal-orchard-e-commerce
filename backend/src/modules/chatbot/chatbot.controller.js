@@ -24,8 +24,28 @@ function chatbotQuery(env) {
         throw Object.assign(new Error("message too long"), { statusCode: 400, code: "invalid_message" });
       }
 
-      const reply = await buildReply(message, env);
-      res.json({ reply });
+      const guest =
+        req.headers["x-guest-session"] ||
+        req.headers["x-guest-session-id"] ||
+        req.body?.guestSessionId;
+      let userId;
+      const header = req.headers.authorization || "";
+      const [, token] = header.split(" ");
+      if (token) {
+        try {
+          const jwt = require("jsonwebtoken");
+          const payload = jwt.verify(token, env.JWT_SECRET);
+          userId = payload.userId;
+        } catch {
+          // ignore
+        }
+      }
+
+      const payload = await buildReply(message, env, {
+        userId,
+        guestSessionId: guest ? String(guest).trim().slice(0, 64) : undefined,
+      });
+      res.json(payload);
     } catch (err) {
       next(err);
     }
@@ -141,6 +161,7 @@ function updateKnowledge() {
       if (body.title !== undefined) patch.title = sanitizeTitle(body.title);
       if (body.content !== undefined) patch.content = sanitizeContent(body.content);
       if (body.type !== undefined && ["text", "pdf", "json"].includes(body.type)) patch.type = body.type;
+      if (body.enabled !== undefined) patch.enabled = Boolean(body.enabled);
 
       const doc = await ChatbotKnowledge.findByIdAndUpdate(id, patch, { new: true, runValidators: true }).lean();
       if (!doc) throw Object.assign(new Error("Not found"), { statusCode: 404, code: "not_found" });

@@ -3,6 +3,7 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Icon } from "@/components/Icon";
 import { mailtoSupportUrl, whatsappSupportUrl } from "@/lib/support-config";
 import { ChatbotPopup } from "./ChatbotPopup";
+import { useAbandonedCartReminder } from "@/hooks/use-abandoned-cart";
 import { cn } from "@/lib/utils";
 
 const CHAT_SEEN_KEY = "royalorchard-support-chat-seen";
@@ -23,6 +24,13 @@ export function SupportDock() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [tooltip, setTooltip] = useState(false);
+  const [chatReminder, setChatReminder] = useState<string | null>(null);
+
+  useAbandonedCartReminder((msg) => {
+    setChatReminder(msg);
+    setUnread(true);
+  });
+
   const [unread, setUnread] = useState(() => {
     try {
       return localStorage.getItem(CHAT_SEEN_KEY) !== "1";
@@ -177,7 +185,12 @@ export function SupportDock() {
         </div>
       </div>
 
-      <ChatbotPopup open={chatOpen} onOpenChange={setChatOpen} />
+      <ChatbotPopup
+        open={chatOpen}
+        onOpenChange={setChatOpen}
+        pendingReminder={chatReminder}
+        onReminderConsumed={() => setChatReminder(null)}
+      />
     </>
   );
 }

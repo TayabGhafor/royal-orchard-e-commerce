@@ -23,6 +23,7 @@ type KnowledgeItem = {
   content: string;
   type: "text" | "pdf" | "json";
   sourceFile?: string;
+  enabled?: boolean;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -97,6 +98,23 @@ const ChatbotKnowledge = () => {
       await load();
     } catch (e: unknown) {
       toast.error((e as Error)?.message || "Upload failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const toggleEnabled = async (it: KnowledgeItem) => {
+    setBusy(true);
+    try {
+      await api(`/api/chatbot/knowledge/${it._id}`, {
+        method: "PUT",
+        body: JSON.stringify({ enabled: it.enabled === false }),
+        admin: true,
+      });
+      toast.success(it.enabled === false ? "Source enabled" : "Source disabled");
+      await load();
+    } catch (e: unknown) {
+      toast.error((e as Error)?.message || "Update failed");
     } finally {
       setBusy(false);
     }
@@ -224,18 +242,29 @@ const ChatbotKnowledge = () => {
                     <p className="text-xs text-stone-500 uppercase tracking-wide mt-1">
                       {it.type}
                       {it.sourceFile ? ` · ${it.sourceFile}` : ""}
+                      {it.enabled === false ? " · disabled" : ""}
                     </p>
                     <p className="text-sm text-stone-600 mt-2 line-clamp-3">{it.content}</p>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="shrink-0 text-rose-700 border-rose-200 hover:bg-rose-50"
-                    disabled={busy}
-                    onClick={() => void remove(it._id)}
-                  >
-                    Delete
-                  </Button>
+                  <div className="flex gap-2 shrink-0">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={busy}
+                      onClick={() => void toggleEnabled(it)}
+                    >
+                      {it.enabled === false ? "Enable" : "Disable"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-rose-700 border-rose-200 hover:bg-rose-50"
+                      disabled={busy}
+                      onClick={() => void remove(it._id)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
                 </li>
               ))}
             </ul>
