@@ -5,6 +5,8 @@ const { connectDB } = require("./config/db");
 const { createApp } = require("./app");
 const { seedDefaultProducts } = require("./modules/products/products.seed");
 const { seedSiteKnowledge } = require("./modules/chatbot/site-knowledge.seed");
+const { seedBlogs } = require("./modules/blogs/blogs.seed");
+const { seedAnalyticsDemo } = require("./modules/analytics/analytics-demo.seed");
 
 async function main() {
   const env = loadEnv(process.env);
@@ -15,6 +17,18 @@ async function main() {
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error("[chatbot] site knowledge seed failed:", err?.message || err);
+  }
+  try {
+    await seedAnalyticsDemo();
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("[analytics] demo seed failed:", err?.message || err);
+  }
+  try {
+    await seedBlogs();
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("[blogs] seed failed:", err?.message || err);
   }
 
   const app = createApp(env);

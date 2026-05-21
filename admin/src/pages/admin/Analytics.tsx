@@ -241,7 +241,7 @@ const Analytics = () => {
                 Orchard Analytics
               </h1>
               <p className="max-w-2xl text-sm font-medium text-stone-600 sm:text-base">
-                Live order pipeline, returns, inventory signals, and trending products — synced from MongoDB every 15 seconds and on every admin change.
+                Live order pipeline, returns, inventory signals, and trending products — synced from MongoDB every 15 seconds. Includes demo preview orders and product metrics stored alongside real customer data.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">

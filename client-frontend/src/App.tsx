@@ -30,6 +30,8 @@ const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Security = lazy(() => import("./pages/Security"));
 const Wholesale = lazy(() => import("./pages/Wholesale"));
+const Blog = lazy(() => import("./pages/Blog"));
+const BlogPost = lazy(() => import("./pages/BlogPost"));
 const Account = lazy(() => import("./pages/Account"));
 const Orders = lazy(() => import("./pages/Orders"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
@@ -87,6 +89,8 @@ const App = () => (
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/verify-reset-code" element={<VerifyResetCode />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/our-story" element={<OurStory />} />
               <Route path="/freshness" element={<Freshness />} />
               <Route path="/shipping-policy" element={<ShippingPolicy />} />

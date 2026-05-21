@@ -185,6 +185,7 @@ function createApp(env) {
   app.use("/api/chatbot", require("./modules/chatbot/chatbot.routes")(env));
   app.use("/api/chat", require("./modules/chat/chat.routes")(env));
   app.use("/api/payments", require("./modules/payments/payment.routes")(env));
+  app.use("/api/blogs", require("./modules/blogs/blogs.routes")(env));
 
   app.use((_req, res) => res.status(404).json({ error: { code: "not_found", message: "Route not found" } }));
   app.use(errorMiddleware);

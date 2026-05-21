@@ -12,86 +12,104 @@ import {
   TableSkeleton,
 } from "@/components/admin/AdminSkeletons";
 import { useState, useEffect, useMemo } from "react";
+import { useAdminAnalytics } from "@/hooks/use-admin-analytics";
+
+function pctChange(current: number, previous: number) {
+  if (previous <= 0) return current > 0 ? "+100%" : "0%";
+  const pct = ((current - previous) / previous) * 100;
+  const sign = pct >= 0 ? "+" : "";
+  return `${sign}${pct.toFixed(1)}%`;
+}
 
 const Dashboard = () => {
   const orders = useAdmin((s) => s.orders);
-  const customers = useAdmin((s) => s.customers);
-  const { loading, error, retry } = usePageLoading({ delay: 700 });
+  const { loading: pageLoading, error: pageError, retry } = usePageLoading({ delay: 400 });
+  const { data: bi, isLoading: biLoading, isError: biError, refetch, dataUpdatedAt } = useAdminAnalytics();
   const { lastUpdated } = useRealtimeTick(30000);
-  const [, setNow] = useState(Date.now());
   const [rangeDays, setRangeDays] = useState<7 | 30>(7);
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, []);
 
-  const revenue = orders.reduce((s, o) => s + o.total, 0);
-  const activeUsers = customers.filter((c) => c.status === "Active").length;
+  const loading = pageLoading || biLoading;
+  const error = pageError || (biError ? "Could not load live analytics" : null);
+  const sales = bi?.sales;
+  const trending = bi?.trending?.items || [];
+
+  const weekMomentum = useMemo(() => {
+    const trend = sales?.dailySalesTrend || [];
+    if (trend.length < 8) return { change: "—", trend: "up" as const };
+    const last7 = trend.slice(-7).reduce((s, d) => s + d.amount, 0);
+    const prev7 = trend.slice(-14, -7).reduce((s, d) => s + d.amount, 0);
+    const pct = pctChange(last7, prev7);
+    return { change: pct, trend: last7 >= prev7 ? ("up" as const) : ("down" as const) };
+  }, [sales?.dailySalesTrend]);
 
   const stats = [
     {
       title: "Total Orders",
-      value: orders.length.toLocaleString(),
-      change: "+12.5%",
-      trend: "up",
+      value: (sales?.orders ?? orders.length).toLocaleString(),
+      change: weekMomentum.change,
+      trend: weekMomentum.trend,
       icon: "shopping_basket",
       iconBg: "bg-orange-100",
       iconColor: "text-orange-700",
     },
     {
-      title: "Revenue",
-      value: formatPKR(revenue),
-      change: "+8.2%",
-      trend: "up",
+      title: "Revenue (Delivered)",
+      value: formatPKR(sales?.revenue ?? 0),
+      change: sales?.weeklySales ? formatPKR(sales.weeklySales) + " / 7d" : "—",
+      trend: "up" as const,
       icon: "payments",
       iconBg: "bg-amber-100",
       iconColor: "text-amber-700",
     },
     {
-      title: "Active Users",
-      value: activeUsers.toLocaleString(),
-      change: "-2.4%",
-      trend: "down",
-      icon: "person_play",
+      title: "Pending Orders",
+      value: (sales?.pendingOrders ?? 0).toLocaleString(),
+      change: `${sales?.returnedOrders ?? 0} returned`,
+      trend: "down" as const,
+      icon: "pending_actions",
       iconBg: "bg-emerald-100",
       iconColor: "text-emerald-700",
     },
   ];
 
   const revenueTrend = useMemo(() => {
-    // UI-only trend data (until real analytics data is wired in)
-    // Generates stable(ish) values per day so switching 7/30 feels consistent.
-    const end = new Date();
-    const base = Math.max(orders.reduce((s, o) => s + o.total, 0) / 20, 1500);
-    const points = Array.from({ length: rangeDays }, (_, i) => {
-      const d = new Date(end);
-      d.setDate(end.getDate() - (rangeDays - 1 - i));
-      const t = i / Math.max(rangeDays - 1, 1);
-      const wave = 0.55 + 0.25 * Math.sin(t * Math.PI * 2);
-      const noise = 0.9 + ((i * 17) % 9) / 50;
-      const value = Math.round(base * wave * noise);
+    const trend = sales?.dailySalesTrend || [];
+    const slice = trend.slice(-rangeDays);
+    const points = slice.map((p) => {
+      const d = new Date(p.day);
       const label =
         rangeDays === 7
           ? d.toLocaleDateString("en-US", { weekday: "short" })
           : d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-      return { date: d, label, value };
+      return { date: d, label, value: p.amount };
     });
-
     const max = Math.max(...points.map((p) => p.value), 1);
     const bars = points.map((p) => ({
       ...p,
       heightPct: Math.max(8, Math.round((p.value / max) * 100)),
     }));
-
     return { bars, peakIdx: bars.findIndex((b) => b.value === Math.max(...bars.map((x) => x.value))) };
-  }, [orders, rangeDays]);
+  }, [sales?.dailySalesTrend, rangeDays]);
 
-  const dailyVolume = [
-    { label: "Fresh Picked", value: 420, pct: 85 },
-    { label: "Pre-Order", value: 150, pct: 40 },
-    { label: "Bulk Wholesale", value: 85, pct: 25 },
-  ];
+  const dailyVolume = useMemo(() => {
+    const top = trending.slice(0, 3);
+    if (!top.length) {
+      return [{ label: "No product data", value: 0, pct: 0 }];
+    }
+    const maxScore = Math.max(...top.map((t) => t.trendingScore), 1);
+    return top.map((t) => ({
+      label: t.name.length > 18 ? `${t.name.slice(0, 16)}…` : t.name,
+      value: t.salesCount,
+      pct: Math.max(12, Math.round((t.trendingScore / maxScore) * 100)),
+    }));
+  }, [trending]);
+
+  const capacityPct = useMemo(() => {
+    const total = sales?.totalSales ?? 0;
+    const month = sales?.monthlySales ?? 1;
+    return Math.min(99, Math.max(8, Math.round((month / Math.max(total, 1)) * 100)));
+  }, [sales]);
 
   const dateRange = (() => {
     const end = new Date();
@@ -115,7 +133,7 @@ const Dashboard = () => {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5 text-xs text-stone-500 bg-emerald-50 text-emerald-700 px-3 py-2 rounded-full font-semibold">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              Live · updated {formatRelative(lastUpdated)}
+              Live · {formatRelative(dataUpdatedAt || lastUpdated)}
             </div>
             <div className="bg-stone-50 px-4 py-2 rounded-full flex items-center gap-2 border border-stone-100">
               <Icon name="calendar_today" className="text-stone-400 text-base" />
@@ -130,7 +148,10 @@ const Dashboard = () => {
               <Icon name="error" /> {error}
             </div>
             <button
-              onClick={retry}
+              onClick={() => {
+                retry();
+                void refetch();
+              }}
               className="text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full bg-white border border-rose-200 hover:bg-rose-100"
             >
               Retry
@@ -260,7 +281,7 @@ const Dashboard = () => {
           >
             <div className="relative z-10">
               <h4 className="text-xl font-bold mb-2 font-headline">Daily Volume</h4>
-              <p className="text-orange-100 text-sm mb-8">Capacity: 92%</p>
+              <p className="text-orange-100 text-sm mb-8">Month vs total: {capacityPct}%</p>
               <div className="space-y-6">
                 {dailyVolume.map((d, idx) => (
                   <div key={d.label} className="space-y-2">

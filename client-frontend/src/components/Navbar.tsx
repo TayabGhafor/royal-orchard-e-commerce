@@ -8,6 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 const navLinks = [
   { to: "/", label: "Home" },
   { to: "/shop", label: "Shop" },
+  { to: "/blog", label: "Blog" },
   { to: "/our-story", label: "OurStory" },
   { to: "/freshness", label: "Freshness" },
 ];
