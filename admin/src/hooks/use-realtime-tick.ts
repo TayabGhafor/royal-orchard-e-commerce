@@ -20,9 +20,21 @@ export function useRealtimeTick(intervalMs = 30000) {
   return { tick, lastUpdated };
 }
 
+type RelativeDateInput = Date | number | string | null | undefined;
+
+function toValidDate(value: RelativeDateInput): Date | null {
+  if (value == null) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 /** Human-friendly "Xs ago" / "Xm ago" relative timestamp. */
-export function formatRelative(date: Date, now: Date = new Date()): string {
-  const sec = Math.max(0, Math.floor((now.getTime() - date.getTime()) / 1000));
+export function formatRelative(date: RelativeDateInput, now: RelativeDateInput = new Date()): string {
+  const targetDate = toValidDate(date);
+  const nowDate = toValidDate(now);
+  if (!targetDate || !nowDate) return "just now";
+
+  const sec = Math.max(0, Math.floor((nowDate.getTime() - targetDate.getTime()) / 1000));
   if (sec < 5) return "just now";
   if (sec < 60) return `${sec}s ago`;
   const min = Math.floor(sec / 60);
